@@ -1,0 +1,16 @@
+# Verify-first findings
+
+Each item flagged "verify first" in `docs/`, checked against the live source before use.
+
+## M0 (checked 2026-10-27, release point 119-134)
+
+| Item | Finding | Source |
+| --- | --- | --- |
+| Per-title XML zip URL pattern | `download/releasepoints/us/pl/{congress}/{law}/xml_usc{NN}@{congress}-{law}.zip`, relative to `https://uscode.house.gov/`. `NN` is a zero-padded title number with an `a` suffix for appendices (`05a`, `11a`, `18a`, `28a`, `50a`). All titles: `xml_uscAll@{label}.zip` (108.7 MB at 119-134). Other formats swap the `xml_` prefix for `htm_`, `pcc_`, `pdf_`. 58 per-title XML links at 119-134 (no title 53). | https://uscode.house.gov/download.html |
+| Release point page location | The plan's old `download/download.shtml` path now returns 404. The page is `download.html`; the root `/` redirects to `browse.html`. The label is in `<h3 class="releasepointinformation">Public Law 119-134</h3>`; the date is in `p.releasepointdescription` ("current through Public Law 119-134 (October 20, 2026)"). Prior release points: `priorreleasepoints.html` (not yet parsed; needed in M3). | same |
+| USLM identifier format | Confirmed as expected: sections carry `identifier="/us/usc/t4/s1"`; title root `<uscDoc identifier="/us/usc/t4">` in namespace `http://xml.house.gov/schemas/uslm/1.0` (schema USLM-1.0.15). Chapters use `/us/usc/t4/ch1`. `meta/docPublicationName` is `Online@119-134`, which gives a second, in-file release point stamp. Each zip holds one member (`usc04.xml`). | `xml_usc04@119-134.zip` |
+| Classification table structure | Index at `classification/tables.html` (not `.shtml`) links `tbl119pl_1st.html`, `tbl119pl_2nd.html` (Public Law order) and `tbl119cd_*` (Code order). The rows are fixed-width text in a `<PRE>` block, not an HTML table. Columns: Title, Section, Description, Pub. L., Sec., Stat. page. Quirks found: the Stat. page can be a range (`762-764`), and a quoted new-section label can run into the page column with no space (`7201(c)(1) "Subchapter I"1677`). The parser takes column starts from the header line and raises on any line it cannot fit. 119th 1st session: 3,049 rows; 2nd session: 647 rows, PL 119-70 to 119-134. | https://uscode.house.gov/classification/tables.html |
+| Temporary site format | Every OLRC page carries "currently operating in a temporary format" (2026-10-27). Fetchers are small and pinned by fixture tests in `tests/unit/test_olrc.py`. | all OLRC pages |
+| Congress.gov API | Needs an api.data.gov key. The shared `DEMO_KEY` returns 429 OVER_RATE_LIMIT, and a missing key returns 403. **Not yet verified with a key.** | https://api.congress.gov/v3/ |
+| Congress.gov bill text files | Downloadable without a key at `https://www.congress.gov/{congress}/bills/{type}{number}/BILLS-{congress}{type}{number}{version}.xml`. The same file is at `https://www.govinfo.gov/content/pkg/BILLS-.../xml/BILLS-....xml` (byte-identical size for 119 hr 1 enr: 1,754,658). | direct fetch |
+| govinfo bulk data | JSON listings at `https://www.govinfo.gov/bulkdata/json/{collection}/{congress}/{session}/{type}`, no key. Each entry has `link`, `size`, `fileExtension`. `PLAW/119/public` lists 132 entries. | direct fetch |

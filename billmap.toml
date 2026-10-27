@@ -1,0 +1,17 @@
+# Release point pin: every output is stamped with this. Change it only by re-indexing.
+[release]
+pin = "119-134"   # verified 2026-10-27 on uscode.house.gov/download.html (dated 2026-10-20)
+
+[sources]
+olrc_base = "https://uscode.house.gov/"
+govinfo_bulk = "https://www.govinfo.gov/bulkdata/"
+congress_api = "https://api.congress.gov/v3/"
+
+[net]
+min_interval_seconds = 1.0   # per-host politeness delay
+timeout_seconds = 60
+
+# Filled in at their milestones.
+[budgets]
+[models]
+[rules]
