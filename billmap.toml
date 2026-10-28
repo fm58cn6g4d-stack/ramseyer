@@ -7,6 +7,10 @@ olrc_base = "https://uscode.house.gov/"
 govinfo_bulk = "https://www.govinfo.gov/bulkdata/"
 congress_api = "https://api.congress.gov/v3/"
 
+[index]
+path = "var/index/billmap.sqlite"
+keep_prior = 4               # prior release points kept for as-of and STALE_BASELINE checks
+
 [net]
 min_interval_seconds = 1.0   # per-host politeness delay
 timeout_seconds = 60

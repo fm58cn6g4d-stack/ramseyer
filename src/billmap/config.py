@@ -34,6 +34,8 @@ class Config:
     api_key: str | None
     contact: str | None
     var: Path
+    index_path: Path
+    keep_prior: int
 
     @property
     def user_agent(self) -> str:
@@ -54,4 +56,6 @@ def load(root: Path = ROOT) -> Config:
         api_key=env.get("API_DATA_GOV_KEY") or None,
         contact=env.get("BILLMAP_CONTACT") or None,
         var=root / "var",
+        index_path=root / raw["index"]["path"],
+        keep_prior=int(raw["index"]["keep_prior"]),
     )

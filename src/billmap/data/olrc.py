@@ -30,6 +30,7 @@ class ReleasePoint:
     date: str | None                # as printed, e.g. "October 20, 2026"
     xml_titles: dict[str, str] = field(default_factory=dict)   # "04" -> absolute URL
     xml_all: str | None = None
+    currency: dict[str, str] = field(default_factory=dict)      # "4" -> "119-134", as printed
 
 
 def parse_release_point(page: str, base: str) -> ReleasePoint:
@@ -53,6 +54,12 @@ def parse_release_point(page: str, base: str) -> ReleasePoint:
             rp.xml_all = url
         else:
             rp.xml_titles[z.group("title")] = url
+    for item in doc.xpath('//div[contains(@class,"uscitem")]'):
+        links = [ZIP_RE.search(h) for h in item.xpath(".//a/@href")]
+        code = next((z.group("title") for z in links if z and z.group("title") != "All"), None)
+        current = " ".join(item.xpath('string(.//div[contains(@class,"itemcurrency")])').split())
+        if code and current:
+            rp.currency[str(int(code[:2])) + code[2:].lower()] = current
     if not rp.xml_titles:
         raise ValueError("no per-title XML links found on download page")
     return rp
