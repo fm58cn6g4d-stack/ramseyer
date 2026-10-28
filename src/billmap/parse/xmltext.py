@@ -10,6 +10,8 @@ parser's segmentation and quote detection against an independent reading.
 """
 from __future__ import annotations
 
+import re
+
 from lxml import etree
 
 from billmap.parse.ops import count_ops
@@ -27,7 +29,13 @@ def enum_key(enum: str | None) -> str:
     return (enum or "").strip().strip("().").replace(" ", "") or "_"
 
 
-def inline(el, quote_open="“", quote_close="”", inner=False) -> str:
+def _squash(s: str) -> str:
+    """Collapse whitespace runs to one space, keeping a leading or trailing space (it is quoted matter:
+    “ and members” differs from “and members”)."""
+    return re.sub(r"\s+", " ", s)
+
+
+def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True) -> str:
     """Text of an inline container: <quote> becomes quotes; nested quoted blocks are not inline."""
     parts = [el.text or ""]
     for c in el:
@@ -35,17 +43,18 @@ def inline(el, quote_open="“", quote_close="”", inner=False) -> str:
             parts.append(c.tail or "")
             continue
         if c.tag == "quote":
-            o, cl = ("‘", "’") if inner else (quote_open, quote_close)
-            parts.append(o + inline(c, inner=True) + cl)
+            o, cl = ("\u2018", "\u2019") if inner else (quote_open, quote_close)
+            parts.append(o + inline(c, inner=True, top=False) + cl)
         elif c.tag in ("quoted-block", "toc"):
             pass
         elif c.tag == "term":            # defined terms print in quotes
             o, cl = ("\u2018", "\u2019") if inner else (quote_open, quote_close)
-            parts.append(o + inline(c, inner=True) + cl)
+            parts.append(o + inline(c, inner=True, top=False) + cl)
         else:
-            parts.append(inline(c, inner=inner))
+            parts.append(inline(c, inner=inner, top=False))
         parts.append(c.tail or "")
-    return " ".join("".join(parts).split())
+    text = _squash("".join(parts))
+    return text.strip() if top else text
 
 
 def _head_line(el) -> str:

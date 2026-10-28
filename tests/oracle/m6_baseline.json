@@ -1,0 +1,22 @@
+{
+ "predictor": "billmap M6",
+ "metrics": {
+  "targets": 1295,
+  "matched": 289,
+  "mismatched": 323,
+  "missed": 683,
+  "extra": 1,
+  "unexpected_change": 2,
+  "pending": 7,
+  "match_rate": 0.2232,
+  "clean": 320,
+  "false_clean": 96,
+  "false_clean_rate": 0.3,
+  "deterministic_coverage": 1.0,
+  "model_tokens": 0,
+  "mismatch_engine": 182,
+  "mismatch_unclassified": 96,
+  "mismatch_parser": 28,
+  "mismatch_resolver": 17
+ }
+}

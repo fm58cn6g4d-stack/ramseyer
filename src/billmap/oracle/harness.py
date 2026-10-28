@@ -37,7 +37,7 @@ class Prediction(BaseModel):
 class SectionOutcome(BaseModel):
     pl: str
     identifier: str
-    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change"]
+    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending"]
     status: str | None
     stage: str | None
     detail: str = ""
@@ -78,9 +78,28 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
             continue
         bt, bs = section_text(before, ident)
         at, as_ = section_text(after, ident)
-        out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_,
-                      "changed": normalize(bt) != normalize(at) or bs != as_, "rows": [row.description]}
+        changed = normalize(bt) != normalize(at) or bs != as_
+        out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_, "changed": changed,
+                      "rows": [row.description],
+                      "pending": not changed and at is not None and pending_note(law, before, after, ident)}
     return out
+
+
+def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> bool:
+    """OLRC did not execute the law's amendment: a delayed effective date set it out in a new note instead
+    ("..., provided that, effective one year after ..., this section is amended as follows: ...")."""
+    try:
+        a = after.by_identifier(ident)
+    except LookupError_:
+        return False
+    try:
+        b_notes = {r[0] for r in before.db.execute("SELECT text FROM notes WHERE section_id=?",
+                                                   (before.by_identifier(ident).id,))}
+    except LookupError_:
+        b_notes = set()
+    cite = "Pub. L. " + law.pl.replace("-", "\u2013")
+    return any(cite in t and re.search(r"effective .{0,160}amended", t, re.S)
+               for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (a.id,)) if t not in b_notes)
 
 
 def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Prediction]], name: str,
@@ -96,7 +115,11 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         counts = collections.Counter()
         for ident, t in gt.items():
             p = preds.get(ident)
-            if p is None:
+            if t.get("pending"):
+                o = SectionOutcome(pl=law.pl, identifier=ident, outcome="pending", status=p.status if p else None,
+                                   stage=None, detail="amendment set out in a note (delayed effective date); "
+                                                      "R_after text is unchanged by design")
+            elif p is None:
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="missed", status=None, stage=None,
                                    detail="classified to this law; no prediction")
             else:
@@ -131,6 +154,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "missed": sum(o.outcome == "missed" for o in outcomes),
         "extra": sum(o.outcome == "extra" for o in outcomes),
         "unexpected_change": sum(o.outcome == "unexpected_change" for o in outcomes),
+        "pending": sum(o.outcome == "pending" for o in outcomes),
         "match_rate": round(sum(o.outcome == "match" for o in outcomes) / targets, 4) if targets else 0.0,
         "clean": len(clean),
         "false_clean": len(false_clean),

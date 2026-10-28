@@ -25,6 +25,7 @@ class Resolution(BaseModel):
     cite: str | None = None                       # "42 U.S.C. 247b–23(b)" (the unit), or "10 U.S.C. 1791 note"
     section_id: int | None = None
     node_id: int | None = None                    # the unit within the section, when it exists
+    path: list[str] = Field(default_factory=list)  # unit path inside the section, e.g. ["(b)", "(2)"]
     note_id: int | None = None
     candidates: list[str] = Field(default_factory=list)   # SPLIT / UNKNOWN: what the evidence pointed to
     note_anchor: str | None = None                # NOTE: section the note is under or precedes (identifier)
@@ -85,6 +86,7 @@ class Resolver:
         else:
             unit_id, uflags = self._unit(section, tuple(path))
             cite = (section.cite or section.identifier) + "".join(path)
+            kw["path"] = list(path)
         if section.status not in ("current", None):
             flags = flags + [f"section is {section.status} at {self.ix.release_point}", "needs review"]
         flags = flags + uflags
