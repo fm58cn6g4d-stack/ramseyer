@@ -108,22 +108,28 @@ class Indexer:
         self.ord = 0
 
     # ---- release point -------------------------------------------------------------
-    def load_release_point(self, zip_path: Path, label: str, date: str | None, source_url: str,
+    def load_release_point(self, zip_path: Path | list[Path], label: str, date: str | None, source_url: str,
                            currency: dict[str, str] | None = None, titles: list[str] | None = None,
                            log=print) -> int:
+        """Index one release point from the all-titles zip, or from a list of per-title zips."""
+        zip_paths = zip_path if isinstance(zip_path, list) else [zip_path]
         existing = self.db.execute("SELECT id, complete FROM release_points WHERE label=?", (label,)).fetchone()
         if existing:
             if existing[1]:
                 log(f"release point {label} already indexed")
                 return existing[0]
             self.drop_release_point(existing[0])
-        sha = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+        sha = " ".join(hashlib.sha256(p.read_bytes()).hexdigest() for p in zip_paths)
         cur = self.db.execute(
             "INSERT INTO release_points(label, date, source_url, source_sha256, loaded_at) VALUES (?,?,?,?,?)",
             (label, date, source_url, sha, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())))
         rp = cur.lastrowid
-        with zipfile.ZipFile(zip_path) as zf:
-            for member in sorted(zf.namelist(), key=lambda m: (int(MEMBER_RE.match(m).group(1)), m)):
+        members = []
+        for zp in zip_paths:
+            with zipfile.ZipFile(zp) as zf:
+                members += [(m, zp) for m in zf.namelist() if MEMBER_RE.match(m)]
+        for member, zp in sorted(members, key=lambda x: (int(MEMBER_RE.match(x[0]).group(1)), x[0])):
+            with zipfile.ZipFile(zp) as zf:
                 code = title_code(member)
                 if titles and code not in titles:
                     continue

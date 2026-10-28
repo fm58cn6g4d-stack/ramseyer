@@ -20,7 +20,7 @@ ZIP_RE = re.compile(
     r"releasepoints/us/pl/(?P<congress>\d+)/(?P<law>[\w-]+)/"
     r"(?P<fmt>xml|htm|pcc|pdf)_usc(?P<title>\d+a?|All)@(?P<label>[\w-]+)\.zip$"
 )
-LABEL_RE = re.compile(r"Public Law\s+(\d+-\d+)")
+LABEL_RE = re.compile(r"Public Law\s+(\d+-\d+(?:not\d+)*)")   # "119-73not60": through 119-73 except 119-60
 DATE_RE = re.compile(r"current through Public Law \d+-\d+ \(([^)]+)\)", re.I)
 
 

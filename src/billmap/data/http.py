@@ -13,6 +13,8 @@ import httpx
 from billmap.config import Config
 
 SECRET_PARAMS = {"api_key"}
+RETRY_STATUSES = {403, 429, 500, 502, 503, 504}
+RETRY_DELAYS = (5, 15, 45)
 
 
 def redact(url: str) -> str:
@@ -67,13 +69,18 @@ class Fetcher:
         if not refresh and body.exists() and meta.exists():
             m = json.loads(meta.read_text())
             return Response(m["url"], m["status"], m["headers"], body, True)
-        self._wait(url)
         tmp = body.with_suffix(".part")
-        with self._client.stream("GET", url, headers=headers) as r:
-            with tmp.open("wb") as fh:
-                for chunk in r.iter_bytes():
-                    fh.write(chunk)
-            status, hdrs = r.status_code, dict(r.headers)
+        for attempt in range(len(RETRY_DELAYS) + 1):
+            self._wait(url)
+            with self._client.stream("GET", url, headers=headers) as r:
+                with tmp.open("wb") as fh:
+                    for chunk in r.iter_bytes():
+                        fh.write(chunk)
+                status, hdrs = r.status_code, dict(r.headers)
+            # uscode.house.gov intermittently answers 403 during runs of downloads (seen 2026-10-28).
+            if status not in RETRY_STATUSES or attempt == len(RETRY_DELAYS):
+                break
+            time.sleep(RETRY_DELAYS[attempt])
         if status != 200:
             tmp.unlink(missing_ok=True)
             return Response(redact(url), status, hdrs, None, False)
