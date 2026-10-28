@@ -42,15 +42,25 @@ sections round-trip cite, section and text with no nulls. Plus the invariants in
 Index size: **1.57 GB** (SQLite with FTS5). Rows: 783k nodes, 1.31M refs, 253k notes,
 155k source credits, 11k definitions (9,709 with a resolved scope).
 
-**Open items found by a full-population text comparison** (beyond the gate; not yet fixed):
-- Every section compared against the XHTML: 52,833 equal and 491 differ (0.9%). Most differences
-  are rendering: fractions (⅓ against 1/3), blank-line lengths, formulas, Unicode normalization, dot leaders.
-- **Likely extraction bug: tables.** Table body rows appear to be missing or reordered in
-  `text_plain` for roughly 10 sections (e.g. 38 U.S.C. 1311 and 42 U.S.C. 7412, 7511, 7521, 7541).
-  The tables use the XHTML namespace inside USLM. Fix this before M2's spot checks.
-- **Decision pending: bracketed status text on subunits.** "[Repealed.]", "[Omitted]" and "[reserved]" sit in a
-  `<note topic="miscellaneous">` inside the subunit (e.g. 12 U.S.C. 1464(g)). The index treats them as
-  notes; the XHTML prints them in the statute text. For the dry-run, it may be better to show
-  them as the unit's status.
-- **Data defect in the OLRC XML:** "Medicare+ÐChoice" carries a stray "Ð" in about 15 title 42 sections;
-  the XHTML has "Medicare+Choice". Quote matching in M6 must expect it.
+**Follow-up (2026-10-28, same milestone):** a comparison of every section's text against the XHTML edition found two bugs, both now fixed:
+- **Tables:** some tables put `<tfoot>` before `<tbody>` in the source (38 U.S.C. 1311). The text was
+  in source order, so footnotes came before rows. Tables now read in display order: header, body, footer.
+- **Status notes:** a subunit whose content is an OLRC note such as "[Repealed.]" (12 U.S.C. 1464(g)) now has
+  that status (107 subunits); the note stays out of `text_plain`.
+
+`billmap sync` now cross-checks every section against the XHTML edition and stores each difference
+in `edition_diffs`, so later stages can warn when the two OLRC editions disagree on a section:
+
+| Result at 119-134 | Sections |
+| --- | --- |
+| Equal (ignoring whitespace and quote style) | 52,845 |
+| Rendering only (fractions, blank-line length, Unicode composition, dot leaders, formula layout) | 398 |
+| **Content difference** | **81** |
+| No statute field in XHTML (repealed, omitted, transferred) | 7,149 |
+| Duplicate section numbers, not paired | 36 |
+
+Content differences include real gaps in the XML. **19 U.S.C. 2702(b)'s list of eligible countries
+appears in the XHTML but nowhere in the title 19 XML**, and 21 U.S.C. 812(e) lacks the "Schedule IV" label.
+Others are XML artifacts: "Medicare+ÐChoice" (13 sections), a double-escaped `&quot;` in 10 U.S.C. 6284,
+and footnote markers present in only one edition. The index keeps the XML as its single source of text
+(rule 3) and flags these sections; it never substitutes XHTML text.

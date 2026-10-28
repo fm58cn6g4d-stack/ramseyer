@@ -6,7 +6,6 @@ Exit status is the number of failed probes.
 from __future__ import annotations
 
 import platform
-import re
 import sys
 import time
 import traceback

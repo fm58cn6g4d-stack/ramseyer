@@ -34,6 +34,8 @@ DEF_INLINE = re.compile(_SCOPE + r"[^.;:]{0,120}?,?\s*" + _TERMS)
 DEF_TERM = re.compile(_TERMS)
 SCOPE_ONLY = re.compile(_SCOPE + r"[^.;]{0,120}?[:—]\s*$")
 QUOTED = re.compile(r"“([^”]{1,120})”")
+# OLRC marks emptied subunits with an editorial note, e.g. 12 U.S.C. 1464(g): <note>[Repealed.]</note>.
+STATUS_NOTE = re.compile(r"^\[\s*(repealed|omitted|reserved|transferred|vacant)\b[^\]]*\]$", re.I)
 
 
 def local(el) -> str:
@@ -55,7 +57,12 @@ def text_of(el, skip: frozenset[str] = frozenset(NON_OPERATIVE)) -> str:
             parts.append(" \t ")
         if e.text and isinstance(e.tag, str):
             parts.append(e.text)
-        for c in e:
+        children = list(e)
+        if name == "table":
+            # XHTML allows <tfoot> before <tbody> in source (38 U.S.C. 1311); read it in display order.
+            order = {"thead": 0, "tbody": 1, "tfoot": 2}
+            children.sort(key=lambda c: order.get(local(c), -1))
+        for c in children:
             walk(c)
             if c.tail:
                 parts.append(c.tail)
@@ -143,6 +150,37 @@ class Indexer:
         self.db.commit()
         return rp
 
+    def cross_check_xhtml(self, rp: int, xhtml_zip: Path) -> dict[str, int]:
+        """Compare every section's text with OLRC's XHTML edition; store each difference in edition_diffs."""
+        from billmap.data import xhtml
+        words: dict[tuple[str, str], list] = {}
+        for code, entries in xhtml.listing(xhtml_zip).items():
+            for num, w in entries:
+                words.setdefault((code, num), []).append(w)
+        counts = {"equal": 0, "rendering": 0, "content": 0, "no_statute_field": 0, "duplicate_number": 0,
+                  "missing_in_xhtml": 0}
+        rows = []
+        for nid, code, ident, text in self.db.execute(
+                "SELECT id, title, identifier, text_plain FROM nodes WHERE rp=? AND kind='section'", (rp,)).fetchall():
+            found = words.get((code, xhtml.first_number(ident)))
+            if not found:
+                counts["missing_in_xhtml"] += 1
+                rows.append((nid, rp, "missing_in_xhtml", "no XHTML document with this section number"))
+                continue
+            if len(found) > 1:
+                counts["duplicate_number"] += 1      # duplicate numbers cannot be paired reliably
+                continue
+            if found[0] is None:
+                counts["no_statute_field"] += 1
+                continue
+            kind, detail = xhtml.compare(xhtml.body_words(text), found[0])
+            counts[kind] += 1
+            if kind != "equal":
+                rows.append((nid, rp, kind, detail))
+        self.db.executemany("INSERT INTO edition_diffs VALUES (?,?,?,?)", rows)
+        self.db.commit()
+        return counts
+
     def mark_complete(self, rp: int) -> None:
         self.db.execute("UPDATE release_points SET complete=1 WHERE id=?", (rp,))
         self.db.commit()
@@ -155,7 +193,7 @@ class Indexer:
         for table, col in [("definitions", "section_id"), ("source_credits", "section_id"),
                            ("notes", "section_id"), ("section_xml", "node_id")]:
             self.db.execute(f"DELETE FROM {table} WHERE {col} IN ({ids})", (rp,))
-        for table in ["refs", "node_ident", "text_hash", "load_issues", "titles"]:
+        for table in ["refs", "node_ident", "text_hash", "load_issues", "titles", "edition_diffs"]:
             self.db.execute(f"DELETE FROM {table} WHERE rp=?", (rp,))
         self.db.execute("DELETE FROM nodes WHERE rp=?", (rp,))
         self.db.execute("DELETE FROM release_points WHERE id=?", (rp,))
@@ -208,8 +246,14 @@ class Indexer:
                 text = text_of(el)
             else:
                 text = " ".join(x for x in (num, heading) if x)
+            status = el.get("status")
+            if status is None and kind in SUB:
+                for n in el.findall(f"{{{USLM}}}note"):
+                    m = STATUS_NOTE.match(" ".join("".join(n.itertext()).split()))
+                    if m:
+                        status = m.group(1).lower()
             load.nodes.append((nid, rp, code, parent_id, section_id, kind, ident, num, heading, path,
-                               el.get("status") or "current", text, el.sourceline, self.ord, int(synthetic)))
+                               status or "current", text, el.sourceline, self.ord, int(synthetic)))
             for i in own_ids:
                 load.idents.append((rp, i, nid))
             if kind in SECTIONLIKE:

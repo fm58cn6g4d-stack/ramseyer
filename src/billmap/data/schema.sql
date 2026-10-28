@@ -109,6 +109,15 @@ CREATE TABLE IF NOT EXISTS text_hash (
     hash        TEXT NOT NULL              -- sha256 of text_plain
 );
 
+-- Sections whose XML text differs from OLRC's XHTML edition of the same release point.
+-- 'content' rows matter: e.g. 19 U.S.C. 2702(b)'s country list is in the XHTML but absent from the XML.
+CREATE TABLE IF NOT EXISTS edition_diffs (
+    node_id     INTEGER PRIMARY KEY REFERENCES nodes(id),
+    rp          INTEGER NOT NULL,
+    kind        TEXT NOT NULL,             -- rendering | content | missing_in_xhtml
+    detail      TEXT NOT NULL              -- first difference, with context (letters only, whitespace removed)
+);
+
 CREATE TABLE IF NOT EXISTS load_issues (
     id          INTEGER PRIMARY KEY,
     rp          INTEGER NOT NULL,

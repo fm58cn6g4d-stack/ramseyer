@@ -7,65 +7,15 @@ from __future__ import annotations
 
 import argparse
 import collections
-import html
 import random
-import re
 import sys
 import time
-import zipfile
 
 from billmap import config
 from billmap.data import cite as citemod
 from billmap.data.http import Fetcher
 from billmap.data.index import Index, LookupError_
-from billmap.data.indexer import MEMBER_RE
-
-SEC_LEAF = re.compile(r"^\[?Secs?\.\s+(.+?)\]?$")   # "[Sec. 2" marks a repealed section
-
-
-def xhtml_listing(path):
-    """Per title: list of (first section number, statute words or None) from OLRC's XHTML edition."""
-    out: dict[str, list] = {}
-    with zipfile.ZipFile(path) as zf:
-        for name in zf.namelist():
-            m = re.match(r"^PRELIM(usc\d+[aA]?)\.htm$", name)
-            if not m:
-                continue
-            code = str(int(MEMBER_RE.match(m.group(1) + ".xml").group(1))) + (
-                "a" if m.group(1)[-1] in "aA" else "")
-            entries, last_doc = [], None
-            for chunk in zf.read(name).decode("utf-8", errors="replace").split("<!-- documentid:")[1:]:
-                doc_id = chunk.split(None, 1)[0]
-                p = re.search(r"<!-- itempath:([^>]*?) -->", chunk)
-                leaf = SEC_LEAF.match(p.group(1).rsplit("/", 1)[-1]) if p else None
-                if not leaf:
-                    continue
-                # "Secs. 3, 4" / "Secs. 1001 to 1004" -> first number; "130g_2" is OLRC's tag for a duplicate number.
-                first = re.sub(r"_\d+$", "", re.split(r",\s*| to ", leaf.group(1))[0])
-                body = re.search(r"<!-- field-start:statute -->(.*?)<!-- field-end:statute -->", chunk, re.S)
-                words = html.unescape(re.sub(r"<[^>]+>", " ", body.group(1))).split() if body else None
-                key = (doc_id, leaf.group(1))      # duplicates differ in the leaf: "130g" vs "130g_2"
-                if key == last_doc and entries:    # one section split over two documents (18a § 2)
-                    prev_num, prev_words = entries[-1]
-                    entries[-1] = (prev_num, (prev_words or []) + (words or []) or None)
-                    continue
-                last_doc = key
-                entries.append((citemod.normalize_section(first), words))
-            out[code] = entries
-    return out
-
-
-def first_number(identifier: str) -> str:
-    """'/us/usc/t2/s1001...1004' -> '1001'; '/us/usc/t2/s3' -> '3'."""
-    return identifier.rsplit("/s", 1)[1].split("...", 1)[0]
-
-
-QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
-
-
-def comparable(words: list[str]) -> str:
-    """Whitespace and curly/straight quote style are rendering choices; every other character must match."""
-    return "".join(words).translate(QUOTES)
+from billmap.data.xhtml import body_words, comparable, first_number, listing as xhtml_listing
 
 
 def main() -> int:
@@ -91,7 +41,7 @@ def main() -> int:
     base = f"{cfg.olrc_base}download/releasepoints/us/pl/{cfg.release_pin.replace('-', '/')}/"
     xh_resp = f.get(f"{base}htm_uscAll@{cfg.release_pin}.zip")
     listing = xhtml_listing(xh_resp.path)
-    mismatches, explained = [], []
+    mismatches = []
     for code, sections in db.execute("SELECT title, sections FROM titles WHERE rp=? ORDER BY rowid", (rp,)):
         ours = collections.Counter(
             first_number(r[0]) for r in db.execute(
@@ -137,8 +87,7 @@ def main() -> int:
             no_field += 1
             no_field_status[node.status] += 1
             continue
-        mine = node.text.split("\n", 1)[1].split() if "\n" in node.text else []
-        a, b = comparable(mine), comparable(words)
+        a, b = comparable(body_words(node.text)), comparable(words)
         if a == b:
             text_ok += 1
         else:
@@ -173,6 +122,15 @@ def main() -> int:
     checks.append(("All sections round-trip cite -> node", pop_fail == 0,
                    f"{len(ids):,} sections; {pop_fail} failed; {pop_amb} ambiguous (duplicate numbers); "
                    f"{pop_nocite} by identifier (no U.S.C. citation form)"))
+
+    # Whole population, as a measurement: XML text vs XHTML edition (stored by `billmap sync`).
+    ed = dict(db.execute("SELECT kind, count(*) FROM edition_diffs WHERE rp=? GROUP BY 1", (rp,)).fetchall())
+    content = [f"{r[0]}: {r[1][:140]}" for r in db.execute(
+        "SELECT n.identifier, d.detail FROM edition_diffs d JOIN nodes n ON n.id=d.node_id "
+        "WHERE d.rp=? AND d.kind='content' ORDER BY n.ord LIMIT 5", (rp,))]
+    checks.append(("All sections' XML text cross-checked against the XHTML edition (measurement)", True,
+                   f"rendering-only differences {ed.get('rendering', 0)}, content differences {ed.get('content', 0)}, "
+                   f"missing in XHTML {ed.get('missing_in_xhtml', 0)}; first content cases: " + " / ".join(content)))
 
     # 4. Every ref resolves or carries dst_raw and a reason.
     unexplained = db.execute("SELECT count(*) FROM refs WHERE rp=? AND dst_id IS NULL AND (dst_raw IS NULL OR "

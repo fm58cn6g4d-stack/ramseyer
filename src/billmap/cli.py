@@ -38,6 +38,12 @@ def sync(force: bool = typer.Option(False, help="Rebuild the release point even 
         if row:
             ix.drop_release_point(row[0])
     rp_id = ix.load_release_point(zip_resp.path, rp.label, rp.date, rp.xml_all, rp.currency, log=typer.echo)
+    xhtml_url = rp.xml_all.replace("/xml_uscAll@", "/htm_uscAll@")
+    x_resp = f.get(xhtml_url)
+    if x_resp.status != 200:
+        raise typer.Exit(f"XHTML edition download failed: HTTP {x_resp.status}")
+    counts = ix.cross_check_xhtml(rp_id, x_resp.path)
+    typer.echo("XHTML cross-check: " + ", ".join(f"{k} {v:,}" for k, v in counts.items()))
     ix.mark_complete(rp_id)
     prior = ix.db.execute("SELECT id, label FROM release_points WHERE complete=1 ORDER BY id DESC").fetchall()
     for old_id, label in prior[1 + cfg.keep_prior:]:
