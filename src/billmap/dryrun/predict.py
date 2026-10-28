@@ -76,6 +76,10 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                     tr.result = Result(ins.id, "CLEAN", "new section added")
                 else:
                     tr.result = Result(ins.id, "TARGET_MISSING", "section to add already exists at the baseline")
+            elif any(f.startswith("delayed effective date") for f in ins.flags):
+                # Not executed at the next release point: OLRC sets the amendment out in a note.
+                why = next(f for f in ins.flags if f.startswith("delayed effective date"))
+                tr.result = Result(ins.id, "WARN", f"not applied: {why}")
             else:
                 tr.result = eng.run(ins, path)
             st = tr.result.status

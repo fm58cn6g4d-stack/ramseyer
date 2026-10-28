@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 
+from billmap.parse.effective import flag_delayed
 from billmap.parse.grammar import CONFIDENCE_THRESHOLD, Ctx, freestanding_type, parse_unit_text, quote_free
 from billmap.parse.ir import Instruction, Node, ParseResult
 from billmap.parse.normalize import normalize
@@ -39,6 +40,7 @@ def parse_text(text: str) -> ParseResult:
 
     for r in roots:
         visit(r, None)
+    flag_delayed(roots, instructions)
     total = len(instructions)
     parsed = sum(1 for i in instructions if i.op != "UNPARSED" and i.confidence >= CONFIDENCE_THRESHOLD)
     return ParseResult(instructions=instructions, nodes=roots, counts=counts,

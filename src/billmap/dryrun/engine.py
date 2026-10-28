@@ -296,6 +296,7 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
 WORD_END = re.compile(r"[\w).,;:\u201d\"'%]$")
 WORD_START = re.compile(r"^[\w(\u201c$]")
 CLOSE_PUNCT = ".,;:)"
+STRAY_SPACE = re.compile(r"(?<=\w) +([,;:])")
 SECTION_LINE = re.compile(r"^(?:§+|SEC\.|Sec\.)\s*([\w–-]+(?:\.\d+)?)\.\s*(.*)$")
 DIVISION_LINE = re.compile(r"^(?:SUBCHAPTER|Subchapter|CHAPTER|Chapter|PART|Part|SUBPART|Subpart) [\w–-]+\s*[\u2014-]")
 EDITORIAL_CITE = re.compile(r" \[\d+ U\.S\.C\. [^\]]*\]")
@@ -585,6 +586,7 @@ class Engine:
         return "NOT_FOUND", "quoted text is absent from the target"
 
     def _tr(self, text: str) -> str:
+        text = STRAY_SPACE.sub(r"\1", text)      # "rifle , or" in the bill is printed "rifle, or" (36 U.S.C. 40732)
         return text if self.work.positive_law else code_form(text, self.work.title)
 
     def _edit(self, ins, scope, path, find, make_new, positional=False, label="", join="replace"):
