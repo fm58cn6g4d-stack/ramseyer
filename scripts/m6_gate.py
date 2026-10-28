@@ -10,6 +10,7 @@ Writes var/m6_gate.md, var/m6_report.json and tests/oracle/m6_baseline.json.
 from __future__ import annotations
 
 import argparse
+import copy
 import re
 import collections
 import json
@@ -17,9 +18,12 @@ import sys
 import time
 from functools import lru_cache
 
+from lxml import etree
+
 from billmap import config
 from billmap.data.http import Fetcher
-from billmap.data.index import Index
+from billmap.data.index import Index, LookupError_
+from billmap.data.indexer import text_of
 from billmap.dryrun.predict import run_bill
 from billmap.oracle import harness, store
 from billmap.oracle.corpus import MANIFEST, Corpus
@@ -34,19 +38,38 @@ FALSE_CLEAN_TARGET = 0.01
 
 
 DATE_PHRASE = re.compile(r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph)|the [A-Z][\w ,.\u2019'()-]*?Act(?: of \d{4})?(?: for Fiscal Year \d{4})?)")
-DATE = re.compile(r"\b(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}")
+DATE = r"(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}"
 
 
-def editorial_equal(pred: str | None, after: str | None) -> bool:
-    if pred is None or after is None:
+def _text(el) -> str:
+    """Section text with footnote reference markers removed (OLRC adds and removes footnotes editorially)."""
+    el = copy.deepcopy(el)
+    for ref in el.xpath(".//*[local-name()='ref'][@class='footnoteRef']"):
+        parent, tail = ref.getparent(), ref.tail or ""
+        prev = ref.getprevious()
+        if prev is not None:
+            prev.tail = (prev.tail or "") + tail
+        else:
+            parent.text = (parent.text or "") + tail
+        parent.remove(ref)
+    for h in el.iter("{*}heading"):     # heading case is OLRC's editorial choice (records/milestones.md, M6)
+        for n in h.iter():
+            n.text = n.text.lower() if n.text else n.text
+            if n is not h and n.tail:
+                n.tail = n.tail.lower()
+    return re.sub(r"\s+", " ", harness.normalize(text_of(el)))
+
+
+def editorial_equal(pred_el, after_xml: str | None) -> bool:
+    """True when the prediction equals R_after except for OLRC's editorial work: footnote markers, the letter
+    case of headings, and the enactment date set in place of "the date of the enactment of this Act" (any date
+    is accepted there)."""
+    if pred_el is None or after_xml is None:
         return False
-    def norm(s):
-        s = harness.normalize(s)
-        s = DATE_PHRASE.sub("DATE", s)
-        s = DATE.sub("DATE", s)
-        s = re.sub(r"(?<=[.,;:a-z\u201d)])\s?\d{1,2}(?=\s|$)", "", s)      # footnote markers
-        return re.sub(r"\s+", " ", s)
-    return norm(pred) == norm(after)
+    pred, after = _text(pred_el), _text(etree.fromstring(after_xml.encode("utf-8")))
+    parts = DATE_PHRASE.split(pred)
+    rx = f"(?:{DATE}|{DATE_PHRASE.pattern})".join(re.escape(p) for p in parts)
+    return re.fullmatch(rx, after) is not None
 
 
 def main() -> int:
@@ -78,13 +101,16 @@ def main() -> int:
     mism = [o for o in rep.outcomes if o.outcome == "mismatch"]
     # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..." and
     # removes or adds footnote markers. Counted separately; they remain mismatches in the match rate.
-    preds = {(pl, p.identifier): p for pl, run in runs.items() for p in run.predictions}
     editorial = 0
     for o in mism:
         law = corpus.law(o.pl)
-        t = harness.truth(law, open_index(law.rp_before), open_index(law.rp_after)).get(o.identifier, {})
-        p = preds.get((o.pl, o.identifier))
-        if p and editorial_equal(p.text, t.get("after")):
+        work = runs[o.pl].working.get(o.identifier)
+        try:
+            ix = open_index(law.rp_after)
+            after_xml = ix.section_xml(ix.by_identifier(o.identifier))
+        except LookupError_:
+            after_xml = None
+        if work is not None and not work.removed and editorial_equal(work.el, after_xml):
             o.stage = "editorial"
             editorial += 1
     graded = m["matched"] + m["mismatched"]
@@ -93,7 +119,7 @@ def main() -> int:
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
          f"{m['pending']}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
-         f"{editorial} differ only editorially (enactment date substituted, footnote markers)"),
+         f"{editorial} differ only editorially (enactment date substituted, footnote markers, heading case)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%}", m["false_clean_rate"] < FALSE_CLEAN_TARGET,
          f"{m['false_clean']} of {m['clean']} CLEAN predictions disagree with R_after "
          f"(rate {m['false_clean_rate']})"),
@@ -111,6 +137,16 @@ def main() -> int:
         lines.append(f"- {o.pl} {o.identifier} [{o.status}, {o.stage}] {o.detail[:300]}")
     (cfg.var / "m6_gate.md").write_text("\n".join(lines) + "\n")
     (cfg.var / "m6_report.json").write_text(rep.model_dump_json(indent=1))
+    with open(cfg.var / "m6_traces.jsonl", "w") as fh:      # per-instruction trace, for diagnosis
+        for pl, run in runs.items():
+            for tr in run.traces:
+                i, r = tr.instruction, tr.result
+                fh.write(json.dumps({"pl": pl, "section": tr.section, "id": i.id, "op": i.op, "unit": i.unit,
+                                     "find": i.find, "new": i.new_text, "replace": i.replace, "flags": i.flags,
+                                     "resolution": tr.resolution.outcome, "path": list(tr.resolution.path),
+                                     "status": r.status if r else None, "detail": r.detail if r else None,
+                                     "before": r.before_span if r else None, "after": r.after_span if r else None},
+                                    ensure_ascii=False) + "\n")
     if not args.law:
         BASELINE.write_text(json.dumps({"predictor": "billmap M6", "metrics": m}, indent=1) + "\n")
     print("\n".join(lines))

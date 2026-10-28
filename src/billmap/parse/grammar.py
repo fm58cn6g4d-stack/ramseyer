@@ -126,8 +126,8 @@ SUCH_SECTION = re.compile(rf"^(?:(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparag
                           r"[Ss]uch section\b")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
-BARE_SECTION = re.compile(rf"^(?:[Ss]ection|in section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)")
-IN_SECTION = re.compile(rf"\bin section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?! of)")
+BARE_SECTION = re.compile(rf"^(?:[Ss]ection|[Ii]n section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)")
+IN_SECTION = re.compile(rf"\b(?:[Ii]n|for) section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?![\w–(])(?! of)")
 LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
                       rf" (?P<labels>{LABELS}(?:(?:,| and| or|, and) {LABELS})*)")
 EACH_OF = re.compile(rf"\bin each of (?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})+)")

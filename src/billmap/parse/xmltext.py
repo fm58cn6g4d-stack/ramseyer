@@ -57,12 +57,15 @@ def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True)
     return text.strip() if top else text
 
 
-def _head_line(el) -> str:
+def _head_line(el, in_block=False) -> str:
     enum = (el.findtext("enum") or "").strip()
     header = " ".join("".join(el.find("header").itertext()).split()) if el.find("header") is not None else ""
     tag = el.tag
     if tag in HEADINGS:
         return f"{HEADINGS[tag]} {enum.rstrip('.')}—{header.upper() if tag in ('division', 'title') else header}"
+    if tag == "section" and in_block == "USC":
+        # A new Code section in a quoted block prints in Code form, with its header's own case.
+        return f"§ {enum.rstrip('.')}. {header}" if header else f"§ {enum.rstrip('.')}."
     if tag == "section":
         return f"SEC. {enum.rstrip('.')}. {header.upper()}." if header else f"SEC. {enum.rstrip('.')}."
     return ""
@@ -75,7 +78,7 @@ def _render(el, lines: list[str], in_block: bool) -> None:
         text_el = el.find("text")
         text = inline(text_el, inner=q) if text_el is not None else ""
         if tag in HEADINGS or tag == "section":
-            lines.append(_head_line(el))
+            lines.append(_head_line(el, in_block))
             if text:
                 lines.append(text)
         else:
@@ -111,7 +114,7 @@ def _block(qb, lines: list[str]) -> None:
         if not isinstance(c.tag, str) or c.tag == "after-quoted-block":
             continue
         if c.tag in STRUCT:
-            _render(c, inner, True)
+            _render(c, inner, qb.get("style") or True)
         elif c.tag == "text":
             inner.append(inline(c, inner=True))
         elif c.tag == "quoted-block":

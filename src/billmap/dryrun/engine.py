@@ -24,6 +24,12 @@ Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "S
 SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "AMBIGUOUS", "STALE_BASELINE", "CONFLICT", "NOT_FOUND",
             "TARGET_MISSING", "UNPARSED"]
 NS = f"{{{USLM}}}"
+STRUCTURAL = re.compile(r"^\u201c?\(\w{1,6}\)\s|\u2014\u201c?\(\w{1,6}\)|\.\u2014")
+ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubchapter|[Pp]art) (?:\d+[A-Za-z]?|[IVXL]+)"
+                     r"(?:\([\w]+\))*(?![\w\u2013-])(?! of (?:title \d+|this title|this chapter|such title))"
+                     r"(?! of the )(?!,? United States Code)(?! of Public Law)(?! \()"
+                     r"|\bthis (?:title|Act|subtitle)\b")
+MARGINS = re.compile(r",? and (?:by )?(?:adjusting|moving) the (?:margins|indentation)[^;.]*(?:[;.]|; and)?")
 LEVEL_TAGS = {"subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem"}
 
 
@@ -77,33 +83,60 @@ ACT_XREF = re.compile(r"section (?P<sec>[\w\u2013.-]+?(?:\([\w]+\))*) of (?:the 
                       r"(?:Act|Code)(?: of \d{4})?) \((?P<t>\d+) U\.S\.C\. (?P<z>[\w\u2013.-]+?(?:\([\w]+\))*)\)")
 
 
-SMALL = {"a", "an", "and", "as", "at", "but", "by", "for", "from", "in", "into", "nor", "of", "on", "or", "the", "to",
-         "with", "under", "upon", "via"}
+# Measured on the subsection headings of titles 10, 14 and 46 (records/milestones.md, M6): these stay lowercase;
+# "with", "from", "under", "upon" and other prepositions are capitalized.
+SMALL = {"a", "an", "and", "as", "at", "but", "by", "for", "if", "in", "nor", "of", "on", "or", "the", "to", "via"}
 
 
 def title_case(s: str) -> str:
-    """OLRC's heading case in positive-law titles: major words capitalized; text after a hyphen lowercase."""
-    words = s.split(" ")
+    """OLRC's subsection-heading case in positive-law titles: every word capitalized except the SMALL words after
+    the first; the part of a hyphenated compound after the hyphen is left as drafted (measured: lowercase in 210
+    of 378 subsection headings of titles 10, 14 and 46)."""
+    def cap(w):
+        return w if w.isupper() and len(w) > 1 else w[:1].upper() + w[1:]
     out = []
-    for i, w in enumerate(words):
-        if w.isupper() and len(w) > 1:
-            out.append(w)
-        elif i > 0 and w.lower() in SMALL:
+    for i, w in enumerate(s.split(" ")):
+        if i > 0 and w.lower() in SMALL:
             out.append(w.lower())
         else:
-            head, *rest = w.split("-")
-            head = head[:1].upper() + head[1:]
-            out.append("-".join([head] + [r.lower() if not r.isupper() else r for r in rest]))
+            head, sep, rest = w.partition("-")
+            out.append(cap(head) + sep + rest)          # after a hyphen, as drafted ("Life-cycle", "Safe-to-Report")
     return " ".join(out)
 
 
-def heading_form(text: str, level: str, positive_law: bool) -> str:
+def sentence_case(s: str) -> str:
+    """OLRC's heading case below the subsection in positive-law titles: the bill's small-caps heading set in
+    lowercase after the first letter ("Senior leader of the coast guard"); all-capital acronyms are kept."""
+    words = s.split(" ")
+    return " ".join(w if (w.isupper() and len(w) > 1) or i == 0 else w.lower() for i, w in enumerate(words))
+
+
+def heading_case(heads: list[str]) -> str | None:
+    """"title" or "sentence": the case style of existing headings, judged by their capitalizable words."""
+    up = low = 0
+    for h in heads:
+        for w in h.split(" ")[1:]:
+            if w.isalpha() and w.lower() not in SMALL and not w.isupper():
+                up, low = up + w[0].isupper(), low + w[0].islower()
+    if up + low == 0:
+        return None
+    return "title" if up > low else "sentence"
+
+
+def heading_form(text: str, level: str, positive_law: bool, dash: bool | None = None,
+                 case: str | None = None) -> str:
     """How OLRC prints an inserted unit's heading (measured on the corpus, records/milestones.md M6):
-    positive-law titles keep ".—" and title-case subsection headings; other titles drop ".—"."""
+    positive-law titles title-case subsection headings; ".—" follows the section's existing style (`dash`),
+    by default kept in positive-law titles and dropped in others."""
     text = text.strip().rstrip(".\u2014").strip()
-    if not positive_law:
-        return text
-    return (title_case(text) if level in ("subsection", "section") else text) + ".\u2014"
+    dash = positive_law if dash is None else dash
+    if positive_law and case is None:
+        case = "title" if level in ("subsection", "section") else "sentence"
+    if case == "title":
+        text = title_case(text)
+    elif case == "sentence":
+        text = sentence_case(text)
+    return text + (".\u2014" if dash else "")
 
 
 def code_form(text: str, title: str) -> str:
@@ -126,6 +159,28 @@ class Working:
         self.el = etree.fromstring(xml.encode("utf-8")) if xml is not None else None
         self.original = copy.deepcopy(self.el) if self.el is not None else None
         self.removed = False
+        self.dash = self._heading_style()
+        self.case: dict[str, str | None] = {}
+        if self.el is not None and positive_law:
+            # The case style of existing headings at each level, which OLRC follows for inserted units.
+            by_level: dict[str, list[str]] = {}
+            for h in self.el.iter(NS + "heading"):
+                lvl = local(h.getparent())
+                if lvl in LEVEL_TAGS:
+                    by_level.setdefault(lvl, []).append(text_of(h).strip().rstrip(".\u2014"))
+            self.case = {lvl: heading_case(hs) for lvl, hs in by_level.items()}
+
+    def _heading_style(self) -> bool:
+        """Whether this section prints unit headings with ".—". OLRC follows the section's existing style (the
+        Toxic Substances Control Act in title 15 keeps ".—" though the title is not positive law); a section
+        with no unit headings gets the title's default."""
+        if self.el is None:
+            return self.positive_law
+        heads = [text_of(h).strip() for h in self.el.iter(NS + "heading") if local(h.getparent()) in LEVEL_TAGS]
+        heads = [h for h in heads if h]
+        if not heads:
+            return self.positive_law
+        return sum(h.endswith(".\u2014") for h in heads) * 2 >= len(heads)
 
     def render(self) -> str | None:
         if self.removed or self.el is None:
@@ -191,7 +246,7 @@ def replace_span(segs: list[Seg], start: int, end: int, new: str) -> None:
     for s in segs:
         txt = getattr(s.node, s.attr) or ""
         s_end = s.start + len(txt)
-        if s_end < start or s.start > end or (s_end == start and placed):
+        if s_end < start or s.start > end or (s_end == start and (placed or end > start)):
             continue
         a, b = max(start, s.start) - s.start, min(end, s_end) - s.start
         if a > len(txt) or b < 0:
@@ -210,8 +265,14 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
     def inside(a, b):
         return any(lo <= a and b <= hi for lo, hi in allowed)
 
+    def bounded(a, b):
+        # A quoted word matches whole words only: "term" is not found inside "determines".
+        lead = hay[a:a + 1].isalnum() and a > 0 and hay[a - 1].isalnum()
+        trail = hay[b - 1:b].isalnum() and b < len(hay) and hay[b].isalnum()
+        return not (lead or trail)
+
     hits = [(m.start(), m.start() + len(needle)) for m in re.finditer(re.escape(needle), hay)]
-    hits = [h for h in hits if inside(*h)]
+    hits = [h for h in hits if inside(*h) and bounded(*h)]
     if hits:
         return hits, "exact"
     for case, how in ((False, "normalized"), (True, "case-insensitive")):
@@ -222,7 +283,7 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
         out = []
         for m in re.finditer(re.escape(fn), fh):
             a, b = fmap[m.start()], fmap[m.end() - 1] + 1
-            if inside(a, b):
+            if inside(a, b) and bounded(a, b):
                 out.append((a, b))
         if out:
             return out, how
@@ -233,6 +294,9 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
 WORD_END = re.compile(r"[\w).,;:\u201d\"'%]$")
 WORD_START = re.compile(r"^[\w(\u201c$]")
 CLOSE_PUNCT = ".,;:)"
+SECTION_LINE = re.compile(r"^(?:§+|SEC\.|Sec\.)\s*([\w–-]+(?:\.\d+)?)\.\s*(.*)$")
+DIVISION_LINE = re.compile(r"^(?:SUBCHAPTER|Subchapter|CHAPTER|Chapter|PART|Part|SUBPART|Subpart) [\w–-]+\s*[\u2014-]")
+EDITORIAL_CITE = re.compile(r" \[\d+ U\.S\.C\. [^\]]*\]")
 
 
 def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
@@ -242,6 +306,16 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
     join: "after" (new follows the anchor hay[a:b]), "before" (new precedes it) or "replace".
     Returns the span to replace and the replacement, adjusted.
     """
+    if join == "replace":
+        old = hay[a:b]
+        # The bracketed Code cite OLRC sets after an Act's name goes with the name when the name is struck.
+        m = EDITORIAL_CITE.match(hay, b)
+        if m and re.search(r"\bAct(?: of \d{4})?$", old):
+            b = m.end()
+        if new and old[:1].isspace() and not new[:1].isspace():
+            new = old[:1] + new
+        if new and old[-1:].isspace() and not new[-1:].isspace():
+            new = new + old[-1:]
     left, right = hay[:a], hay[b:]
     if join == "after":
         old = hay[a:b]
@@ -274,6 +348,8 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
     else:
         if new[0] == " " and left.endswith(" "):
             new = new[1:]
+        if new[0] in CLOSE_PUNCT and left.endswith(" ") and not hay[a:a + 1].isspace():
+            a -= 1
         if new.endswith(" ") and right.startswith(" "):
             new = new[:-1]
         if new.endswith(" ") and rc and rc in CLOSE_PUNCT:
@@ -294,18 +370,27 @@ def block_lines(block: str) -> list[str]:
     return [nested_to_double(x) for x in lines if x]
 
 
-def build_units(block: str, positive_law: bool = False) -> tuple[list[etree._Element], list[str]]:
+def build_units(block: str, positive_law: bool = False, dash: bool | None = None,
+                case: dict[str, str | None] | None = None) -> tuple[list[etree._Element], list[str]]:
     """Quoted block -> USLM unit (or section) elements. Returns (elements, plain text lines that had no unit)."""
     lines = block_lines(block)
-    sec_re = re.compile(r"^§+\s*([\w–.-]+?)\.\s*(.*)$")
-    if lines and sec_re.match(lines[0]):
+    sec_re = SECTION_LINE
+    starts = [i for i, x in enumerate(lines) if sec_re.match(x)]
+    if starts and (starts[0] == 0 or all(DIVISION_LINE.match(x) for x in lines[:starts[0]])):
+        if len(starts) > 1 or starts[0] > 0:
+            # Several new sections (perhaps under a new subchapter heading): one element per section.
+            out = []
+            for a, b in zip(starts, starts[1:] + [len(lines)]):
+                chunk = [x for x in lines[a:b] if not DIVISION_LINE.match(x)]
+                out += build_units("\n".join("\u201c" + x for x in chunk) + "\u201d", positive_law, dash, case)[0]
+            return out, []
         m = sec_re.match(lines[0])
         sec = etree.Element(NS + "section")
         num = etree.SubElement(sec, NS + "num", value=m.group(1))
         num.text = f"§ {m.group(1)}."
         h = etree.SubElement(sec, NS + "heading")
         h.text = " " + m.group(2).rstrip(".")
-        units, loose = build_units("\n".join("\u201c" + x for x in lines[1:]) + "\u201d", positive_law) \
+        units, loose = build_units("\n".join("\u201c" + x for x in lines[1:]) + "\u201d", positive_law, dash, case) \
             if len(lines) > 1 else ([], [])
         if loose:
             c = etree.SubElement(sec, NS + "content")
@@ -328,7 +413,7 @@ def build_units(block: str, positive_law: bool = False) -> tuple[list[etree._Ele
         num.text = f"({node.enum})"
         if node.header:
             h = etree.SubElement(el, NS + "heading")
-            h.text = " " + heading_form(node.header, tag, positive_law)
+            h.text = " " + heading_form(node.header, tag, positive_law, dash, (case or {}).get(tag))
         body = node.text.split("\n")
         first, rest = body[0], body[1:]
         if node.children:
@@ -356,8 +441,36 @@ class Engine:
 
     def run(self, ins: Instruction, path: list[str]) -> Result:
         r = self._run(ins, path)
+        if r.status == "CLEAN":
+            r.status, r.detail = self._review(ins, r)
+        if r.status == "CLEAN":
+            loose = [f for f in ins.flags if f.startswith("expected a quoted block") or
+                     (f.startswith("unconsumed") and not MARGINS.fullmatch(f[len("unconsumed: "):].strip()))]
+            if loose:
+                # The parser left part of the instruction unread, so a clean edit may be an incomplete one.
+                r.status, r.detail = "WARN", "; ".join(x for x in (r.detail, "parser left text unread: " +
+                                                                    loose[0][:120]) if x)
         self.results.append(r)
         return r
+
+    def _review(self, ins: Instruction, r: Result) -> tuple[str, str]:
+        """Downgrade a clean edit to WARN where the Code is known to set the result differently from the literal
+        text: a text edit that adds an enumerated unit or heading (set as structure), Act references in inserted
+        text in a non-positive-law title (set in Code form by OLRC), and a whole-section repeal (removed or set
+        out as a stub)."""
+        why = None
+        added = ins.replace if ins.replace is not None else ins.new_text
+        text_op = ins.op in ("STRIKE_INSERT", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH", "AMEND_HEADING")
+        if text_op and added and (STRUCTURAL.search(added) or "\n" in added.strip()):
+            why = "the inserted text adds an enumerated unit or heading, which the Code sets as structure"
+        elif added and not self.work.positive_law and ACT_REF.search(self._tr(nested_to_double(added))):
+            why = ("the inserted text refers to a provision of the Act; the Code sets such references in Code form, "
+                   "which needs the Act-to-Code map")
+        elif ins.op == "REPEAL" and r.detail == "section repealed":
+            why = "a repealed section is removed or set out as a stub in the Code"
+        if why:
+            return "WARN", "; ".join(x for x in (r.detail, why) if x)
+        return r.status, r.detail
 
     def _scope(self, path: list[str]):
         if self.work.el is None:
@@ -526,7 +639,9 @@ class Engine:
         if ins.find is None or any(f.startswith("anchor is a unit") for f in ins.flags):
             return Result(ins.id, "AMBIGUOUS", f"insertion anchored on {ins.find!r}: not a quoted anchor the "
                           "engine applies")
-        new = nested_to_double(ins.new_text if ins.new_text is not None else "")
+        if ins.new_text is None:
+            return Result(ins.id, "UNPARSED", "insertion with no quoted text to insert")
+        new = nested_to_double(ins.new_text)
         if "\n" in new or new.startswith("\u201c"):
             new = " ".join(block_lines(new))
         new = self._tr(new)
@@ -558,8 +673,12 @@ class Engine:
             if not th:
                 return Result(ins.id, "NOT_FOUND", f"end anchor “{through[:60]}” not found after the start")
             end = th[0][1]
-        new = ins.replace if ins.replace is not None else (" ".join(block_lines(ins.new_text)) if ins.new_text else "")
-        replace_span(segs, start, end, nested_to_double(new))
+        new = ins.replace if ins.replace is not None else (ins.new_text or "")
+        if "\n" in new or new.startswith("\u201c"):
+            new = " ".join(block_lines(new))
+        new = self._tr(nested_to_double(new))
+        a, b, piece = tidy(hay, start, end, new, "replace")
+        replace_span(segs, a, b, piece)
         status = "AMBIGUOUS" if len(hits) > 1 else "CLEAN"
         return Result(ins.id, status, "struck through" + (f"; {len(hits)} start matches" if len(hits) > 1 else ""),
                       before_span=hay[start:end], after_span=new, matches=len(hits))
@@ -587,7 +706,7 @@ class Engine:
     def _new_units(self, ins):
         if not ins.new_text:
             return None, None, Result(ins.id, "NOT_FOUND", "no quoted block to insert")
-        units, loose = build_units(ins.new_text, self.work.positive_law)
+        units, loose = build_units(ins.new_text, self.work.positive_law, self.work.dash, self.work.case)
         if not self.work.positive_law:
             for u in units:
                 for t in u.iter():

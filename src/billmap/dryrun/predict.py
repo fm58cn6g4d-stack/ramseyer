@@ -26,6 +26,7 @@ class Trace:
 class BillRun:
     predictions: list[Prediction]
     traces: list[Trace] = field(default_factory=list)
+    working: dict[str, Working] = field(default_factory=dict)     # identifier -> amended working copy
 
 
 def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Index) -> BillRun:
@@ -53,7 +54,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                     ident = f"/us/usc/{title}/s{u.find('{*}num').get('value')}"
                     by_section.setdefault(ident, []).append((ins, ["NEW"], tr))
                     tr.section = ident
-    predictions = []
+    predictions, workings = [], {}
     for ident, items in by_section.items():
         try:
             node = baseline.by_identifier(ident)
@@ -61,6 +62,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
         except LookupError_:
             xml = None
         work = Working(xml, ident, positive_law=ident.split("/")[3][1:] in resolver.positive)
+        workings[ident] = work
         eng = Engine(work)
         statuses, stage, deterministic = [], None, True
         for ins, path, tr in items:
@@ -85,4 +87,4 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
         status = worst(statuses)
         predictions.append(Prediction(identifier=ident, status="CLEAN" if status == "NOT_APPLICABLE" else status,
                                       text=work.render(), stage=stage, deterministic=deterministic))
-    return BillRun(predictions, traces)
+    return BillRun(predictions, traces, workings)
