@@ -69,3 +69,12 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | Delayed effective dates | 119-60 § 6404(g) delays § 6404(c) by 180 days. At R_after, 50 U.S.C. 3025 shows an "Amendment of Subsection (c)" note, while the same section's immediate amendment (§ 6402(c)(2)(A)(i)) is executed |
 | Codification | 119-60 § 3111 enacts the Atomic Energy Defense Act as 10 U.S.C. 6101 ff. OLRC's text differs from the bill's quoted text: some paragraph headings are absent ("(1) Not later than …" where the bill has "(1) Initial briefing.—"), and later amendments in the same bill to the AEDA's title 50 sections are carried in |
 | OLRC deviations from the enrolled text | "section section 3221" (10 U.S.C. 139a); "18 months" without the apostrophe (46 U.S.C. 7307–7309); an insertion at "regular component" where the law says "reserve component" (37 U.S.C. 204(h)(1)); a SAFE Port Act provision placed in 46 U.S.C. 70001 as subsection (l). These are labelled editorial in `tests/oracle/labels.json` |
+
+## M6b (checked 2026-10-28)
+
+| Item | Finding |
+| --- | --- |
+| Older Code snapshots | OLRC's prior release points start at 119-73not60 (January 2026). Guessed URLs for annual archives (`download/annualhistoricalarchives/...`, `download/annualtitlefiles.shtml`) return 404, and `download.html` links only "Prior Release Points" |
+| govinfo annual editions | `api.govinfo.gov/packages/USCODE-{year}-title{N}/summary` exists (e.g. `USCODE-2024-title49`, dateIssued 2024-12-31), with txt, pdf, zip, mods and premis links but no USLM link. The title 49 zip is 265 MB; the download through the proxy cut off at 202 MB |
+| Free-standing provisions | The Code's editors classify free-standing bill sections as new Code sections (classification row "new", no amending instruction): 119-94 § 2 -> 34 U.S.C. 51101, 119-129 § 2 -> 15 U.S.C. 45g |
+| New Act sections | A new Act section gets an editor-assigned Code number: Federal Power Act § 37 "after section 36 (16 U.S.C. 823g)" -> 16 U.S.C. 823h; Social Security Act § 714 -> 42 U.S.C. 915 |

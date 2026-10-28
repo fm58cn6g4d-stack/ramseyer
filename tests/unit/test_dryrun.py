@@ -88,3 +88,23 @@ def test_delayed_effective_date_is_flagged():
                      "striking “alpha” and inserting “beta”.\n(b) Effective date.—The amendment made by subsection (a) "
                      "shall take effect 180 days after the date of the enactment of this Act.\n").instructions
     assert any(f.startswith("delayed effective date") for f in ins[0].flags)
+
+
+def test_listed_repeals_fan_out_with_unknown_items_kept():
+    ins = parse_text("SEC. 2. REPEALS.\n(a) Title 99.—The following provisions of title 99, United States Code, are hereby "
+                     "repealed:\n(1) Chapter 5.\n(2) Section 7.\n(3) The Placeholder Act (99 U.S.C. 1 et seq.).\n").instructions
+    assert [i.op for i in ins] == ["REPEAL"] * 3
+    assert ins[0].target.qualifiers == ["chapter 5"] and ins[1].target.section == "7"
+    assert ins[2].target.kind == "unknown" and "Placeholder Act" in ins[2].target.cite_raw
+
+
+def test_structural_redesignation():
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (b) by redesignating "
+                    "paragraphs (1) and (2) as paragraphs (4) and (5), respectively.")
+    assert res[0].status == "CLEAN" and "(4)\nfile a report;" in text
+
+
+def test_strike_at_start_of_text_after_heading():
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “The determiner” "
+                    "and inserting “The reviewer”.")
+    assert res[0].status == "CLEAN" and "The reviewer shall review" in text

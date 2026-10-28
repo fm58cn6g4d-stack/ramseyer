@@ -11,7 +11,6 @@ Run:  .venv/bin/python scripts/m5_gate.py [--sample 50] [--seed 20261028]      W
 from __future__ import annotations
 
 import argparse
-import re
 import collections
 import random
 import sys
@@ -21,7 +20,7 @@ from billmap import config
 from billmap.data.cite import normalize_section
 from billmap.data.http import Fetcher
 from billmap.data.index import Index, LookupError_
-from billmap.oracle import store
+from billmap.oracle import harness, store
 from billmap.oracle.corpus import Corpus
 from billmap.parse import parse_text
 from billmap.parse.xmltext import render
@@ -156,11 +155,7 @@ def main() -> int:
             changed += 1
             continue
         # A delayed effective date: OLRC sets the amendment out in an "Amendment of Section" note instead.
-        b_notes = {r[0] for r in before.db.execute("SELECT text FROM notes n JOIN nodes s ON s.id=n.section_id "
-                                                   "WHERE s.identifier=? AND s.rp=?", (ident, before.rp_id))}
-        law_cite = "Pub. L. " + law.pl.replace("-", "\u2013")
-        if any(law_cite in t and re.search(r"effective .{0,120}amended as follows", t, re.S)
-               for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (a_node.id,)) if t not in b_notes):
+        if harness.pending_note(law, before, after, ident):     # same test as the oracle harness
             pending += 1
             continue
         unchanged += 1

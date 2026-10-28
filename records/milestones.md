@@ -388,3 +388,46 @@ Measured by classification-table row type:
 These are the next things to raise the match rate. They do not affect the false-clean rate, because a section with no prediction is never CLEAN.
 
 **Harness:** the M3 self-test expectation for the "partial" predictor now excludes pending-effective-date targets, which are outside the target count. M3 passes again.
+
+## M6b: Held-out check and coverage (in progress, 2026-10-28)
+
+**Plan change:** made 2026-10-28 with Espen's go-ahead. Changed in the live Build Plan doc (overview rev 10,
+Testing tab rev 2) and mirrored in `docs/`:
+- **New milestone:** M6b, the held-out check.
+- **M6 gate reworded:** substantive false-clean is gated, and the raw rate is reported beside it.
+- **Order:** M8 (comparative print) moves ahead of M7 (Word ingestion), which waits for real drafts.
+
+**Held-out set:**
+- **Files:** `scripts/build_heldout.py` writes `tests/oracle/heldout.json` and builds `var/oracle/heldout.sqlite`. Selection is shared with the tuning corpus through `src/billmap/oracle/candidates.py`; the tuning manifest is reproduced byte for byte.
+- **Contents:** every eligible law not in the tuning corpus, which is 10 laws with 10 target sections (titles 15, 16, 29, 30, 34 and 42).
+  - **Set aside:** 119-84 and 119-87, which amend Act text kept in notes.
+  - **Small by necessity:** OLRC publishes no USLM snapshot before 119-73not60 (January 2026). The other laws in the window either touch one or two sections or were already used for tuning.
+- **Gate:** `scripts/m6_gate.py --heldout` writes `var/m6b_gate.md`, `var/m6b_report.json` and `var/m6b_traces.jsonl`.
+
+| Set | Targets | Matched | Mismatched | Missed | CLEAN | Substantive false-clean |
+| --- | --- | --- | --- | --- | --- | --- |
+| Held-out, first run | 10 | 1 | 2 | 7 | 0 | — |
+| Held-out, now | 10 | 2 | 2 (1 editorial only) | 6 | 0 | 0 of 0 |
+| Tuning corpus, now | 1,295 | 528 | 361 | 406 | 370 (28.6% of targets) | 0 of 370; raw 43 (11.6%) |
+
+**What the held-out laws exposed**, all fixed and re-measured on both sets:
+- **One false-clean (30 U.S.C. 191(d)(3)):** "striking 'transfer—' and all that follows through 'the Fund'" crossed subparagraphs and left the emptied units behind, printing "Fund .". Swallowed units are now merged into the replacement, and the result is WARN.
+- **A word-boundary bug:** the linear view joins a heading and its text with no space ("UseOf"), so a match at the start of the text was refused. Edges of the matched range now count as boundaries. CONFLICTs on the tuning corpus fell from 41 to 22.
+- **Parser:** "Marine Mammal Protection Act Of 1972" (capital "Of"); "inserting after section 36 (16 U.S.C. 823g) the following".
+- **Redesignation:**
+  - **Below the named unit:** units are now found when they sit under it (WARN).
+  - **Inline enumerators:** enumerators set inline in running text, e.g. "means (A) … (i) … (ii)" in 29 U.S.C. 1002(18), are redesignated in the text (WARN).
+- **Act-to-Code references in inserted text:** "section 407(d)(6)" of ERISA is printed "section 1107(d)(6) of this title". The engine now translates bare "section N" references through the resolver. When the resolver has only one witness (source credits), the result stays WARN with the translation named.
+- **Tuning corpus, list-form repeals:** "The following provisions of title 10 … are hereby repealed: (1) Chapter 345. (2) Section 3070. …" now fans out, and a repealed chapter predicts each of its sections (WARN). Items naming no single provision (a whole Act, "Sections 3116 and 3141 of …") become their own UNKNOWN instructions with their text. M4 now stands at 3,146 = 2,990 + 156 UNPARSED.
+- **M5 gate:** it now uses the harness's pending-note test. One sampled amendment (119-75 § 6101, effective in 3 years) was otherwise counted as "unchanged".
+
+**What held-out shows that tuning did not:**
+- **Few confident answers:** on unseen laws the engine produced no CLEAN at all. Every applied change carried a reason to doubt it: a delayed date, an Act reference, a structural edit or a cross-unit strike. That is the intended behaviour, but it means little is confident.
+- **Unpredictable placements (4 of 10 held-out targets):** the Code's editors placed free-standing bill sections as new Code sections (34 U.S.C. 51101, 15 U.S.C. 45g, 16 U.S.C. 430h-15, 29 U.S.C. 570). No instruction in the bill places them, so no tool can predict the section number.
+- **New Act sections (2 targets, 16 U.S.C. 823h and 42 U.S.C. 915):** these get Code numbers the editors assign. Next-number conventions could predict them only as WARN.
+
+**Left unpredicted on purpose:** chapter "prec" rows (tables of sections). 46 of the 120 such sections also changed text, through edits the engine does not attribute. Predicting "unchanged" would create false CLEANs.
+
+**Open (for Espen):**
+- **The confident-answer target.**
+- **Whether to widen the held-out set** with govinfo's annual U.S. Code editions. These exist (e.g. `USCODE-2023-title49`, `USCODE-2024-title49`), but as PDF, text and HTML granules, not USLM; a title zip is about 265 MB. That would bring in title 49 laws such as the 2024 FAA reauthorization, at the cost of a second text normalizer.

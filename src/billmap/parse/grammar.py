@@ -473,6 +473,11 @@ DISTRIBUTED = re.compile(r"\b[Tt]he following (?:sections|provisions|paragraphs|
                          r"(?:each )?(?:further )?amended(?: by)?\s*$")
 
 
+# "The following provisions of title 10, United States Code, are hereby repealed: (1) Chapter 345. (2) Section 3070."
+DISTRIBUTED_REPEAL = re.compile(r"\b[Tt]he following (?:sections|provisions|chapters)\b[^\u27e6]*?\s*$")
+LISTED_UNIT = re.compile(r"^(?P<unit>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart) (?P<x>[\w]+)$")
+
+
 def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
     """"The following sections of title 10 ... are amended by striking X and inserting Y: (1) Section 2130a(a)(1),
     relating to ...; (2) ...": one target per listed item. Empty unless every item names a provision."""
@@ -483,10 +488,16 @@ def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
         d = ctx.copy()
         d.is_target_set, d.multi = False, []
         apply_head(text, d, quotes)
-        if d.target.kind == "unknown" or not d.target.section or d.target == ctx.target:
-            return []
+        unit = LISTED_UNIT.match(text)
+        if unit and d.target == ctx.target and _usc_base(ctx) is not None:      # "(1) Chapter 345."
+            d.target = Target(kind="usc", cite_raw=text, title=_usc_base(ctx).title)
+            d.path, d.qualifiers = [], [f"{unit['unit'].lower()} {unit['x']}"]
+        elif d.target.kind == "unknown" or not d.target.section or d.target == ctx.target:
+            # An item naming no single provision (a whole Act, "Sections 3116 and 3141 of ..."): its own
+            # instruction with an unknown target, reported with its text rather than guessed.
+            d.target, d.path, d.qualifiers = Target(kind="unknown", cite_raw=text), [], []
         out.append(d)
-    return out
+    return out if any(d.target.kind != "unknown" for d in out) else []
 
 
 def _section_list(head: str, ctx: Ctx) -> list[Ctx]:
@@ -526,7 +537,8 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
     if child_ctx.target.kind == "usc" and child_ctx.target.title:
         child_ctx.memory["usc"] = child_ctx.target_out()      # for "such chapter 908" later in the section
     out: list[Instruction] = []
-    listed = _distributed(node, child_ctx) if starts and node.children and DISTRIBUTED.search(head) else []
+    listed = (_distributed(node, child_ctx) if starts and node.children and
+              (DISTRIBUTED.search(head) or DISTRIBUTED_REPEAL.search(head) and starts[0]["repeal"]) else [])
     listed = listed or (_section_list(head, child_ctx) if starts else [])
     for i, st in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(lifted)

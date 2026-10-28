@@ -46,6 +46,21 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
             by_section.setdefault(ident, []).append((ins, list(res.path), tr))
             tr.section = ident
             continue
+        # A repealed chapter (subchapter, part) repeals each section in it at the baseline.
+        if res.node_id is not None and ins.op == "REPEAL":
+            try:
+                unit = baseline.by_identifier(ix._node(res.node_id).identifier)
+            except LookupError_:
+                unit = None
+            stack = [unit] if unit is not None else []
+            while stack:
+                n = stack.pop()
+                if n.kind == "section":
+                    by_section.setdefault(n.identifier, []).append((ins, ["REPEAL_ALL"], tr))
+                    tr.section = n.identifier
+                else:
+                    stack.extend(baseline.children(n))
+            continue
         # A title or chapter target: instructions that add whole sections create new section predictions.
         if res.node_id is not None and ins.new_text and ins.op in ("ADD_END", "ADD_UNIT_AFTER", "ADD_UNIT_BEFORE"):
             title = ix._node(res.node_id).identifier.split("/")[3]
@@ -88,7 +103,11 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
         eng = Engine(work)
         statuses, stage, deterministic = [], None, True
         for ins, path, tr in items:
-            if path == ["NEW"]:
+            if path == ["REPEAL_ALL"]:
+                work.removed = True
+                tr.result = Result(ins.id, "WARN", "repealed with the unit that contains it; the Code sets out "
+                                   "a repealed section as a stub or removes it")
+            elif path == ["NEW"]:
                 units, _ = build_units(ins.new_text, work.positive_law)
                 sec = next(u for u in units if u.tag == NS + "section" and
                            f"/s{u.find('{*}num').get('value')}" == ident[ident.rfind('/s'):])
