@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from billmap.parse.ir import Instruction, Node, Target
 from billmap.parse.ops import op_starts
 from billmap.parse.normalize import usc_variants
+from billmap.parse.segment import int_to_roman, is_roman, roman_to_int
 
 PH = "⟦{}⟧"                    # ⟦n⟧
 PH_RE = re.compile(r"⟦(\d+)⟧")
@@ -336,6 +337,10 @@ def _expand(labels_phrase: str) -> list[str]:
         x, y = a.strip("()"), b.strip("()")
         if x.isdigit() and y.isdigit():
             out += [f"({i})" for i in range(int(x), int(y) + 1)]
+        elif is_roman(x) and is_roman(y) and max(len(x), len(y)) > 1 and roman_to_int(x) < roman_to_int(y):
+            # "(i) through (iii)": a roman range (a range of single letters is read as letters below)
+            out += [f"({r if x.islower() else r.upper()})" for r in
+                    (int_to_roman(i) for i in range(roman_to_int(x), roman_to_int(y) + 1))]
         elif len(x) == 1 and len(y) == 1 and x.isalpha() and y.isalpha():
             out += [f"({chr(c)})" for c in range(ord(x), ord(y) + 1)]
         else:

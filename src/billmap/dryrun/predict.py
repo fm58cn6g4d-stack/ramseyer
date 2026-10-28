@@ -5,7 +5,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 
 from billmap.data.index import Index, LookupError_
-from billmap.dryrun.engine import Engine, Result, Working, build_units, worst
+from billmap.dryrun.engine import NS, Engine, Result, Working, build_units, worst
 from billmap.oracle.harness import Prediction
 from billmap.parse.ir import Instruction
 from billmap.resolve.resolver import Resolution, Resolver
@@ -50,7 +50,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
             title = ix._node(res.node_id).identifier.split("/")[3]
             units, _ = build_units(ins.new_text, title[1:] in resolver.positive)
             for u in units:
-                if u.tag.endswith("section"):
+                if u.tag == NS + "section":
                     ident = f"/us/usc/{title}/s{u.find('{*}num').get('value')}"
                     by_section.setdefault(ident, []).append((ins, ["NEW"], tr))
                     tr.section = ident
@@ -68,7 +68,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
         for ins, path, tr in items:
             if path == ["NEW"]:
                 units, _ = build_units(ins.new_text, work.positive_law)
-                sec = next(u for u in units if u.tag.endswith("section") and
+                sec = next(u for u in units if u.tag == NS + "section" and
                            f"/s{u.find('{*}num').get('value')}" == ident[ident.rfind('/s'):])
                 sec.set("identifier", ident)
                 if work.el is None:

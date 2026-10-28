@@ -25,7 +25,7 @@ SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "AMBIGUOUS", "STALE_BASELINE", "C
             "TARGET_MISSING", "UNPARSED"]
 NS = f"{{{USLM}}}"
 STRUCTURAL = re.compile(r"^\u201c?\(\w{1,6}\)\s|\u2014\u201c?\(\w{1,6}\)|\.\u2014")
-ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubchapter|[Pp]art) (?:\d+[A-Za-z]?|[IVXL]+)"
+ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubchapter|[Pp]art) (?:\d+[A-Za-z]?|[IVXL]+|[A-Z])"
                      r"(?:\([\w]+\))*(?![\w\u2013-])(?! of (?:title \d+|this title|this chapter|such title))"
                      r"(?! of the )(?!,? United States Code)(?! of Public Law)(?! \()"
                      r"|\bthis (?:title|Act|subtitle)\b")
@@ -55,7 +55,7 @@ class Seg:
 # ---- quotes --------------------------------------------------------------------------------
 def nested_to_double(s: str) -> str:
     """Bills quote inside quotes with ‘ ’; the Code prints those as “ ”. Apostrophes (applicant’s) stay."""
-    return re.sub(r"(?<![\w])‘([^‘’]*?)’(?![\w])", "“\\1”", s)
+    return re.sub(r"(?<![\w])‘((?:[^‘’]|’(?=\w))*?)’(?![\w])", "“\\1”", s)
 
 
 def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
@@ -170,16 +170,18 @@ class Working:
                     by_level.setdefault(lvl, []).append(text_of(h).strip().rstrip(".\u2014"))
             self.case = {lvl: heading_case(hs) for lvl, hs in by_level.items()}
 
-    def _heading_style(self) -> bool:
-        """Whether this section prints unit headings with ".—". OLRC follows the section's existing style (the
-        Toxic Substances Control Act in title 15 keeps ".—" though the title is not positive law); a section
-        with no unit headings gets the title's default."""
-        if self.el is None:
+    def _heading_style(self, root=None) -> bool:
+        """Whether unit headings under `root` (default: the section) print with ".—". OLRC follows the existing
+        style of the unit being amended (the Toxic Substances Control Act in title 15 keeps ".—" in subsection
+        (b) of 15 U.S.C. 2625 and not elsewhere); with no unit headings, the section's or the title's default."""
+        root = self.el if root is None else root
+        if root is None:
             return self.positive_law
-        heads = [text_of(h).strip() for h in self.el.iter(NS + "heading") if local(h.getparent()) in LEVEL_TAGS]
+        heads = [text_of(h).strip() for h in root.iter(NS + "heading") if local(h.getparent()) in LEVEL_TAGS
+                 and h.getparent() is not root]
         heads = [h for h in heads if h]
         if not heads:
-            return self.positive_law
+            return self.positive_law if root is self.el else self.dash
         return sum(h.endswith(".\u2014") for h in heads) * 2 >= len(heads)
 
     def render(self) -> str | None:
@@ -373,7 +375,7 @@ def block_lines(block: str) -> list[str]:
 def build_units(block: str, positive_law: bool = False, dash: bool | None = None,
                 case: dict[str, str | None] | None = None) -> tuple[list[etree._Element], list[str]]:
     """Quoted block -> USLM unit (or section) elements. Returns (elements, plain text lines that had no unit)."""
-    lines = block_lines(block)
+    lines = [nested_to_double(x) for x in block_lines(block)]
     sec_re = SECTION_LINE
     starts = [i for i, x in enumerate(lines) if sec_re.match(x)]
     if starts and (starts[0] == 0 or all(DIVISION_LINE.match(x) for x in lines[:starts[0]])):
@@ -393,13 +395,18 @@ def build_units(block: str, positive_law: bool = False, dash: bool | None = None
         units, loose = build_units("\n".join("\u201c" + x for x in lines[1:]) + "\u201d", positive_law, dash, case) \
             if len(lines) > 1 else ([], [])
         if loose:
-            c = etree.SubElement(sec, NS + "content")
+            c = etree.SubElement(sec, NS + ("chapeau" if units else "content"))
             c.text = " " + " ".join(loose)
         for u in units:
             sec.append(u)
         return [sec], []
     if not lines or not re.match(r"^\(", lines[0]):
-        return [], lines
+        # Lead-in text ("In this subchapter:") before the first unit: returned as loose lines, units after it.
+        first = next((i for i, x in enumerate(lines) if re.match(r"^\(\w+\) ", x)), None)
+        if not first:
+            return [], lines
+        units, _ = build_units("\n".join("\u201c" + x for x in lines[first:]) + "\u201d", positive_law, dash, case)
+        return units, lines[:first]
     text = "SEC. 0. X.\n" + "\n".join(lines) + "\n"
     nodes = Segmenter(normalize(text)).run()
     section = next((n for n in walk(nodes) if n.level == "section"), None)
@@ -703,10 +710,11 @@ class Engine:
             u.getparent().remove(u)
         return Result(ins.id, "CLEAN", f"struck {ins.unit}")
 
-    def _new_units(self, ins):
+    def _new_units(self, ins, scope=None):
         if not ins.new_text:
             return None, None, Result(ins.id, "NOT_FOUND", "no quoted block to insert")
-        units, loose = build_units(ins.new_text, self.work.positive_law, self.work.dash, self.work.case)
+        dash = self.work._heading_style(scope) if scope is not None and self.work.el is not None else self.work.dash
+        units, loose = build_units(ins.new_text, self.work.positive_law, dash, self.work.case)
         if not self.work.positive_law:
             for u in units:
                 for t in u.iter():
@@ -715,7 +723,7 @@ class Engine:
         return units, loose, None
 
     def _op_replace_unit(self, ins, scope, path):
-        units, loose, err = self._new_units(ins)
+        units, loose, err = self._new_units(ins, scope)
         if err:
             return err
         if ins.unit:                                   # "striking paragraph (2) and inserting the following"
@@ -749,7 +757,7 @@ class Engine:
         return Result(ins.id, "CLEAN", f"replaced {''.join(path)}")
 
     def _append(self, ins, scope, after_el=None, before_el=None):
-        units, loose, err = self._new_units(ins)
+        units, loose, err = self._new_units(ins, scope)
         if err:
             return err
         if loose and not units:
