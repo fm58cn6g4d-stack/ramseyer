@@ -38,3 +38,12 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | Section pages on uscode.house.gov | The site is still in its temporary format. A section lives at `https://uscode.house.gov/us/usc/{release point}/t{title}/s{section}/`, e.g. `/us/usc/119-134/t4/s1/`; the unversioned `/us/usc/t4/s1/` is the current one. The section number uses an ASCII hyphen (`s1395w-22`); an en dash returns 404. Multi-section stubs live at their first number (`/t2/s3/` shows "§§3, 4"). The old `view.xhtml?req=granuleid:...` links return 404 |
 | Page structure | `<span class="lawsInEffect">Text contains those laws in effect through Public Law 119-134 (October 20, 2026).</span>`, `<h3 class="section-head">`, body in `statutory-body*` elements, then `<p class="source-credit">`, then notes. The page inserts U+2060 (word joiner) before em dashes |
 | MCP Python SDK | Version 2.3.0: `FastMCP` is now `mcp.server.mcpserver.MCPServer`, and `CallToolResult.structured_content` is snake_case. Tools run in a worker thread, so the read-only SQLite connection uses `check_same_thread=False` |
+
+## M3 (checked 2026-10-28)
+
+| Item | Finding |
+| --- | --- |
+| Prior release points | `https://uscode.house.gov/priorreleasepoints.html` lists 24, from 119-134 back to 119-73not60 (January 23, 2026). Each entry is `<a class="releasepoint" href="download/{label}.html">Public Law {label} ({date}), affecting titles ...</a>`. Older labels (e.g. `download/118-158.html`) return 404. A release point page has the same layout as `download.html`, with zips under `download/releasepoints/us/pl/{congress}/{law}/` |
+| "Except" release points | `119-73not60` (through 119-73 except 119-60) and `119-102not101` exist. The label carries the exception, and so do the zip names (`xml_usc49@119-73not60.zip`). The "not" release point comes before the plain one, which is the first to include the held-back law |
+| Newer release point | 119-136 (October 22, 2026) is now current. The pin stays at 119-134 until a deliberate re-index |
+| Congress.gov law endpoint | `/v3/law/{congress}/pub/{number}` returns `bill.type`, `bill.number` and `bill.title`; e.g. 119-75 is H.R. 7148 |

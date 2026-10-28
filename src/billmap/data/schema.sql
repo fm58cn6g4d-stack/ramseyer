@@ -91,6 +91,7 @@ CREATE TABLE IF NOT EXISTS source_credits (
     raw         TEXT NOT NULL              -- full credit text
 );
 CREATE INDEX IF NOT EXISTS credits_pl ON source_credits(pl, pl_section);
+CREATE INDEX IF NOT EXISTS credits_section ON source_credits(section_id);
 
 CREATE TABLE IF NOT EXISTS definitions (
     id          INTEGER PRIMARY KEY,
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS definitions (
     evidence    TEXT NOT NULL              -- the matched sentence fragment
 );
 CREATE INDEX IF NOT EXISTS definitions_term ON definitions(term);
+CREATE INDEX IF NOT EXISTS definitions_section ON definitions(section_id);
 
 CREATE TABLE IF NOT EXISTS text_hash (
     node_id     INTEGER PRIMARY KEY REFERENCES nodes(id),

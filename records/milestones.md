@@ -101,3 +101,51 @@ Behaviors worth knowing:
 
 Unit tests: 21 passed, offline. They include a synthetic two-release-point index for `changes`,
 ranges, ambiguity, definitions scope and act_to_code.
+
+## M3: Oracle corpus and comparison harness (2026-10-28) — gate PASS
+
+**Gate** (from `docs/00-build-plan.md` and `docs/12-testing.md`): 20 enacted laws with before and after
+release points and enrolled-bill text, plus the comparison harness.
+
+**Corpus** (`tests/oracle/corpus.json`, references and hashes only; text cached under `var/`): 20
+public laws of the 119th Congress, 1,302 targeted sections in 22 release points. The selection rule
+is in the manifest. The largest laws are 119-60 (NDAA for FY2026, 1,020 sections in 29 titles),
+119-75 (Consolidated Appropriations Act, 2026, 94), 119-101 (21st Century ROAD to Housing Act, 88) and
+119-103 (Continuing Appropriations and Extensions Act, 2027, 36). Sixteen smaller laws have 1 to 18 sections each.
+No law shares a release-point window with another corpus law that touches the same section.
+
+**Deviation from the plan:** the plan asks for laws mostly amending titles 49, 23 and 45. OLRC now publishes
+prior release points only back to 119-73not60 (January 2026). None of them changes title 45, and the
+title 49/23 changes in that window come from 119-60 only. The corpus therefore spreads across 34 titles.
+It can grow once older release points are reachable.
+
+**Set aside as hard cases:** 119-84 and 119-87 (FISA sunset extensions) amend § 403(b) of Pub. L. 110-261,
+which is Act text held in a note under 50 U.S.C. 1881. OLRC classifies them to nine sections each, but no
+section text or source credit changes. They are recorded in `hard_cases`, to come back for notes and Act text (M5/M6).
+
+**Harness** (`billmap.oracle.harness`): a predictor returns, per law, a status and the predicted
+`text_plain` for each section. The harness compares the prediction with the section at R_after
+(whitespace and quote style ignored), and reports match, mismatch, missed, extra and unexpected_change. It
+also reports the tab-11 metrics: false-clean rate, deterministic coverage and model tokens, with mismatches split
+by stage (parser, resolver, engine, editorial, unclassified; manual labels in `tests/oracle/labels.json`).
+
+**Run:** `.venv/bin/python scripts/m3_gate.py` (23 s); output in `var/m3_gate.md`.
+
+| Check | Result | Measured |
+| --- | --- | --- |
+| 20 laws with enrolled text and before/after release points | PASS | 20 laws; enrolled XML hashes match; every law's titles loaded at both release points |
+| Every law changes classified section text | PASS | 1,215 of 1,302 targeted sections change; 1,063 of 1,205 present at R_after cite the law in their source credit |
+| Harness self-test with known predictors | PASS | oracle: match 1.0, false-clean 0; identity (no-op): mismatches = 1,215 = changed sections; one-word mutation: 1,120/1,120 caught; half predicted: 648 missed, 20 extra, WARN never counted as clean |
+| Baseline stored for CI | PASS | `tests/oracle/baseline.json`: the no-op predictor's match rate is 0.0668; any pipeline must beat it |
+
+Found along the way:
+- **Repeals:** OLRC removes some repealed sections entirely at the next release point instead of leaving a
+  "Repealed" stub (87 NDAA repeals, plus two transfers). The harness treats "absent at R_after" as the
+  correct prediction for those.
+- **Intermittent 403:** uscode.house.gov intermittently answers 403 during runs of downloads. The fetcher
+  retries 403, 429 and 5xx with backoff (5, 15, 45 s).
+- **Slow release-point drop:** dropping a release point was quadratic. SQLite checked foreign keys per
+  deleted node against unindexed `source_credits.section_id` and `definitions.section_id`. Fixed with
+  indexes and foreign-key checks off during the drop: 2 h+ down to seconds.
+- **Size and time:** the oracle index (22 partial release points) is 7.1 GB under `var/oracle/`, and
+  a clean build takes about 15 minutes.

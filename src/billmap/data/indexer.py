@@ -192,6 +192,9 @@ class Indexer:
         self.db.commit()
 
     def drop_release_point(self, rp: int) -> None:
+        # Every dependent table is cleared explicitly below; per-row foreign-key checks would make this
+        # quadratic on a full release point.
+        self.db.execute("PRAGMA foreign_keys = OFF")
         ids = "SELECT id FROM nodes WHERE rp=?"
         self.db.execute("INSERT INTO fts_nodes(fts_nodes, rowid, heading, text_plain) SELECT 'delete', id, "
                         "coalesce(heading,''), text_plain FROM nodes WHERE rp=? AND kind IN "
@@ -204,6 +207,7 @@ class Indexer:
         self.db.execute("DELETE FROM nodes WHERE rp=?", (rp,))
         self.db.execute("DELETE FROM release_points WHERE id=?", (rp,))
         self.db.commit()
+        self.db.execute("PRAGMA foreign_keys = ON")
 
     # ---- one title -----------------------------------------------------------------
     def _load_title(self, root, rp: int, code: str) -> TitleLoad:
