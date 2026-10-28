@@ -262,6 +262,32 @@ def replace_span(segs: list[Seg], start: int, end: int, new: str) -> None:
         setattr(s.node, s.attr, (getattr(s.node, s.attr) or "") + new)
 
 
+def _remove_keep_tail(el) -> None:
+    parent, tail, prev = el.getparent(), el.tail or "", el.getprevious()
+    if prev is not None:
+        prev.tail = (prev.tail or "").rstrip("\u202f ") + tail
+    else:
+        parent.text = (parent.text or "").rstrip("\u202f ") + tail
+    parent.remove(el)
+
+
+def drop_footnote_after(segs: list[Seg], b: int) -> None:
+    """A footnote attached to words the amendment replaces goes with them: OLRC removed "section 2334 [1]"'s
+    References-in-Text footnote when 10 U.S.C. 139a was amended to read "section 3221"."""
+    for s in segs:
+        txt = getattr(s.node, s.attr) or ""
+        if s.start < b <= s.start + len(txt) and not txt[b - s.start:].strip("\u202f "):
+            nxt = (s.node[0] if len(s.node) else None) if s.attr == "text" else s.node.getnext()
+            if nxt is not None and local(nxt) == "sup" and (nxt.text or "").strip().isdigit():
+                _remove_keep_tail(nxt)                  # the other footnote marker form: "\u202f<sup>1</sup>"
+            elif nxt is not None and local(nxt) == "ref" and nxt.get("class") == "footnoteRef":
+                note = nxt.getnext()
+                if note is not None and local(note) == "note" and note.get("id") == nxt.get("idref"):
+                    _remove_keep_tail(note)
+                _remove_keep_tail(nxt)
+            return
+
+
 def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[list[tuple[int, int]], str]:
     """All matches of needle in hay inside allowed ranges: exact, then folded, then folded case-insensitive."""
     def inside(a, b):
@@ -298,6 +324,7 @@ WORD_START = re.compile(r"^[\w(\u201c$]")
 CLOSE_PUNCT = ".,;:)"
 STRAY_SPACE = re.compile(r"(?<=\w) +([,;:])")
 SECTION_LINE = re.compile(r"^(?:§+|SEC\.|Sec\.)\s*([\w–-]+(?:\.\d+)?)\.\s*(.*)$")
+TOC_LINE = re.compile(r"^(?:Sec\.|\d+[\w\u2013-]*\.\s+\S.*)$")
 DIVISION_LINE = re.compile(r"^(?:SUBCHAPTER|Subchapter|CHAPTER|Chapter|PART|Part|SUBPART|Subpart) [\w–-]+\s*[\u2014-]")
 EDITORIAL_CITE = re.compile(r" \[\d+ U\.S\.C\. [^\]]*\]")
 
@@ -379,12 +406,14 @@ def build_units(block: str, positive_law: bool = False, dash: bool | None = None
     lines = [nested_to_double(x) for x in block_lines(block)]
     sec_re = SECTION_LINE
     starts = [i for i, x in enumerate(lines) if sec_re.match(x)]
-    if starts and (starts[0] == 0 or all(DIVISION_LINE.match(x) for x in lines[:starts[0]])):
+    if starts and (starts[0] == 0 or all(DIVISION_LINE.match(x) or TOC_LINE.match(x) for x in lines[:starts[0]])):
         if len(starts) > 1 or starts[0] > 0:
             # Several new sections (perhaps under a new subchapter heading): one element per section.
             out = []
             for a, b in zip(starts, starts[1:] + [len(lines)]):
                 chunk = [x for x in lines[a:b] if not DIVISION_LINE.match(x)]
+                while len(chunk) > 1 and TOC_LINE.match(chunk[-1]):      # the next chapter's table of sections
+                    chunk.pop()
                 out += build_units("\n".join("\u201c" + x for x in chunk) + "\u201d", positive_law, dash, case)[0]
             return out, []
         m = sec_re.match(lines[0])
@@ -604,6 +633,8 @@ class Engine:
             return Result(ins.id, "NOT_FOUND", warn or "occurrence not found", matches=len(hits))
         before = hay[chosen[0][0]:chosen[0][1]]
         for a, b in sorted(chosen, reverse=True):
+            if join == "replace":
+                drop_footnote_after(segs, b)
             piece = make_new(hay[a:b])
             if join != "replace":
                 piece = piece[b - a:] if join == "after" else piece[:len(piece) - (b - a)]

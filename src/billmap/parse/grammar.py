@@ -172,6 +172,17 @@ def _unquote(s: str | None, quotes: list[str] | None) -> str | None:
     return PH_RE.sub(lambda m: "\u201c" + quotes[int(m.group(1))] + "\u201d", s)
 
 
+SUCH_UNIT = re.compile(r"(?:\b[Ss]uch (?P<u1>chapter|subchapter|part|subpart) (?P<x1>[\w]+)|"
+                       r"\b(?P<u2>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart) (?P<x2>[\w]+) of (?:such|this) title)")
+
+
+def _usc_base(ctx: Ctx) -> Target | None:
+    for t in (ctx.target, ctx.memory.get("last"), ctx.memory.get("usc")):
+        if t is not None and t.kind == "usc" and t.title:
+            return t
+    return None
+
+
 def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str]:
     """Update ctx from a head phrase (target and location). Returns flags."""
     flags: list[str] = []
@@ -235,6 +246,11 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^The ", "", m["act"]), quotes),
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
+    elif (m := SUCH_UNIT.search(h)) and _usc_base(ctx) is not None:
+        # "Chapter 2003 of such title", "Such chapter 908": a unit of the title in context.
+        unit, x = (m["u1"] or m["u2"]).lower(), m["x1"] or m["x2"]
+        ctx.target = Target(kind="usc", cite_raw=m.group(0), title=_usc_base(ctx).title)
+        ctx.path, ctx.qualifiers, ctx.is_target_set = [], [f"{unit} {x}"], True
     elif (m := USC_TITLE.search(h)) and not ctx.is_target_set:
         ctx.target = Target(kind="usc", cite_raw=m.group(0), title=m["t"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
@@ -506,6 +522,8 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
     flags = list(qflags) + apply_head(head, child_ctx, quotes)
     if child_ctx.target.kind != "unknown" and child_ctx.target.section:
         child_ctx.memory["last"] = child_ctx.target_out()
+    if child_ctx.target.kind == "usc" and child_ctx.target.title:
+        child_ctx.memory["usc"] = child_ctx.target_out()      # for "such chapter 908" later in the section
     out: list[Instruction] = []
     listed = _distributed(node, child_ctx) if starts and node.children and DISTRIBUTED.search(head) else []
     listed = listed or (_section_list(head, child_ctx) if starts else [])
