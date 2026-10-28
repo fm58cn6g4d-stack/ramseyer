@@ -66,6 +66,7 @@ class Corpus(BaseModel):
     selection: str            # the rule used, in words
     release_points: list[ReleasePointRef]
     laws: list[CorpusLaw]
+    hard_cases: list[dict] = []   # candidates set aside, with the reason (named tests in later milestones)
 
     def law(self, pl: str) -> CorpusLaw:
         return next(x for x in self.laws if x.pl == pl)

@@ -1,7 +1,7 @@
 {
  "version": 1,
  "built": "2026-10-28",
- "selection": "Candidates: public laws of the 119th Congress whose OLRC classification rows include at least one non-note row, and for which OLRC publishes both the release point just before the law's classification and the one that first includes it (prior release points online on 2026-10-28 start at 119-73not60). Pick every candidate with at least 2 non-note rows, in public-law order; then fill to 20 with single-row candidates whose title is not yet covered, in public-law order. No candidate has another law in the same release-point window touching the same section. The plan asks for laws mostly in titles 49, 23 and 45; no available release point changes title 45, and title 49/23 text changes in this window come only from 119-60, so the corpus is spread across titles instead.",
+ "selection": "Candidates: public laws of the 119th Congress whose OLRC classification rows include at least one non-note row, and for which OLRC publishes both the release point just before the law's classification and the one that first includes it (prior release points online on 2026-10-28 start at 119-73not60). Pick every candidate with at least 2 non-note rows, in public-law order; then fill to 20 with single-row candidates whose title is not yet covered, in public-law order. No candidate has another law in the same release-point window touching the same section. The plan asks for laws mostly in titles 49, 23 and 45; no available release point changes title 45, and title 49/23 text changes in this window come only from 119-60, so the corpus is spread across titles instead. A candidate must also be cited by the source credit of at least one targeted section at the pinned release point, which shows it changed section text: laws that only amend Act text kept in notes (e.g. 119-84 and 119-87, FISA sunset extensions) are listed under hard_cases instead.",
  "release_points": [
   {
    "label": "119-73",
@@ -174,7 +174,6 @@
     "42",
     "43",
     "48",
-    "50",
     "54"
    ],
    "zip_urls": [
@@ -196,19 +195,7 @@
     "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc42@119-83.zip",
     "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc43@119-83.zip",
     "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc48@119-83.zip",
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc50@119-83.zip",
     "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc54@119-83.zip"
-   ]
-  },
-  {
-   "label": "119-84",
-   "date": "April 18, 2026",
-   "page_url": "https://uscode.house.gov/download/119-84.html",
-   "titles": [
-    "50"
-   ],
-   "zip_urls": [
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/84/xml_usc50@119-84.zip"
    ]
   },
   {
@@ -216,12 +203,10 @@
    "date": "April 30, 2026",
    "page_url": "https://uscode.house.gov/download/119-87.html",
    "titles": [
-    "25",
-    "50"
+    "25"
    ],
    "zip_urls": [
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/87/xml_usc25@119-87.zip",
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/87/xml_usc50@119-87.zip"
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/87/xml_usc25@119-87.zip"
    ]
   },
   {
@@ -229,10 +214,12 @@
    "date": "May 4, 2026",
    "page_url": "https://uscode.house.gov/download/119-88.html",
    "titles": [
-    "25"
+    "25",
+    "47"
    ],
    "zip_urls": [
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/88/xml_usc25@119-88.zip"
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/88/xml_usc25@119-88.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/88/xml_usc47@119-88.zip"
    ]
   },
   {
@@ -241,11 +228,13 @@
    "page_url": "https://uscode.house.gov/download/119-90.html",
    "titles": [
     "15",
-    "16"
+    "16",
+    "47"
    ],
    "zip_urls": [
     "https://uscode.house.gov/download/releasepoints/us/pl/119/90/xml_usc15@119-90.zip",
-    "https://uscode.house.gov/download/releasepoints/us/pl/119/90/xml_usc16@119-90.zip"
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/90/xml_usc16@119-90.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/90/xml_usc47@119-90.zip"
    ]
   },
   {
@@ -452,6 +441,28 @@
    ],
    "zip_urls": [
     "https://uscode.house.gov/download/releasepoints/us/pl/119/121/xml_usc15@119-121.zip"
+   ]
+  },
+  {
+   "label": "119-124",
+   "date": "October 15, 2026",
+   "page_url": "https://uscode.house.gov/download/119-124.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/124/xml_usc16@119-124.zip"
+   ]
+  },
+  {
+   "label": "119-134",
+   "date": "October 20, 2026",
+   "page_url": "https://uscode.house.gov/download/119-134.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/134/xml_usc16@119-134.zip"
    ]
   }
  ],
@@ -14179,186 +14190,6 @@
    "reason": "at least 2 non-note rows"
   },
   {
-   "pl": "119-84",
-   "name": "To amend the FISA Amendments Act of 2008 to extend the authorities of title VII of the Foreign Intelligence Surveillance Act of 1978 through April 30, 2026, and for other purposes.",
-   "bill": "119 hr 8322",
-   "enrolled_url": "https://www.congress.gov/119/bills/hr8322/BILLS-119hr8322enr.xml",
-   "enrolled_sha256": "2710d2d524e7a07ac23d7c93ce15ac02e47aaea57e508122eae1d9436c6570b3",
-   "rp_before": "119-83",
-   "rp_after": "119-84",
-   "titles": [
-    "50"
-   ],
-   "rows": [
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "nt",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881a",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881b",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881c",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881d",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881e",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881f",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881g",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881h",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "18",
-     "section": "2511",
-     "description": "nt",
-     "law_section": "1(a)(2)"
-    },
-    {
-     "title": "50",
-     "section": "1801",
-     "description": "nt",
-     "law_section": "1(b)"
-    },
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "nt new",
-     "law_section": "1(c)"
-    }
-   ],
-   "reason": "at least 2 non-note rows"
-  },
-  {
-   "pl": "119-87",
-   "name": "A bill to amend the FISA Amendments Act of 2008 to extend the authorities of title VII of the Foreign Intelligence Surveillance Act of 1978, and for other purposes.",
-   "bill": "119 s 4465",
-   "enrolled_url": "https://www.congress.gov/119/bills/s4465/BILLS-119s4465enr.xml",
-   "enrolled_sha256": "8cd3ff73fe22ee08596d3fa5e25c2c85322df2ddf545bc17e5cb935d72edc38e",
-   "rp_before": "119-84",
-   "rp_after": "119-87",
-   "titles": [
-    "50"
-   ],
-   "rows": [
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "nt",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881a",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881b",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881c",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881d",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881e",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881f",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881g",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "50",
-     "section": "1881h",
-     "description": "",
-     "law_section": "1(a)(1)"
-    },
-    {
-     "title": "18",
-     "section": "2511",
-     "description": "nt",
-     "law_section": "1(a)(2)"
-    },
-    {
-     "title": "50",
-     "section": "1881",
-     "description": "nt new",
-     "law_section": "1(b)"
-    }
-   ],
-   "reason": "at least 2 non-note rows"
-  },
-  {
    "pl": "119-88",
    "name": "Tribal Trust Land Homeownership Act of 2025",
    "bill": "119 s 723",
@@ -14396,6 +14227,33 @@
     }
    ],
    "reason": "at least 2 non-note rows"
+  },
+  {
+   "pl": "119-89",
+   "name": "Rural Broadband Protection Act of 2025",
+   "bill": "119 s 98",
+   "enrolled_url": "https://www.congress.gov/119/bills/s98/BILLS-119s98enr.xml",
+   "enrolled_sha256": "04da7b874d6ed9696ad8a5fdc2706a6dbaa2b9c0be87b6fc075bd1b2242cb397",
+   "rp_before": "119-88",
+   "rp_after": "119-90",
+   "titles": [
+    "47"
+   ],
+   "rows": [
+    {
+     "title": "47",
+     "section": "609",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "47",
+     "section": "254",
+     "description": "",
+     "law_section": "2"
+    }
+   ],
+   "reason": "single row; adds title 47"
   },
   {
    "pl": "119-91",
@@ -16122,6 +15980,49 @@
     }
    ],
    "reason": "at least 2 non-note rows"
+  },
+  {
+   "pl": "119-133",
+   "name": "Chiricahua National Park Act",
+   "bill": "119 hr 6380",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr6380/BILLS-119hr6380enr.xml",
+   "enrolled_sha256": "b631ba2f02ab75b2a79bab3404be95eee8b419e17fb9f79c986d7acc95559504",
+   "rp_before": "119-124",
+   "rp_after": "119-134",
+   "titles": [
+    "16"
+   ],
+   "rows": [
+    {
+     "title": "16",
+     "section": "410llll",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "16",
+     "section": "410llll",
+     "description": "new",
+     "law_section": "2"
+    },
+    {
+     "title": "16",
+     "section": "410llll-1",
+     "description": "new",
+     "law_section": "3"
+    }
+   ],
+   "reason": "at least 2 non-note rows"
+  }
+ ],
+ "hard_cases": [
+  {
+   "pl": "119-84",
+   "reason": "classified rows, but no targeted section's source credit cites it at 119-134: amends Act text held in notes"
+  },
+  {
+   "pl": "119-87",
+   "reason": "classified rows, but no targeted section's source credit cites it at 119-134: amends Act text held in notes"
   }
  ]
 }

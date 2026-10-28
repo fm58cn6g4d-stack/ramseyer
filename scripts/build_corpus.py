@@ -26,7 +26,10 @@ SELECTION = (
     "single-row candidates whose title is not yet covered, in public-law order. No candidate has another "
     "law in the same release-point window touching the same section. The plan asks for laws mostly in "
     "titles 49, 23 and 45; no available release point changes title 45, and title 49/23 text changes "
-    "in this window come only from 119-60, so the corpus is spread across titles instead."
+    "in this window come only from 119-60, so the corpus is spread across titles instead. "
+    "A candidate must also be cited by the source credit of at least one targeted section at the pinned "
+    "release point, which shows it changed section text: laws that only amend Act text kept in notes "
+    "(e.g. 119-84 and 119-87, FISA sunset extensions) are listed under hard_cases instead."
 )
 
 
@@ -75,6 +78,28 @@ def main() -> int:
             continue
         cands.append((pl, w, targets))
     cands.sort(key=lambda c: num(c[0]))
+    # Keep laws that changed section text: the pinned index's source credits cite them.
+    from billmap.data.index import Index
+    main_ix = Index(cfg.index_path, cfg.release_pin)
+    hard_cases = []
+
+    def credits_cite(pl: str, targets) -> bool:
+        for r in targets:
+            row = main_ix.db.execute("SELECT node_id FROM node_ident WHERE rp=? AND identifier=?",
+                                     (main_ix.rp_id, r.identifier)).fetchone()
+            if row and main_ix.db.execute("SELECT 1 FROM source_credits WHERE section_id=? AND pl=?",
+                                          (row[0], pl)).fetchone():
+                return True
+        return False
+
+    kept = []
+    for c in cands:
+        if credits_cite(c[0], c[2]):
+            kept.append(c)
+        else:
+            hard_cases.append({"pl": c[0], "reason": "classified rows, but no targeted section's source credit "
+                               f"cites it at {cfg.release_pin}: amends Act text held in notes"})
+    cands = kept
     # Contamination: another candidate in the same window touching the same section.
     touch = collections.defaultdict(set)
     for pl, w, t in cands:
@@ -121,7 +146,8 @@ def main() -> int:
         key = {t: (f"{int(re.sub(r'[a-z]', '', t)):02d}" + ("a" if t.endswith("a") else "")) for t in titles}
         refs.append(ReleasePointRef(label=label, date=rp.date, page_url=page, titles=titles,
                                     zip_urls=[rp.xml_titles[key[t]] for t in titles]))
-    corpus = Corpus(built=time.strftime("%Y-%m-%d"), selection=SELECTION, release_points=refs, laws=laws)
+    corpus = Corpus(built=time.strftime("%Y-%m-%d"), selection=SELECTION, release_points=refs, laws=laws,
+                    hard_cases=hard_cases)
     corpus.save()
     print(f"manifest: {len(laws)} laws, {len(refs)} release points")
     store.build(corpus)
