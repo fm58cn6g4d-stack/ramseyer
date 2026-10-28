@@ -57,3 +57,15 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | Source-credit links | For Acts cited by date and chapter, the credit link is `/us/act/1944-07-01/ch373` with no section. The Act section appears only in the credit text ("title III, §317U, as added …"). Links for public laws carry the full path (`/us/pl/116/94/dN/tI/s404/b`) |
 | Act text in notes | Statutory notes that carry an Act section's text open with its citation and "provided that:" ("Pub. L. 116–283, div. A, title V, § 589, Jan. 1, 2021, …, provided that:"). Notes on a chapter heading are what OLRC cites as "note prec. <first section>" |
 | Delayed amendments | An amendment with a delayed effective date is not executed at the next release point. It appears as an "Amendment of Section" note ("provided that, effective one year after Dec. 18, 2025, this section is amended as follows: …") |
+
+## M6 (checked 2026-10-28 on the oracle corpus)
+
+| Item | Finding |
+| --- | --- |
+| Heading ".—" | Follows the amended unit's existing style, not the title. 15 U.S.C. 2625(b) (title 15, not positive law) keeps ".—"; other subsections of the same section have none |
+| Heading case | In positive-law titles, subsection headings are title case. Prepositions such as "With", "From" and "Under" are capitalized. The part after a hyphen is lowercase in 210 of 378 cases, so it is left as drafted. Paragraph and lower headings are sentence case: OLRC printed "Senior leader of the coast guard" for the bill's "Senior leader of the Coast Guard". In non-positive titles, OLRC also fixes case editorially ("Sunshine act", "PDP sponsors"), which is unpredictable |
+| Footnotes | Two markups: `<ref class="footnoteRef">n</ref><note type="footnote">…` and ` <sup>n</sup>`. OLRC removes a footnote attached to words an amendment replaces (10 U.S.C. 139a, "section 2334"). It adds "So in original" footnotes where an amendment leaves an odd result |
+| Bracketed cites | OLRC's "[42 U.S.C. 5121 et seq.]" after an Act name disappears when the Act name is struck (42 U.S.C. 5306, 5321) |
+| Delayed effective dates | 119-60 § 6404(g) delays § 6404(c) by 180 days. At R_after, 50 U.S.C. 3025 shows an "Amendment of Subsection (c)" note, while the same section's immediate amendment (§ 6402(c)(2)(A)(i)) is executed |
+| Codification | 119-60 § 3111 enacts the Atomic Energy Defense Act as 10 U.S.C. 6101 ff. OLRC's text differs from the bill's quoted text: some paragraph headings are absent ("(1) Not later than …" where the bill has "(1) Initial briefing.—"), and later amendments in the same bill to the AEDA's title 50 sections are carried in |
+| OLRC deviations from the enrolled text | "section section 3221" (10 U.S.C. 139a); "18 months" without the apostrophe (46 U.S.C. 7307–7309); an insertion at "regular component" where the law says "reserve component" (37 U.S.C. 204(h)(1)); a SAFE Port Act provision placed in 46 U.S.C. 70001 as subsection (l). These are labelled editorial in `tests/oracle/labels.json` |

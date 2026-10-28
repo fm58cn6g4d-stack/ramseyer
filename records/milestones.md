@@ -276,3 +276,115 @@ SPLIT 5; Code targets CODIFIED 1,131, UNKNOWN 7; public-law targets NOTE 15, UNC
   actually the Act text in its note (NDAA FY2019 § 1792 under 50 U.S.C. 4531). The oracle settles these.
 - **Index fix:** the main index lacked the new `source_credits(section_id)` index (the database predates it).
   Opening the Indexer applies the schema, so this is fixed in place.
+
+## M6: Dry-run engine (2026-10-28)
+
+**Built:** `src/billmap/dryrun/engine.py` applies parsed instructions, in bill order, to a working copy of
+each section's USLM XML at the law's R_before release point. Text edits run on a linear view of the scope's
+text mapped back to the XML text nodes. New units are built as USLM elements from the quoted block.
+`src/billmap/dryrun/predict.py` runs parse, resolve and dry-run for a bill, one prediction per Code section
+reached, including new sections. Every instruction gets a status: CLEAN, WARN, AMBIGUOUS, NOT_FOUND,
+TARGET_MISSING, CONFLICT or UNPARSED, and the section takes the worst.
+
+**Run:** `.venv/bin/python scripts/m6_gate.py` (about 3 minutes). Output goes to `var/m6_gate.md`,
+`var/m6_report.json` and `var/m6_traces.jsonl` (per-instruction traces). The baseline is
+`tests/oracle/m6_baseline.json`.
+
+| Check | Result | Measured |
+| --- | --- | --- |
+| Predicted text matches the next release point (measured) | PASS | 1,295 targets: 515 matched, 357 mismatched, 423 missed (match rate 0.398; 515 of 872 predicted targets). 7 pending-effective-date, 1 extra, 1 unexpected change |
+| False-clean rate under 1% (substantive) | PASS | **0 of 369** CLEAN predictions differ from R_after in substance |
+| False-clean rate, raw (measured) | — | **43 of 369 (11.7%)** CLEAN predictions differ from R_after in some way. All 43 are OLRC editorial changes: 37 found by the detector, 6 labelled by hand after checking the enrolled text |
+
+**Calibration of the false-clean gate (decision for Espen to confirm):**
+- **Target:** docs/12-testing.md says targets are starting points to calibrate after the first measurement. It also classifies an "editorial change by OLRC that is not in the law" as its own mismatch class.
+- **Gate:** it therefore tests the substantive rate, and the raw rate is reported beside it.
+- **What the detector ignores:** footnote markers, the letter case of headings, and an enactment date set in place of "the date of the enactment of this Act". It compares footnote-stripped XML text and accepts no other difference.
+- **The six labelled cases:** `tests/oracle/labels.json` lists them, each checked against the enrolled XML.
+  - **10 U.S.C. 139a:** R_after reads "section section 3221", an OLRC slip.
+  - **46 U.S.C. 7307–7309:** OLRC printed "18 months" with a "So in original. Probably should be '18 months''" footnote. The enrolled bill strikes "3 years" and leaves the apostrophe.
+  - **46 U.S.C. 70001:** OLRC set a SAFE Port Act provision into the section as subsection (l). Its text is not in Pub. L. 119-60.
+  - **37 U.S.C. 204(h)(1):** OLRC inserted after "regular component" where the law says "reserve component".
+- **Caveat:** these figures are measured on the corpus the engine was tuned on. The real-draft trial in M11 is the independent check.
+
+**First run versus now:**
+
+| Run | Matched | Missed | False-clean |
+| --- | --- | --- | --- |
+| First run | 229 of 612 predicted | 683 | 41% |
+| Now | 515 of 872 predicted | 423 | 0 substantive, 11.7% raw |
+
+**Mismatches by stage:**
+
+| Stage | Count | Notes |
+| --- | --- | --- |
+| Engine | 231 | All non-CLEAN: WARN, NOT_FOUND, TARGET_MISSING or CONFLICT, each reported with its reason |
+| Editorial | 75 | |
+| Parser | 35 | |
+| Resolver | 16 | |
+
+**What made predictions right, and what keeps a CLEAN honest.**
+
+*Engine: Code conventions verified on the corpus:*
+- **Matching:**
+  - Matches are word-bounded: "term" is not found inside "determines".
+  - Spacing at edit boundaries follows the Code: one space around inserted words, and a strike leaves no double space or space before punctuation.
+- **Footnotes:** a footnote attached to replaced words goes with them.
+- **Bracketed cites:** OLRC's bracketed "[42 U.S.C. … et seq.]" after an Act name goes when the name is struck.
+- **Inserted unit headings follow the amended unit's existing style:**
+  - **".—":** 15 U.S.C. 2625(b) keeps ".—" though title 15 is not positive law.
+  - **Case:** positive-law subsection headings are title-cased, measured on titles 10, 14 and 46. "With", "From" and "Under" are capitalized; "of", "and", "for", "on", "in", "or", "the", "by", "as", "a", "at" and "to" are not. After a hyphen the case is left as drafted.
+  - **Below the subsection:** headings print in sentence case, e.g. "Senior leader of the coast guard". 13,463 of 13,524 words are lowercase.
+- **New sections:**
+  - A quoted Code section is set in Code form: "§ 4145. Program for the enhancement …".
+  - "SEC." in USC-style blocks and chapter tables of sections are handled.
+  - An Act section replaced in full keeps its Code number.
+- **Inserted text:**
+  - "‘…’" becomes "“…”", and apostrophes inside nested quotes stay.
+  - A stray space before a comma in the bill is removed. The bill's "rifle , or" is printed "rifle, or".
+
+*Parser gaps found by the dry run, all now covered, with the M4 accounting still exact:*
+
+| Gap | Effect before the fix |
+| --- | --- |
+| "by amending paragraph (3) to read as follows" | 57 instructions were invisible to both the parser and the independent counter, which shared the op-start rule |
+| "by repealing subsection (e)" | Not read as an instruction |
+| "(15) In section 1749—" | Capital "In" was not read as a section scope |
+| "The following sections of title 10 are amended by striking …: (1) Section 2130a(a)(1) …; (2) …" | Not applied to the listed sections; now one instruction per listed provision |
+| "Sections 351(a), 352(a), 353(a), and 353(b) of such title" | Not split into separate targets |
+| "Subsections (g)(1) and (h)(1) of section 204" | Scope lost |
+| "in subsections (a)(1), (b), and (h)(1)" | Split into wrong units; now chain-aware |
+| "Chapter 2003 of such title", "Such chapter 908" | No target found; title targets are now remembered across sibling units |
+| "paragraph (2) of subsection (b)" in replacements | Parent unit dropped |
+| "clauses (i) through (iii)" | (ii) was skipped |
+| "in the section heading, by adding at the end …" | Not read as a heading edit; the P10 fixture had it as a negative example, now moved to positive |
+| Unit headers up to 32 words | Longer headers were not recognized |
+
+M4 gate now: 3,146 instructions = 2,982 + 164 UNPARSED, coverage 0.901. The count was 3,088 before the "amending … to read" and "repealing" fixes.
+
+*Kept out of CLEAN on purpose:*
+
+| Situation | Status | Why |
+| --- | --- | --- |
+| A text edit that adds an enumerated unit or heading | WARN | The Code restructures it |
+| Inserted text in a non-positive-law title that still refers to the Act ("section 102", "subtitle A", "this title") | WARN | OLRC converts these to Code form, which needs the Act-to-Code map |
+| A repealed section or unit | WARN | Set out as a "[Repealed …]" stub |
+| Instructions the parser left partly unread | WARN | |
+| Instructions governed by a delayed effective date | WARN, not applied | OLRC sets them out in a note. 46 corpus instructions are flagged by `parse/effective.py` |
+| More than 10 sections enacted by one instruction | WARN | A restatement, such as 119-60 § 3111 (Atomic Energy Defense Act into 10 U.S.C. 6101 ff.). OLRC carried the bill's other amendments to the old provisions into the new ones |
+
+**Still missed (423):**
+
+Measured by classification-table row type:
+
+| Cause | Count |
+| --- | --- |
+| Repealed sections the predictor does not emit | 148 |
+| New sections not yet built | 128 |
+| Chapter tables of sections ("prec" rows) | 120 |
+| Section transfers ("tr" rows) | 23 |
+| "amd gen" rows | 4 |
+
+These are the next things to raise the match rate. They do not affect the false-clean rate, because a section with no prediction is never CLEAN.
+
+**Harness:** the M3 self-test expectation for the "partial" predictor now excludes pending-effective-date targets, which are outside the target count. M3 passes again.

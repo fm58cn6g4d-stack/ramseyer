@@ -30,6 +30,7 @@ uv venv -p python3.11 .venv && uv pip install -p .venv/bin/python -e '.[dev]'
 .venv/bin/billmap parse draft.txt --out var/ir.json   # parse a draft (drafts stay under var/)
 .venv/bin/python scripts/m5_gate.py           # M5 gate; writes var/m5_gate.md
 .venv/bin/billmap resolve "Section 317U(b) of the Public Health Service Act (42 U.S.C. 247b-23)"
+.venv/bin/python scripts/m6_gate.py           # M6 gate; writes var/m6_gate.md (~3 min)
 ```
 
 Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`.
@@ -44,7 +45,8 @@ Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`
 | M3 | `scripts/build_corpus.py` builds `tests/oracle/corpus.json` and `var/oracle/oracle.sqlite`; `scripts/m3_gate.py` -> `var/m3_gate.md`, `tests/oracle/baseline.json` |
 | M4 | `scripts/m4_gate.py` -> `var/m4_gate.md`, residue in `var/m4_residue.jsonl`; pattern fixtures from `scripts/harvest_patterns.py` |
 | M5 | `scripts/m5_gate.py` -> `var/m5_gate.md` |
-| M6+ | added as each milestone is built; listed in `records/milestones.md` |
+| M6 | `scripts/m6_gate.py` -> `var/m6_gate.md`, `var/m6_report.json`, `var/m6_traces.jsonl`, `tests/oracle/m6_baseline.json`; editorial labels in `tests/oracle/labels.json` |
+| M7+ | added as each milestone is built; listed in `records/milestones.md` |
 
 ## Commits and files
 

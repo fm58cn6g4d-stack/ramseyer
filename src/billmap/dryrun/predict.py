@@ -10,6 +10,7 @@ from billmap.oracle.harness import Prediction
 from billmap.parse.ir import Instruction
 from billmap.resolve.resolver import Resolution, Resolver
 
+RESTATEMENT = 10        # more new sections than this from one instruction: a restatement (codification)
 STAGE = {"UNPARSED": "parser", "TARGET_MISSING": "engine", "NOT_FOUND": "engine", "AMBIGUOUS": "engine",
          "CONFLICT": "engine", "STALE_BASELINE": "engine", "WARN": "engine"}
 
@@ -73,7 +74,15 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                 sec.set("identifier", ident)
                 if work.el is None:
                     work.el, work.removed = sec, False
-                    tr.result = Result(ins.id, "CLEAN", "new section added")
+                    n_new = sum(1 for u in units if u.tag == NS + "section")
+                    if n_new > RESTATEMENT:
+                        # A codification enacts many sections at once; the bill's other amendments to the source
+                        # provisions may be carried into them (10 U.S.C. 6101 ff., Pub. L. 119-60 sec. 3111).
+                        tr.result = Result(ins.id, "WARN", f"new section, one of {n_new} enacted by one instruction "
+                                           "(a restatement): amendments elsewhere in the bill to the restated "
+                                           "provisions are not carried into it")
+                    else:
+                        tr.result = Result(ins.id, "CLEAN", "new section added")
                 else:
                     tr.result = Result(ins.id, "TARGET_MISSING", "section to add already exists at the baseline")
             elif any(f.startswith("delayed effective date") for f in ins.flags):

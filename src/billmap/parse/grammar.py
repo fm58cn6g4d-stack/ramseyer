@@ -319,14 +319,14 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P13e", re.compile(rf"^striking {q('a')}{OCC} and all that follows(?: through the end(?: of [\w ]+?(?: \([\w]+\))*)?)?"
                         rf"(?: and inserting (?:(?:the following:? ?)?{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
     ("P7", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"
-                      rf"(?: of [\w ]+? {LABELS})? and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
+                      rf"(?P<of> of [\w ]+? {LABELS})? and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
     ("P2", re.compile(rf"^striking {q('a')}{AT_END}{OCC} and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                       rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash)){OCC.replace('occ', 'occ2').replace('nth', 'nth2')}"),
      "STRIKE_INSERT"),
     ("P2p", re.compile(rf"^striking {DESCR}(?: at the end(?: (?:thereof|of [\w ]+?(?: \([\w]+\))*))?| after {q('anchor')})?{OCC} "
                        rf"and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                        rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash))"), "STRIKE_INSERT"),
-    ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})(?: of [\w ]+? {LABELS})?"
+    ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})(?P<of> of [\w ]+? {LABELS})?"
                        rf"(?:,? as (?:so )?redesignated(?: by [^,]+)?,?)? to read as follows:?"), "REPLACE_UNIT"),
     ("P9u", re.compile(rf"^repealing (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
      "STRIKE_UNIT"),
@@ -413,7 +413,7 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
                     "replace": get("c"),
                     "new_text": block if uses_block else None}
         elif pid in ("P7", "P7a"):
-            out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}", "new_text": block}
+            out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}{gd.get('of') or ''}", "new_text": block}
         elif pid in ("P2", "P2p"):
             find = get("a") if pid == "P2" else PUNCT[gd["punct"]]
             replace = get("b") if gd.get("b") is not None else (PUNCT[gd["punct2"]] if gd.get("punct2") else None)

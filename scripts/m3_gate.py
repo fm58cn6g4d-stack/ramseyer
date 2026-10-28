@@ -121,14 +121,15 @@ def main() -> int:
     n_changed = sum(v["changed"] for law in CORPUS.laws for v in gt(law.pl).values())
     n_mutated = sum(1 for law in CORPUS.laws for v in gt(law.pl).values()
                     if v["changed"] and v["after"] and " " in v["after"])
-    n_half = sum((len(gt(law.pl)) + 1) // 2 for law in CORPUS.laws)
+    # Pending-effective-date targets are outside the target count, predicted or not.
+    n_pred_graded = sum(not v.get("pending") for law in CORPUS.laws for _, v in list(gt(law.pl).items())[::2])
     expect = [
         ("oracle match_rate 1.0", rep["oracle"].metrics["match_rate"] == 1.0),
         ("oracle false_clean 0", rep["oracle"].metrics["false_clean"] == 0),
         ("identity mismatches = changed sections", rep["identity"].metrics["mismatched"] == n_changed),
         ("identity false_clean = changed sections", rep["identity"].metrics["false_clean"] == n_changed),
         ("every mutation caught", rep["mutated"].metrics["mismatched"] == n_mutated),
-        ("partial: missed = unpredicted targets", rep["partial"].metrics["missed"] == n_targets - n_half),
+        ("partial: missed = unpredicted targets", rep["partial"].metrics["missed"] == n_targets - n_pred_graded),
         ("partial: WARN never counted clean", rep["partial"].metrics["false_clean"] == 0),
         ("partial: untouched section reported extra", rep["partial"].metrics["extra"] == len(CORPUS.laws)),
     ]

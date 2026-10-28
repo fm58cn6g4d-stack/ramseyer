@@ -742,6 +742,10 @@ class Engine:
 
     # unit edits -------------------------------------------------------------------------------
     def _children_named(self, scope, unit_phrase: str) -> list:
+        if " of " in unit_phrase:                  # "paragraph (2) of subsection (b)": descend to the parent first
+            unit_phrase, parent = unit_phrase.split(" of ", 1)
+            if scope is not None:
+                scope = self.work.unit([f"({x})" for x in re.findall(r"\((\w+)\)", parent)], root=scope)
         labels = re.findall(r"\((\w+)\)", unit_phrase)
         if " through " in unit_phrase and len(labels) == 2:
             from billmap.parse.grammar import _expand
