@@ -205,5 +205,8 @@ exposed five harvest regexes that had mislabeled correct parses, now corrected.
 - **Freestanding laws:** 119-88, 119-116 and 119-133 contain no amendatory instructions. Their Code
   changes are freestanding sections that OLRC places in the Code, so the dry-run needs a classification
   path for them, not an amendment path.
-- **Act targets:** 63% of corpus instructions target Acts, through an Act section plus a parenthetical
-  U.S.C. cite (the resolver's Act-to-Code job), not Code sections directly.
+- **Targets (measured):** of 3,088 instructions, 1,419 (46%) target an Act section, usually with a
+  parenthetical U.S.C. cite (the resolver's Act-to-Code job); 1,038 (34%) target a Code section directly;
+  23 target a public law by number. For 608 (20%) the parser recognized no target (kind `unknown`),
+  e.g. enacting clauses it did not read as a target, or heads naming the target in a form outside P1/P14.
+  Those reach the resolver as UNKNOWN; the resolver milestone (M5) must measure and reduce them.
