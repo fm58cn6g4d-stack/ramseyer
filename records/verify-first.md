@@ -78,3 +78,11 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | govinfo annual editions | `api.govinfo.gov/packages/USCODE-{year}-title{N}/summary` exists (e.g. `USCODE-2024-title49`, dateIssued 2024-12-31), with txt, pdf, zip, mods and premis links but no USLM link. The title 49 zip is 265 MB; the download through the proxy cut off at 202 MB |
 | Free-standing provisions | The Code's editors classify free-standing bill sections as new Code sections (classification row "new", no amending instruction): 119-94 § 2 -> 34 U.S.C. 51101, 119-129 § 2 -> 15 U.S.C. 45g |
 | New Act sections | A new Act section gets an editor-assigned Code number: Federal Power Act § 37 "after section 36 (16 U.S.C. 823g)" -> 16 U.S.C. 823h; Social Security Act § 714 -> 42 U.S.C. 915 |
+
+## Held-out sources suggested by Espen (checked 2026-10-28)
+
+| Source | Finding |
+| --- | --- |
+| uscode.ecfr.io (`/api/v1/titles`, `/search`, `/section`; MCP at `/mcp`) | Free, no key. It serves only its current OLRC release: 119-134 on 2026-10-28, ingested the same day. There is no date or release parameter (OpenAPI: `path`, `offset`, `length` only), so it gives no history. Section text is flattened ("(a) In generalAll money …"). Usable only as a second current-text cross-check |
+| github.com/CourtGPT/us-code | A JSON mirror of OLRC, flattened to section `text`. Its history is 4 commits, with one data snapshot (release 119-100, 2026-07-13), so it has no earlier versions |
+| GovInfo USCODE collection (api.govinfo.gov with the api.data.gov key) | 1,552 packages, annual editions from 1994. Title 49's 2023 edition has 1,761 granules, one per section (e.g. `USCODE-2023-title49-subtitleV-partC-chap243-sec24301`), with htm, pdf, mods and premis links but no USLM. The htm is OLRC's XHTML: `documentid`, `itempath`, `currentthrough` comments, `field-start:statute`, and `p.statutory-body`, `-1em`, `-2em` with the enumerators inline. Currency: 2023 edition `currentthrough:20240103`, 2024 edition `currentthrough:20250106` |
