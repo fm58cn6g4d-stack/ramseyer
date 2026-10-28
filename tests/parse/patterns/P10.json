@@ -74,6 +74,18 @@
    "expect": {
     "op": "AMEND_HEADING"
    }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVII.subtB.sec712.1",
+   "lines": [
+    "SEC. 712. MILITARY-CIVILIAN MEDICAL SURGE PROGRAM.",
+    "Section 1096 of title 10, United States Code, is amended—",
+    "(1) in the section heading, by adding at the end the following: “; medical surge program”; and"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
   }
  ],
  "negative": [
@@ -111,18 +123,6 @@
     "(a) In general.—Section 1074i of title 10, United States Code, is amended—",
     "(2) in subsection (b)—",
     "(A) by striking the heading and inserting “Special rules for certain members and dependents.—”;"
-   ],
-   "must_not": {
-    "op": "AMEND_HEADING"
-   }
-  },
-  {
-   "law": "119-60",
-   "loc": "divA.titleVII.subtB.sec712.1",
-   "lines": [
-    "SEC. 712. MILITARY-CIVILIAN MEDICAL SURGE PROGRAM.",
-    "Section 1096 of title 10, United States Code, is amended—",
-    "(1) in the section heading, by adding at the end the following: “; medical surge program”; and"
    ],
    "must_not": {
     "op": "AMEND_HEADING"

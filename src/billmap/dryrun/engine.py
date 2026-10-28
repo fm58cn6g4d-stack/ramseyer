@@ -473,6 +473,8 @@ class Engine:
         elif added and not self.work.positive_law and ACT_REF.search(self._tr(nested_to_double(added))):
             why = ("the inserted text refers to a provision of the Act; the Code sets such references in Code form, "
                    "which needs the Act-to-Code map")
+        elif ins.op == "STRIKE_UNIT" and "repealed unit" in ins.flags:
+            why = "the Code sets out a repealed unit as a “[Repealed. …]” stub citing the enacted law"
         elif ins.op == "REPEAL" and r.detail == "section repealed":
             why = "a repealed section is removed or set out as a stub in the Code"
         if why:
@@ -619,11 +621,26 @@ class Engine:
         positional = any(f.startswith("positional") for f in ins.flags)
         return self._edit(ins, scope, path, nested_to_double(ins.find or ""), lambda old: new, positional)
 
+    def _heading_append(self, ins, scope):
+        """"in the section heading, by adding at the end the following: “; medical surge program”"."""
+        h = scope.find(NS + "heading") if scope is not None else None
+        if h is None or not ins.new_text or "\n" in ins.new_text.strip():
+            return Result(ins.id, "TARGET_MISSING" if h is None else "AMBIGUOUS", "no heading text to add to")
+        new = self._tr(nested_to_double(ins.new_text))
+        holder, attr = (h, "text") if len(h) == 0 else (h[-1], "tail")
+        old = getattr(holder, attr) or ""
+        dash = ".\u2014" if old.rstrip().endswith(".\u2014") else ""
+        body = old.rstrip()[:-2] if dash else old.rstrip().rstrip(".")
+        setattr(holder, attr, body + new + dash)
+        return Result(ins.id, "CLEAN", "added at the end of the heading", after_span=new)
+
     def _op_amend_heading(self, ins, scope, path):
         """A heading edit: the parser records the underlying op ("heading edit (INSERT_AFTER)"); the scope is
         limited to the heading by _allowed."""
         m = next((re.search(r"heading edit \((\w+)\)", f) for f in ins.flags if "heading edit" in f), None)
         op = m.group(1).lower() if m else "strike_insert"
+        if op == "add_end":
+            return self._heading_append(ins, scope)
         handler = getattr(self, "_op_" + op, None)
         if handler is None:
             return Result(ins.id, "AMBIGUOUS", f"heading edit with op {op} not supported")

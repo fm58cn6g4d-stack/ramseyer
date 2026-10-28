@@ -140,6 +140,8 @@ QUALIFIERS = [
      lambda m: "heading" if not m["u"] else f"{m['u']} heading"),
     (re.compile(r"\bin the item relating to (?P<x>[^,;]+?)(?=,|;| by |$)"), lambda m: f"item relating to {m['x']}"),
 ]
+LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})*) of (?:such )?section ",
+                        re.I)
 TOC_HEAD = re.compile(r"\b[Tt]he (?:table of (?:sections|contents|chapters)|analysis)\b")
 
 
@@ -230,6 +232,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
             ctx.qualifiers = []
         else:
             flags.append("section_without_root")
+    m = LEAD_UNITS.match(h.strip())
+    if m and ctx.is_target_set:
+        chains = re.findall(LABELS, m["labels"])
+        if len(chains) == 1:
+            _section_path(ctx, chains[0])
+        else:
+            ctx.multi = [[(i, lab) for i, lab in enumerate(_labels(c))] for c in chains]
+            flags.append("multi_scope")
     m = EACH_OF.search(h)
     if m:
         unit = PLURAL.get(m["unit"], m["unit"])
@@ -287,6 +297,8 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
                        rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash))"), "STRIKE_INSERT"),
     ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})(?: of [\w ]+? {LABELS})?"
                        rf"(?:,? as (?:so )?redesignated(?: by [^,]+)?,?)? to read as follows:?"), "REPLACE_UNIT"),
+    ("P9u", re.compile(rf"^repealing (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
+     "STRIKE_UNIT"),
     ("P7b", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
      "STRIKE_UNIT"),
     ("P3", re.compile(rf"^striking {q('a')}{AT_END}{OCC}"), "STRIKE"),
@@ -379,6 +391,8 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
                 out["flags"] = ["positional: " + m.group(0).split(" and inserting")[0][len("striking "):]]
         elif pid == "P7b":
             out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}"}
+        elif pid == "P9u":
+            out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}", "flags": ["repealed unit"]}
         elif pid == "P3":
             out |= {"op": op, "find": get("a")}
             if gd.get("atend"):
@@ -423,6 +437,26 @@ TRAILING_LOC = re.compile(rf"^,?\s*(?:in|of) (?:the )?(?:{UNIT}|section) [\w–.
                           rf"(?:\s+of\s+(?:such|this|that)\s+\w+)?(?:,? as so redesignated)?")
 
 
+DISTRIBUTED = re.compile(r"\b[Tt]he following (?:sections|provisions|paragraphs|subsections)\b[^\u27e6]*?\b(?:is|are) "
+                         r"(?:each )?(?:further )?amended(?: by)?\s*$")
+
+
+def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
+    """"The following sections of title 10 ... are amended by striking X and inserting Y: (1) Section 2130a(a)(1),
+    relating to ...; (2) ...": one target per listed item. Empty unless every item names a provision."""
+    out = []
+    for c in node.children:
+        text, quotes, _ = lift_quotes(c.text)
+        text = re.sub(r"(?:,\s*relating to .*)?[.;]?(?:\s*and)?\s*$", "", text.strip())
+        d = ctx.copy()
+        d.is_target_set, d.multi = False, []
+        apply_head(text, d, quotes)
+        if d.target.kind == "unknown" or not d.target.section or d.target == ctx.target:
+            return []
+        out.append(d)
+    return out
+
+
 def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[Instruction], Ctx]:
     """Instructions in one unit's own text. Returns them and the context its children inherit."""
     lifted, quotes, qflags = lift_quotes(node.text)
@@ -440,6 +474,7 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
     if child_ctx.target.kind != "unknown" and child_ctx.target.section:
         child_ctx.memory["last"] = child_ctx.target_out()
     out: list[Instruction] = []
+    listed = _distributed(node, child_ctx) if starts and node.children and DISTRIBUTED.search(head) else []
     for i, st in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(lifted)
         clause = lifted[st.start():end]
@@ -471,9 +506,15 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
             pflags.append(f"table of contents edit ({op})")
             op = "CONFORM_TOC"
         elif any(qq.endswith("heading") or qq == "heading" for qq in ictx.qualifiers) and op in (
-                "STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH"):
+                "STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH", "ADD_END"):
             pflags.append(f"heading edit ({op})")
             op = "AMEND_HEADING"
+        if listed and TRAILING_OK.match(rest.rstrip(":")):
+            for j, d in enumerate(listed):
+                out.append(Instruction(**{**base, "id": f"{base['id']}.{j}"}, target=d.target_out(), op=op,
+                                       confidence=conf, flags=pflags + [f"one of {len(listed)} listed provisions"],
+                                       **{k: v for k, v in parsed.items() if v is not None}))
+            continue
         targets = ictx.multi or [ictx.path]
         for j, path in enumerate(targets):
             tctx = ictx.copy()

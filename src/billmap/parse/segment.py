@@ -11,7 +11,7 @@ HEADING_RE = re.compile(r"^(DIVISION|TITLE|Subtitle|SUBTITLE|PART|Part|Subpart|S
                         r"SUBCHAPTER)\s+([A-Z0-9]+)\s*[—–-]+\s*(.*)$")
 SECTION_RE = re.compile(r"^(?:SEC\.|SECTION)\s+(\d+[A-Za-z]*(?:[–-]\d+)?)\.\s*(.*)$")
 ENUM_RE = re.compile(r"^\(([0-9]+[A-Za-z]?|[ivxl]{1,7}|[IVXL]{1,7}|[a-z]{1,3}|[A-Z]{1,3})\)\s*(.*)$", re.S)
-HEADER_RE = re.compile(r"^([^“”—]{1,160}?)\.—(.*)$", re.S)
+HEADER_RE = re.compile(r"^([^“”—]{1,240}?)\.—(.*)$", re.S)
 BLOCK_CLOSE_RE = re.compile(r"”(?:\s*[.;,:]?\s*(?:and|or)?|\.”)?\s*$")
 TOC_ENTRY_RE = re.compile(r"^(?:Sec\.|Sections?\s|Subtitle|Part|Chapter|TITLE|DIVISION|Division|Title)\b")
 LEVEL_PREFIX = {"division": "div", "title": "title", "subtitle": "subt", "part": "part", "subpart": "subpart",
@@ -267,7 +267,7 @@ class Segmenter:
         header, text = None, rest
         h = HEADER_RE.match(rest)
         # A header ends with ".—" ("In general.—"); lowercase starts are instruction text, never headers.
-        if h and not h.group(1).strip().startswith(("in ", "by ")) and len(h.group(1).split()) <= 20:
+        if h and not h.group(1).strip().startswith(("in ", "by ")) and len(h.group(1).split()) <= 32:
             header, text = h.group(1).strip(), h.group(2).strip()
         node = Node(loc=self._loc(level, enum), level=level, enum=enum, header=header, text=text, span=span)
         parent = self.units[-1] if self.units else self.section
