@@ -113,7 +113,7 @@ USC_UNIT = re.compile(r"\b(?P<chain>(?:[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpa
 # short parenthesized words inside it ("William M. (Mac) Thornberry National Defense Authorization Act ...").
 ACT_NAME = (r"(?:the )?[A-Z](?:[^()\u27e6;,]|\([A-Z][a-z]{1,12}\)|\u27e6\d+\u27e7|, (?=Jr\.|Sr\.|[A-Z]|and ))*?"
             r"(?:Act|Code|Resolution|Amendments|Law)"
-            r"(?: of \d{4}| for (?:the )?Fiscal Years? \d{4}(?: (?:and|through) \d{4})?)?(?:, \d{4})?")
+            r"(?: [Oo]f \d{4}| for (?:the )?Fiscal Years? \d{4}(?: (?:and|through) \d{4})?)?(?:, \d{4})?")
 USC_TITLE = re.compile(r"\b[Tt]itle (?P<t>\d+),? United States Code")
 ACT_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of (?P<act>{ACT_NAME})"
                          r"(?:\s*\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
@@ -339,7 +339,8 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
      "CONFORM_TOC"),
     ("P11i", re.compile(rf"^inserting (?P<where>after|before) {ITEM},? (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING}))"),
      "CONFORM_TOC"),
-    ("P6s", re.compile(rf"^inserting (?P<where>after|before) (?:the )?section (?P<labels>{SECTION_NUM})(?:,? as so redesignated[^,]*,?)? "
+    ("P6s", re.compile(rf"^inserting (?P<where>after|before) (?:the )?section (?P<labels>{SECTION_NUM})"
+                       r"(?: \([^()]*(?:\([^()]*\)[^()]*)*\))?(?:,? as so redesignated[^,]*,?)? "
                        rf"(?P<block>{FOLLOWING})"), "ADD_UNIT_"),
     ("P5i", re.compile(rf"^inserting at the end(?: (?:thereof|of [\w ]+?(?: {LABELS})?))?,? (?:{q('b')}|(?P<block>{FOLLOWING}))"),
      "ADD_END"),

@@ -10,7 +10,7 @@ from __future__ import annotations
 import copy
 import re
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Callable, Literal
 
 from lxml import etree
 
@@ -293,10 +293,13 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
     def inside(a, b):
         return any(lo <= a and b <= hi for lo, hi in allowed)
 
+    starts, ends = {lo for lo, _ in allowed}, {hi for _, hi in allowed}
+
     def bounded(a, b):
-        # A quoted word matches whole words only: "term" is not found inside "determines".
-        lead = hay[a:a + 1].isalnum() and a > 0 and hay[a - 1].isalnum()
-        trail = hay[b - 1:b].isalnum() and b < len(hay) and hay[b].isalnum()
+        # A quoted word matches whole words only: "term" is not found inside "determines". The edge of an
+        # allowed range is a boundary too: the linear view joins a heading and its text with no space ("UseOf").
+        lead = a not in starts and hay[a:a + 1].isalnum() and a > 0 and hay[a - 1].isalnum()
+        trail = b not in ends and hay[b - 1:b].isalnum() and b < len(hay) and hay[b].isalnum()
         return not (lead or trail)
 
     hits = [(m.start(), m.start() + len(needle)) for m in re.finditer(re.escape(needle), hay)]
@@ -322,6 +325,8 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
 WORD_END = re.compile(r"[\w).,;:\u201d\"'%]$")
 WORD_START = re.compile(r"^[\w(\u201c$]")
 CLOSE_PUNCT = ".,;:)"
+BARE_ACT_REF = re.compile(r"\bsection (?P<sec>\d+[A-Za-z]?(?:[\u2013-]\d+)?)(?P<path>(?:\(\w+\))*)(?![\w\u2013-])"
+                          r"(?! of )(?!,? United States Code)(?! \()")
 STRAY_SPACE = re.compile(r"(?<=\w) +([,;:])")
 SECTION_LINE = re.compile(r"^(?:§+|SEC\.|Sec\.)\s*([\w–-]+(?:\.\d+)?)\.\s*(.*)$")
 TOC_LINE = re.compile(r"^(?:Sec\.|\d+[\w\u2013-]*\.\s+\S.*)$")
@@ -475,8 +480,12 @@ def build_units(block: str, positive_law: bool = False, dash: bool | None = None
 class Engine:
     work: Working
     results: list[Result] = field(default_factory=list)
+    # Act section label -> (Code section, " of this title" | " of title N"), for the Act being amended; or None.
+    act_ref: Callable[[str], tuple[str, str, bool] | None] | None = None
+    weak_refs: set[str] = field(default_factory=set)     # Act references translated on one witness
 
     def run(self, ins: Instruction, path: list[str]) -> Result:
+        self.weak_refs = set()
         r = self._run(ins, path)
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
@@ -507,6 +516,8 @@ class Engine:
             why = "the Code sets out a repealed unit as a “[Repealed. …]” stub citing the enacted law"
         elif ins.op == "REPEAL" and r.detail == "section repealed":
             why = "a repealed section is removed or set out as a stub in the Code"
+        if not why and self.weak_refs:
+            why = ("Act references translated on one witness (source credits): " + "; ".join(sorted(self.weak_refs)))
         if why:
             return "WARN", "; ".join(x for x in (r.detail, why) if x)
         return r.status, r.detail
@@ -616,7 +627,18 @@ class Engine:
 
     def _tr(self, text: str) -> str:
         text = STRAY_SPACE.sub(r"\1", text)      # "rifle , or" in the bill is printed "rifle, or" (36 U.S.C. 40732)
-        return text if self.work.positive_law else code_form(text, self.work.title)
+        if self.work.positive_law:
+            return text
+        text = code_form(text, self.work.title)
+        if self.act_ref is not None:
+            # "section 407(d)(6)" of the Act being amended is printed "section 1107(d)(6) of this title".
+            def sub(m):
+                code = self.act_ref(m["sec"])
+                if code and code[2]:
+                    self.weak_refs.add(f"section {m['sec']} -> section {code[0]}{code[1]}")
+                return f"section {code[0]}{m['path']}{code[1]}" if code else m.group(0)
+            text = BARE_ACT_REF.sub(sub, text)
+        return text
 
     def _edit(self, ins, scope, path, find, make_new, positional=False, label="", join="replace"):
         segs, hay, hits, how, err = self._locate(ins, scope, find, positional)
@@ -734,10 +756,23 @@ class Engine:
         if "\n" in new or new.startswith("\u201c"):
             new = " ".join(block_lines(new))
         new = self._tr(nested_to_double(new))
+        # Units whose number falls inside the struck span are swallowed: what is left of the last one (".")
+        # joins the replacement and the emptied units are removed (30 U.S.C. 191(d)(3), Pub. L. 119-134).
+        swallowed = [s.node.getparent() for s in segs if s.kind == "num" and start <= s.start < end]
+        swallowed = [u for u in swallowed if not any(a in swallowed for a in u.iterancestors())]
+        if swallowed:
+            last_end = max(s.start + len(getattr(s.node, s.attr) or "") for s in segs
+                           if (s.node is swallowed[-1] or swallowed[-1] in s.node.iterancestors())
+                           and not (s.node is swallowed[-1] and s.attr == "tail"))
+            new, end = new + hay[end:last_end], max(end, last_end)
         a, b, piece = tidy(hay, start, end, new, "replace")
         replace_span(segs, a, b, piece)
-        status = "AMBIGUOUS" if len(hits) > 1 else "CLEAN"
-        return Result(ins.id, status, "struck through" + (f"; {len(hits)} start matches" if len(hits) > 1 else ""),
+        for u in swallowed:
+            if not text_of(u).strip() and u.getparent() is not None:
+                _remove_keep_tail(u)
+        status = "AMBIGUOUS" if len(hits) > 1 else ("WARN" if swallowed else "CLEAN")
+        return Result(ins.id, status, "struck through" + (f"; {len(hits)} start matches" if len(hits) > 1 else "")
+                      + (f"; the strike runs across {len(swallowed)} unit(s), merged into the text" if swallowed else ""),
                       before_span=hay[start:end], after_span=new, matches=len(hits))
 
     # unit edits -------------------------------------------------------------------------------
@@ -773,7 +808,7 @@ class Engine:
             for u in units:
                 for t in u.iter():
                     if t.text:
-                        t.text = code_form(t.text, self.work.title)
+                        t.text = self._tr(t.text)
         return units, loose, None
 
     def _op_replace_unit(self, ins, scope, path):
@@ -867,17 +902,48 @@ class Engine:
     def _op_redesignate(self, ins, scope, path):
         moves = ins.redesignate or []
         found = []
+        nested = False
         for old, new in moves:
             u = self.work.unit([old], root=scope)
+            if u is None and scope is not None:
+                # "redesignating clauses (i) and (ii)" of a paragraph whose clauses sit under a subparagraph:
+                # a unique descendant with that number.
+                want = old.strip("()")
+                hits = [e for e in scope.iter() if local(e) in LEVEL_TAGS and e is not scope
+                        and (e.find(NS + "num") is not None and e.find(NS + "num").get("value") == want)]
+                if len(hits) > 1:
+                    return Result(ins.id, "AMBIGUOUS", f"{old} occurs {len(hits)} times below the unit")
+                u, nested = (hits[0], True) if hits else (None, nested)
             if u is None:
-                return Result(ins.id, "TARGET_MISSING", f"{old} not found for redesignation")
+                return self._redesignate_inline(ins, scope, moves) or \
+                    Result(ins.id, "TARGET_MISSING", f"{old} not found for redesignation")
             found.append((u, new))
         for u, new in found:                      # all at once: (2)->(3) and (3)->(4) never collide
             num = u.find(NS + "num")
             num.set("value", new.strip("()"))
             num.text = new
         flags = [f for f in ins.flags if f.startswith("redesignation counts differ")]
+        if nested:
+            flags.append("units found below the named unit, not directly in it")
         return Result(ins.id, "WARN" if flags else "CLEAN", "; ".join(flags) or f"redesignated {len(found)} unit(s)")
+
+    def _redesignate_inline(self, ins, scope, moves):
+        """Enumerators set inline in running text ("means (A) in the case of ... either (i) ... or (ii) ...", 29 U.S.C.
+        1002(18)) are redesignated in the text, when each old label occurs exactly once."""
+        if scope is None:
+            return None
+        segs = Working.segments(scope)
+        hay = linear(segs)
+        allowed = self._allowed(segs, ins, None)
+        spans = []
+        for old, new in moves:
+            hits = [h for h in find_all(hay, old, allowed)[0] if hay[h[0]:h[1]] == old]
+            if len(hits) != 1:
+                return None
+            spans.append((hits[0], new))
+        for (a, b), new in sorted(spans, reverse=True):
+            replace_span(segs, a, b, new)
+        return Result(ins.id, "WARN", f"redesignated {len(spans)} enumerator(s) set inline in the text")
 
     def _op_repeal(self, ins, scope, path):
         if scope is self.work.el:

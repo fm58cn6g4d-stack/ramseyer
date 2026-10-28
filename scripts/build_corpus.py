@@ -9,13 +9,13 @@ import json
 import re
 import sys
 import time
-from urllib.parse import urljoin
 
 from billmap import config
-from billmap.data import congress, olrc
+from billmap.data import congress
 from billmap.data.http import Fetcher
 from billmap.oracle import store
-from billmap.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
+from billmap.oracle.candidates import discover, num
+from billmap.oracle.corpus import Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
 
 SIZE = 20
 SELECTION = (
@@ -33,51 +33,11 @@ SELECTION = (
 )
 
 
-def num(label: str) -> int:
-    return int(re.match(r"\d+-(\d+)", label).group(1))
-
-
 def main() -> int:
     cfg = config.load()
     f = Fetcher(cfg)
-    base = cfg.olrc_base
-    prior = f.get(urljoin(base, "priorreleasepoints.html"), refresh=True).text()
-    listed = re.findall(r'<a class="releasepoint" href="([^"]+)">([^<]+)</a>', prior)
-    rps = {}
-    for href, _ in listed:
-        u = urljoin(base, href)
-        rp = olrc.parse_release_point(f.get(u).text(), u)
-        rps[rp.label] = (rp, u)
-    plain = sorted((l for l in rps if "not" not in l), key=num)
-
-    rows = []
-    for t in ("tbl119pl_1st.html", "tbl119pl_2nd.html"):
-        rows += olrc.parse_classification_table(f.get(urljoin(base, f"classification/{t}")).text())
-    by_law = collections.defaultdict(list)
-    for r in rows:
-        by_law[r.public_law].append(ClassifiedRow(title=r.title, section=r.section, description=r.description,
-                                                  law_section=r.law_section))
-
-    def window(pl: str) -> tuple[str, str] | None:
-        excepted = [l for l in rps if l.endswith(f"not{num(pl)}") and l.startswith("119-")]
-        if excepted:          # e.g. 119-73not60 held 119-60 back; 119-73 is the first to include it
-            after = excepted[0].split("not")[0]
-            return excepted[0], after
-        after = next((l for l in plain if num(l) >= num(pl)), None)
-        if after is None or plain.index(after) == 0:
-            return None
-        return plain[plain.index(after) - 1], after
-
-    cands = []
-    for pl, rs in by_law.items():
-        if not pl.startswith("119-"):
-            continue
-        w = window(pl)
-        targets = [r for r in rs if not r.is_note]
-        if not w or not targets or (num(pl) <= num(plain[0]) and "not" not in w[0]):
-            continue
-        cands.append((pl, w, targets))
-    cands.sort(key=lambda c: num(c[0]))
+    d = discover(f, cfg.olrc_base)
+    rps, by_law, cands = d.rps, d.by_law, d.cands
     # Keep laws that changed section text: the pinned index's source credits cite them.
     from billmap.data.index import Index
     main_ix = Index(cfg.index_path, cfg.release_pin)

@@ -6,6 +6,8 @@ section dry-run on its text at the law's R_before release point. The harness com
 
 Run:  .venv/bin/python scripts/m6_gate.py [--law 119-118] [--show 30]
 Writes var/m6_gate.md, var/m6_report.json and tests/oracle/m6_baseline.json.
+With --heldout (M6b): the held-out laws (tests/oracle/heldout.json, built by scripts/build_heldout.py); writes
+var/m6b_gate.md, var/m6b_report.json and tests/oracle/m6b_baseline.json.
 """
 from __future__ import annotations
 
@@ -33,7 +35,8 @@ from billmap.resolve import popular
 from billmap.resolve.actcode import classification_map
 from billmap.resolve.resolver import Resolver, classification_rows
 
-BASELINE = MANIFEST.with_name("m6_baseline.json")
+HELDOUT = MANIFEST.with_name("heldout.json")
+HELDOUT_DB = store.ORACLE_DB.with_name("heldout.sqlite")
 FALSE_CLEAN_TARGET = 0.01
 
 
@@ -79,16 +82,19 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--law")
     ap.add_argument("--show", type=int, default=30)
+    ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b)")
     args = ap.parse_args()
     cfg = config.load()
     f = Fetcher(cfg)
     t0 = time.monotonic()
     resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(),
                         classification_map(classification_rows(f, cfg.olrc_base)))
-    corpus = Corpus.load()
+    corpus = Corpus.load(HELDOUT if args.heldout else MANIFEST)
+    tag = "m6b" if args.heldout else "m6"
     if args.law:
         corpus.laws = [corpus.law(args.law)]
-    open_index = lru_cache(maxsize=None)(store.index)
+    db = HELDOUT_DB if args.heldout else store.ORACLE_DB
+    open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
     statuses = collections.Counter()
     runs = {}
 
@@ -137,9 +143,13 @@ def main() -> int:
          f"(rate {substantive / max(m['clean'], 1):.4f}); raw rate {m['false_clean_rate']} ({m['false_clean']} differ "
          f"in any way: {detected} editorial-only by the detector, {labelled} labelled editorial in "
          f"tests/oracle/labels.json after checking against the enrolled text)"),
+        ("Confident answers (measured)", True,
+         f"{m['clean']} of {m['targets']} targets have a CLEAN prediction ({m['clean'] / max(m['targets'], 1):.1%}); "
+         f"{m['clean'] - substantive} of them right in substance ({(m['clean'] - substantive) / max(m['targets'], 1):.1%} "
+         f"of targets)"),
     ]
     by_stage = collections.Counter(o.stage for o in mism)
-    lines = ["# M6 gate", "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
+    lines = [f"# {tag.upper()} gate" + (" (held-out laws)" if args.heldout else ""), "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
              f"{time.monotonic() - t0:.0f}s.", "", "| Check | Result | Measured |", "| --- | --- | --- |"]
     lines += [f"| {n} | {'PASS' if ok else 'FAIL'} | {d.replace('|', '/')} |" for n, ok, d in checks]
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
@@ -149,9 +159,9 @@ def main() -> int:
     lines += ["", f"## Mismatches (first {args.show}; CLEAN ones first)", ""]
     for o in sorted(mism, key=lambda o: o.status != "CLEAN")[:args.show]:
         lines.append(f"- {o.pl} {o.identifier} [{o.status}, {o.stage}] {o.detail[:300]}")
-    (cfg.var / "m6_gate.md").write_text("\n".join(lines) + "\n")
-    (cfg.var / "m6_report.json").write_text(rep.model_dump_json(indent=1))
-    with open(cfg.var / "m6_traces.jsonl", "w") as fh:      # per-instruction trace, for diagnosis
+    (cfg.var / f"{tag}_gate.md").write_text("\n".join(lines) + "\n")
+    (cfg.var / f"{tag}_report.json").write_text(rep.model_dump_json(indent=1))
+    with open(cfg.var / f"{tag}_traces.jsonl", "w") as fh:      # per-instruction trace, for diagnosis
         for pl, run in runs.items():
             for tr in run.traces:
                 i, r = tr.instruction, tr.result
@@ -162,7 +172,7 @@ def main() -> int:
                                      "before": r.before_span if r else None, "after": r.after_span if r else None},
                                     ensure_ascii=False) + "\n")
     if not args.law:
-        BASELINE.write_text(json.dumps({"predictor": "billmap M6", "metrics": m}, indent=1) + "\n")
+        MANIFEST.with_name(f"{tag}_baseline.json").write_text(json.dumps({"predictor": "billmap M6", "metrics": m}, indent=1) + "\n")
     print("\n".join(lines))
     return 0 if all(ok for _, ok, _ in checks) else 1
 

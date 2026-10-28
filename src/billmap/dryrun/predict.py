@@ -55,6 +55,26 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                     ident = f"/us/usc/{title}/s{u.find('{*}num').get('value')}"
                     by_section.setdefault(ident, []).append((ins, ["NEW"], tr))
                     tr.section = ident
+    cache: dict[tuple, tuple[str, str, bool] | None] = {}
+
+    def act_refs(ins: Instruction):
+        """Bare "section 407(d)(6)" in text inserted into an Act: the same Act's section. Translated when the resolver
+        is sure, or has one witness (source credits; the engine then reports WARN); otherwise left as drafted."""
+        def lookup(sec: str, here: str) -> tuple[str, str, bool] | None:
+            key = (ins.target.act, ins.target.public_law, sec, here)
+            if key not in cache:
+                t = ins.target.model_copy(deep=True)
+                t.section, t.path, t.cite_raw, t.usc_parenthetical, t.qualifiers = sec, [], f"section {sec}", None, []
+                r = resolver.resolve(t)
+                cache[key] = None
+                weak = r.flags == ["single source: source credits only"]
+                if r.outcome == "CODIFIED" and r.section_id is not None and (r.verified and not r.flags or weak):
+                    title, s = ix._node(r.section_id).identifier.split("/")[3:5]
+                    cache[key] = (s[1:], " of this title" if title == here else f" of title {title[1:]}", weak)
+            return cache[key]
+        return lambda sec: lookup(sec, current_title[0])
+
+    current_title = [""]
     predictions, workings = [], {}
     for ident, items in by_section.items():
         try:
@@ -64,6 +84,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
             xml = None
         work = Working(xml, ident, positive_law=ident.split("/")[3][1:] in resolver.positive)
         workings[ident] = work
+        current_title[0] = ident.split("/")[3]
         eng = Engine(work)
         statuses, stage, deterministic = [], None, True
         for ins, path, tr in items:
@@ -90,6 +111,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                 why = next(f for f in ins.flags if f.startswith("delayed effective date"))
                 tr.result = Result(ins.id, "WARN", f"not applied: {why}")
             else:
+                eng.act_ref = act_refs(ins) if ins.target.kind in ("act", "pl") else None
                 tr.result = eng.run(ins, path)
             st = tr.result.status
             if tr.resolution.flags and "needs review" in tr.resolution.flags and st == "CLEAN":

@@ -1,0 +1,498 @@
+{
+ "version": 1,
+ "built": "2026-10-28",
+ "selection": "Held out: every public law of the 119th Congress that meets the tuning corpus's availability rules (classified, at least one non-note row, both bounding release points online, the current release point included) and is not in tests/oracle/corpus.json. A law is set aside (hard_cases) when the source credits at its R_after release point cite it for none of its targeted sections (it amends Act text kept in notes), or when another law in the same release-point window touches one of its sections. Not tuned on: the engine was developed against the tuning corpus only.",
+ "release_points": [
+  {
+   "label": "119-73",
+   "date": "January 23, 2026",
+   "page_url": "https://uscode.house.gov/download/119-73.html",
+   "titles": [
+    "42"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/73/xml_usc42@119-73.zip"
+   ]
+  },
+  {
+   "label": "119-83",
+   "date": "April 13, 2026",
+   "page_url": "https://uscode.house.gov/download/119-83.html",
+   "titles": [
+    "42",
+    "50"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc42@119-83.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/83/xml_usc50@119-83.zip"
+   ]
+  },
+  {
+   "label": "119-84",
+   "date": "April 18, 2026",
+   "page_url": "https://uscode.house.gov/download/119-84.html",
+   "titles": [
+    "50"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/84/xml_usc50@119-84.zip"
+   ]
+  },
+  {
+   "label": "119-87",
+   "date": "April 30, 2026",
+   "page_url": "https://uscode.house.gov/download/119-87.html",
+   "titles": [
+    "50"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/87/xml_usc50@119-87.zip"
+   ]
+  },
+  {
+   "label": "119-93",
+   "date": "May 19, 2026",
+   "page_url": "https://uscode.house.gov/download/119-93.html",
+   "titles": [
+    "34"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/93/xml_usc34@119-93.zip"
+   ]
+  },
+  {
+   "label": "119-94",
+   "date": "May 28, 2026",
+   "page_url": "https://uscode.house.gov/download/119-94.html",
+   "titles": [
+    "34"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/94/xml_usc34@119-94.zip"
+   ]
+  },
+  {
+   "label": "119-95",
+   "date": "May 29, 2026",
+   "page_url": "https://uscode.house.gov/download/119-95.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/95/xml_usc16@119-95.zip"
+   ]
+  },
+  {
+   "label": "119-99",
+   "date": "June 12, 2026",
+   "page_url": "https://uscode.house.gov/download/119-99.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/99/xml_usc16@119-99.zip"
+   ]
+  },
+  {
+   "label": "119-111",
+   "date": "September 18, 2026",
+   "page_url": "https://uscode.house.gov/download/119-111.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/111/xml_usc16@119-111.zip"
+   ]
+  },
+  {
+   "label": "119-117",
+   "date": "September 25, 2026",
+   "page_url": "https://uscode.house.gov/download/119-117.html",
+   "titles": [
+    "16"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/117/xml_usc16@119-117.zip"
+   ]
+  },
+  {
+   "label": "119-118",
+   "date": "September 30, 2026",
+   "page_url": "https://uscode.house.gov/download/119-118.html",
+   "titles": [
+    "42"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/118/xml_usc42@119-118.zip"
+   ]
+  },
+  {
+   "label": "119-120",
+   "date": "October 7, 2026",
+   "page_url": "https://uscode.house.gov/download/119-120.html",
+   "titles": [
+    "42"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/120/xml_usc42@119-120.zip"
+   ]
+  },
+  {
+   "label": "119-121",
+   "date": "October 9, 2026",
+   "page_url": "https://uscode.house.gov/download/119-121.html",
+   "titles": [
+    "29"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/121/xml_usc29@119-121.zip"
+   ]
+  },
+  {
+   "label": "119-124",
+   "date": "October 15, 2026",
+   "page_url": "https://uscode.house.gov/download/119-124.html",
+   "titles": [
+    "15",
+    "16",
+    "29",
+    "30"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/124/xml_usc15@119-124.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/124/xml_usc16@119-124.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/124/xml_usc29@119-124.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/124/xml_usc30@119-124.zip"
+   ]
+  },
+  {
+   "label": "119-134",
+   "date": "October 20, 2026",
+   "page_url": "https://uscode.house.gov/download/119-134.html",
+   "titles": [
+    "15",
+    "16",
+    "29",
+    "30"
+   ],
+   "zip_urls": [
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/134/xml_usc15@119-134.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/134/xml_usc16@119-134.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/134/xml_usc29@119-134.zip",
+    "https://uscode.house.gov/download/releasepoints/us/pl/119/134/xml_usc30@119-134.zip"
+   ]
+  }
+ ],
+ "laws": [
+  {
+   "pl": "119-77",
+   "name": "Ending Improper Payments to Deceased People Act",
+   "bill": "119 s 269",
+   "enrolled_url": "https://www.congress.gov/119/bills/s269/BILLS-119s269enr.xml",
+   "enrolled_sha256": "d8fd92f40a530e1ffb40b4d1f25875a2c6b2d5ff384cbfe86038fad145c6e94c",
+   "rp_before": "119-73",
+   "rp_after": "119-83",
+   "titles": [
+    "42"
+   ],
+   "rows": [
+    {
+     "title": "42",
+     "section": "1305",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "42",
+     "section": "405",
+     "description": "",
+     "law_section": "2(a), (b)"
+    },
+    {
+     "title": "42",
+     "section": "405",
+     "description": "nt new",
+     "law_section": "2(c)"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-94",
+   "name": "Medal of Sacrifice Act",
+   "bill": "119 hr 3497",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr3497/BILLS-119hr3497enr.xml",
+   "enrolled_sha256": "2664d3c7e3990bb57995c259bc13f261f6fcb930b41a17b89e78dd4281de4ee5",
+   "rp_before": "119-93",
+   "rp_after": "119-94",
+   "titles": [
+    "34"
+   ],
+   "rows": [
+    {
+     "title": "34",
+     "section": "10101",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "34",
+     "section": "51101",
+     "description": "new",
+     "law_section": "2"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-99",
+   "name": "ARTIST Act",
+   "bill": "119 s 254",
+   "enrolled_url": "https://www.congress.gov/119/bills/s254/BILLS-119s254enr.xml",
+   "enrolled_sha256": "671c018f7c0dd4a82b26667ad14190bf190aebb46d21176322b197a3b4f3a8e7",
+   "rp_before": "119-95",
+   "rp_after": "119-99",
+   "titles": [
+    "16"
+   ],
+   "rows": [
+    {
+     "title": "16",
+     "section": "1361",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "16",
+     "section": "1371",
+     "description": "",
+     "law_section": "2"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-112",
+   "name": "Hydropower Licensing Transparency Act",
+   "bill": "119 hr 3657",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr3657/BILLS-119hr3657enr.xml",
+   "enrolled_sha256": "2bf119e5016f5736232d218f6510f96b628a2459df7becb27c82deb380514a86",
+   "rp_before": "119-111",
+   "rp_after": "119-117",
+   "titles": [
+    "16"
+   ],
+   "rows": [
+    {
+     "title": "16",
+     "section": "791a",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "16",
+     "section": "823h",
+     "description": "new",
+     "law_section": "2 \"37\""
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-119",
+   "name": "Improving Social Security’s Service to Victims of Identity Theft Act",
+   "bill": "119 hr 5345",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr5345/BILLS-119hr5345enr.xml",
+   "enrolled_sha256": "fc0b575b27c923b62d846b15d8bb37bb1b54df4a80770e91f18fa1e169f58288",
+   "rp_before": "119-118",
+   "rp_after": "119-120",
+   "titles": [
+    "42"
+   ],
+   "rows": [
+    {
+     "title": "42",
+     "section": "1305",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "42",
+     "section": "915",
+     "description": "new",
+     "law_section": "2(a) \"714\""
+    },
+    {
+     "title": "42",
+     "section": "915",
+     "description": "nt new",
+     "law_section": "2(b)"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-124",
+   "name": "Retire through Ownership Act",
+   "bill": "119 s 2403",
+   "enrolled_url": "https://www.congress.gov/119/bills/s2403/BILLS-119s2403enr.xml",
+   "enrolled_sha256": "f6b2baa27ed07c984bcc7e5368926f93a2ab2e46045c63f8c3196ec342c06308",
+   "rp_before": "119-121",
+   "rp_after": "119-124",
+   "titles": [
+    "29"
+   ],
+   "rows": [
+    {
+     "title": "29",
+     "section": "1001",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "29",
+     "section": "1002",
+     "description": "",
+     "law_section": "2(a)"
+    },
+    {
+     "title": "29",
+     "section": "1002",
+     "description": "nt new",
+     "law_section": "2(b)"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-129",
+   "name": "Romance Scam Prevention Act",
+   "bill": "119 hr 2481",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr2481/BILLS-119hr2481enr.xml",
+   "enrolled_sha256": "362c8f814c474828ffd5ba9643cb6cd97cee14bc5af5859ee6b20c8acd728fe8",
+   "rp_before": "119-124",
+   "rp_after": "119-134",
+   "titles": [
+    "15"
+   ],
+   "rows": [
+    {
+     "title": "15",
+     "section": "58",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "15",
+     "section": "45g",
+     "description": "new",
+     "law_section": "2"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-131",
+   "name": "Enhancing Detection of Human Trafficking Act",
+   "bill": "119 hr 4307",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr4307/BILLS-119hr4307enr.xml",
+   "enrolled_sha256": "1e422f9558907fd323fbaf5b699e3b23de8fc29f01798667df6f5fb7094f34d1",
+   "rp_before": "119-124",
+   "rp_after": "119-134",
+   "titles": [
+    "29"
+   ],
+   "rows": [
+    {
+     "title": "29",
+     "section": "551",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "29",
+     "section": "570",
+     "description": "nt new",
+     "law_section": "2"
+    },
+    {
+     "title": "29",
+     "section": "570",
+     "description": "new",
+     "law_section": "3"
+    },
+    {
+     "title": "29",
+     "section": "570",
+     "description": "nt new",
+     "law_section": "4"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-132",
+   "name": "Vicksburg National Military Park Boundary Modification Act",
+   "bill": "119 hr 4467",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr4467/BILLS-119hr4467enr.xml",
+   "enrolled_sha256": "b0dbd2873a23ab8a7433e4193e0e50832123f324a367a3e630e4c36a8c251563",
+   "rp_before": "119-124",
+   "rp_after": "119-134",
+   "titles": [
+    "16"
+   ],
+   "rows": [
+    {
+     "title": "16",
+     "section": "430h",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "16",
+     "section": "430h-15",
+     "description": "new",
+     "law_section": "2"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  },
+  {
+   "pl": "119-134",
+   "name": "License to Drill Act",
+   "bill": "119 hr 7831",
+   "enrolled_url": "https://www.congress.gov/119/bills/hr7831/BILLS-119hr7831enr.xml",
+   "enrolled_sha256": "cc58b9969bf1cdbddf74cf671d72d776daf25a999b1eb12a6d6be271b378d13f",
+   "rp_before": "119-124",
+   "rp_after": "119-134",
+   "titles": [
+    "30"
+   ],
+   "rows": [
+    {
+     "title": "30",
+     "section": "181",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "30",
+     "section": "191",
+     "description": "",
+     "law_section": "2"
+    }
+   ],
+   "reason": "not in the tuning corpus"
+  }
+ ],
+ "hard_cases": [
+  {
+   "pl": "119-84",
+   "reason": "no targeted section's source credit cites it at 119-84: amends Act text held in notes"
+  },
+  {
+   "pl": "119-87",
+   "reason": "no targeted section's source credit cites it at 119-87: amends Act text held in notes"
+  }
+ ]
+}
