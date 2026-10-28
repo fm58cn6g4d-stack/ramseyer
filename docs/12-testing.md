@@ -20,7 +20,7 @@ Targets are starting points; calibrate them after the first measurement.
 | Metric | Target | Why |
 | --- | --- | --- |
 | Instruction accounting | Count in equals IR count plus UNPARSED, always | Nothing is silently dropped |
-| False-clean rate | Under 1 percent (tool says CLEAN, oracle disagrees) | The metric that matters most |
+| False-clean rate | Under 1 percent in substance (tool says CLEAN, oracle disagrees beyond OLRC editorial changes), on held-out laws; the raw rate is always reported beside it | The metric that matters most |
 | Deterministic coverage | At least 85 percent of instructions without the model | Token efficiency |
 | Resolver silent errors | 0 on 50 Act-section references | A wrong section is the worst failure |
 | Tokens per 50-page bill | Measured and recorded every run | Tracks the efficiency goal |

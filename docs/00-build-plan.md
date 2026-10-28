@@ -22,7 +22,7 @@ A draft flows left to right through parse, resolve and dry-run, and the three ou
 
 ## Build order
 
-Thirteen milestones, each with a gate that must pass before the next starts. The oracle corpus (M3) comes before the parser so every later step has a measurable check.
+Fourteen milestones, each with a gate that must pass before the next starts. The oracle corpus (M3) comes before the parser so every later step has a measurable check. Revised Oct 28, 2026 after M6: a held-out check (M6b) was added, M6's gate was reworded, and the comparative print (M8) moved ahead of Word ingestion (M7), which waits for real drafts.
 
 | # | Milestone | Done when | Detail tab |
 | --- | --- | --- | --- |
@@ -32,9 +32,10 @@ Thirteen milestones, each with a gate that must pass before the next starts. The
 | M3 | Oracle corpus | 20 enacted laws with before and after release points and enrolled-bill text, plus the comparison harness | 11 Testing |
 | M4 | Parser and IR (pasted text) | Instruction count in equals count out on the corpus; deterministic coverage measured and logged | 3 Draft parser |
 | M5 | Resolver and Act-to-Code | Zero silent mis-resolutions on 50 Act-section references from the corpus | 4 Resolver |
-| M6 | Dry-run engine | Predicted post-amendment text matches the next release point on the corpus; false-clean rate measured | 5 Dry-run |
-| M7 | Word ingestion | Five real drafts parse, with tracked changes and manual numbering handled | 3 Draft parser |
+| M6 | Dry-run engine | Match rate, confident-answer (CLEAN) share and false-clean rate measured on the corpus; false-clean under 1% in substance, with the raw rate (OLRC editorial changes included) reported beside it | 5 Dry-run |
+| M6b | Held-out check and coverage | On laws not used for tuning, substantive false-clean under 1% with the raw rate reported; repealed sections, chapter tables of sections and new sections predicted; confident-answer share meets the target Espen sets | 11 Testing |
 | M8 | Comparative print | HTML and DOCX render; stripping markup recovers both before and after text exactly | 6 Comparative print |
+| M7 | Word ingestion | Five real drafts parse, with tracked changes and manual numbering handled | 3 Draft parser |
 | M9 | Ripple graph | Interactive HTML for 50 amended sections loads in seconds; edges match the refs table | 7 Ripple graph |
 | M10 | Flags and ledger | Authorization ledger CSV and flag report produced for the American Passenger Rail Network Act | 8 Flags |
 | M11 | Model fallback | Residue handled by propose-then-verify; log, cache and budget caps working | 9 Model fallback |
