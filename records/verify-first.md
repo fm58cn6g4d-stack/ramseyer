@@ -30,3 +30,11 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | Ref hrefs | `/us/pl/{congress}/{law}/[dX/][tX/]s{sec}/...`, `/us/stat/{vol}/{page}`, `/us/act/{date}/ch{n}/s{sec}`, `/us/usc/...`. Footnote markers are `<ref class="footnoteRef">` with no href |
 | Soft hyphens | The XML contains U+00AD ("Psycho\xadtropic"). `text_plain` strips them; the stored section XML keeps them |
 | XHTML edition | Independent per-title listing via `<!-- itempath:... -->` comments: "Sec. N", "Secs. 3, 4", "[Sec. 2" for repealed, "130g_2" for duplicates. One section can span two documents (18a § 2). Three files contain GPO locator escapes (`\xffAE1`) that are not valid UTF-8 |
+
+## M2 (checked 2026-10-28)
+
+| Item | Finding |
+| --- | --- |
+| Section pages on uscode.house.gov | The site is still in its temporary format. A section lives at `https://uscode.house.gov/us/usc/{release point}/t{title}/s{section}/`, e.g. `/us/usc/119-134/t4/s1/`; the unversioned `/us/usc/t4/s1/` is the current one. The section number uses an ASCII hyphen (`s1395w-22`); an en dash returns 404. Multi-section stubs live at their first number (`/t2/s3/` shows "§§3, 4"). The old `view.xhtml?req=granuleid:...` links return 404 |
+| Page structure | `<span class="lawsInEffect">Text contains those laws in effect through Public Law 119-134 (October 20, 2026).</span>`, `<h3 class="section-head">`, body in `statutory-body*` elements, then `<p class="source-credit">`, then notes. The page inserts U+2060 (word joiner) before em dashes |
+| MCP Python SDK | Version 2.3.0: `FastMCP` is now `mcp.server.mcpserver.MCPServer`, and `CallToolResult.structured_content` is snake_case. Tools run in a worker thread, so the read-only SQLite connection uses `check_same_thread=False` |

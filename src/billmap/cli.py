@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from urllib.parse import urljoin
 
+import json
+
 import typer
 
 from billmap import config
@@ -50,6 +52,27 @@ def sync(force: bool = typer.Option(False, help="Rebuild the release point even 
         typer.echo(f"dropping release point {label} (keep_prior={cfg.keep_prior})")
         ix.drop_release_point(old_id)
     typer.echo(f"indexed {rp.label} into {cfg.index_path}")
+
+
+@app.command("serve-mcp")
+def serve_mcp() -> None:
+    """Start the statute MCP server on stdio."""
+    from billmap.mcp_server.server import main as serve
+    serve()
+
+
+@app.command()
+def statute(tool: str = typer.Argument(..., help="resolve_cite, get_section, cited_by, search, ..."),
+            args: list[str] = typer.Argument(None, help="key=value pairs, e.g. citation='4 USC 1'")) -> None:
+    """Run a statute-server tool from the command line and print its JSON result."""
+    from billmap.statute import TOOLS, StatuteService, call
+    if tool not in TOOLS:
+        raise typer.BadParameter(f"tool must be one of {', '.join(TOOLS)}")
+    kwargs = {}
+    for a in args or []:
+        k, _, v = a.partition("=")
+        kwargs[k] = {"true": True, "false": False}.get(v.lower(), int(v) if v.isdigit() else v)
+    typer.echo(json.dumps(call(StatuteService(), tool, **kwargs), indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

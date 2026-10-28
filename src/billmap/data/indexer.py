@@ -359,6 +359,9 @@ class Indexer:
                 if n in ("note", "notes"):
                     context = "note"
                     break
+                if n == "toc":
+                    context = "toc"
+                    break
                 if a in node_of:
                     break
             href = (ref.get("href") or "").strip()

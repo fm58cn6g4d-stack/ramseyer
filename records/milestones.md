@@ -64,3 +64,40 @@ appears in the XHTML but nowhere in the title 19 XML**, and 21 U.S.C. 812(e) lac
 Others are XML artifacts: "Medicare+ÐChoice" (13 sections), a double-escaped `&quot;` in 10 U.S.C. 6284,
 and footnote markers present in only one edition. The index keeps the XML as its single source of text
 (rule 3) and flags these sections; it never substitutes XHTML text.
+
+## M2: Free statute server (2026-10-28) — gate PASS
+
+**Gate** (from `docs/00-build-plan.md` and `docs/03-free-statute-server.md`): resolve_cite, get_section,
+cited_by and search work over MCP and match uscode.house.gov on 50 spot checks; cited_by equals the
+inverted refs table.
+
+**Built:** `billmap.statute.StatuteService`, with 11 tools: resolve_cite, get_section (operative, plain or
+xml; as_of), get_pincite, cross_refs, cited_by, definitions, neighbors, search (FTS5 BM25), changes,
+coverage, act_to_code. Thin wrappers expose them as an MCP server over stdio (`billmap serve-mcp`,
+MCP SDK 2.3) and as a CLI (`billmap statute <tool> k=v`). Sample client configs are in `README.md`.
+
+**Run:** `.venv/bin/python scripts/m2_gate.py` (52 s with a cold page cache); output in `var/m2_gate.md`.
+
+| Check | Result | Measured |
+| --- | --- | --- |
+| Tools work over MCP (stdio client spawns `billmap serve-mcp`) | PASS | 11 tools listed; 7 calls, each with release point 119-134; the deliberate bad cite returns a structured not_found |
+| 50 spot checks against uscode.house.gov (seed 20261028) | PASS | Headings 50/50 equal; text 25 equal, 25 rendering-only, 0 content; every page stamped "through Public Law 119-134" |
+| cited_by equals the inverted refs table | PASS | 600 comparisons over 300 cited sections (text only, and with notes); 0 mismatches |
+| Every response carries the release point; only documented error codes | PASS | 14 calls; codes seen: ambiguous, not_found, out_of_range |
+
+All 25 rendering-only differences are the same thing: the website puts a word joiner (U+2060) before
+every em dash.
+
+Behaviors worth knowing:
+- **Ranges:** a cite inside a published range resolves to the range unit and says so ("2 U.S.C. 1002"
+  matches "within range /us/usc/t2/s1001...1004", status repealed).
+- **Never a guess:** a duplicate section number returns `ambiguous` with both node ids, never one of them.
+  A missing subunit says the section exists but the unit does not.
+- **Edition warning:** get_section adds a `warning` when the section is among the 81 that the XML and
+  XHTML editions disagree on in content (M1 follow-up).
+- **Ref context:** refs inside tables of contents are now `context='toc'` (they were miscounted as text),
+  so cited_by returns citing sections, not ToC lines.
+- **act_to_code:** uses source credits only (layer 1) and says it is unvalidated until M5.
+
+Unit tests: 21 passed, offline. They include a synthetic two-release-point index for `changes`,
+ranges, ambiguity, definitions scope and act_to_code.

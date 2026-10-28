@@ -38,7 +38,8 @@ class Index:
     def __init__(self, db_path: Path, release_point: str | None = None):
         if not db_path.exists():
             raise FileNotFoundError(f"no index at {db_path}; run `billmap sync`")
-        self.db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        # Read-only; the MCP server calls tools from a worker thread.
+        self.db = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, check_same_thread=False)
         if release_point is None:
             row = self.db.execute("SELECT id, label FROM release_points WHERE complete=1 "
                                   "ORDER BY id DESC LIMIT 1").fetchone()

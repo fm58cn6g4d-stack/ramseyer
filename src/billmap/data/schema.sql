@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS refs (
     dst_id      INTEGER REFERENCES nodes(id),            -- NULL when unresolved; see reason
     dst_raw     TEXT NOT NULL,                           -- href as published
     kind        TEXT NOT NULL,             -- usc, pl, act, stat, other
-    context     TEXT NOT NULL,             -- text, note, credit
+    context     TEXT NOT NULL,             -- text, note, credit, toc
     anchor_text TEXT,
     reason      TEXT NOT NULL              -- resolved | <why not>
 );

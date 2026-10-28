@@ -23,6 +23,7 @@ uv venv -p python3.11 .venv && uv pip install -p .venv/bin/python -e '.[dev]'
 .venv/bin/python scripts/probe_sources.py     # M0 gate; writes var/probe.md
 .venv/bin/billmap sync                        # index the current release point (~3 min, 1.6 GB)
 .venv/bin/python scripts/m1_gate.py           # M1 gate; writes var/m1_gate.md
+.venv/bin/python scripts/m2_gate.py           # M2 gate; writes var/m2_gate.md
 ```
 
 Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`.
@@ -33,7 +34,8 @@ Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`
 | --- | --- |
 | M0 | `scripts/probe_sources.py` -> `var/probe.md`; result recorded in `records/milestones.md` |
 | M1 | `billmap sync` builds `var/index/billmap.sqlite`; `scripts/m1_gate.py` -> `var/m1_gate.md` |
-| M2+ | added as each milestone is built; listed in `records/milestones.md` |
+| M2 | `scripts/m2_gate.py` -> `var/m2_gate.md` |
+| M3+ | added as each milestone is built; listed in `records/milestones.md` |
 
 ## Commits and files
 
