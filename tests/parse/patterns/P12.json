@@ -1,0 +1,144 @@
+{
+ "pattern": "P12",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtD.sec535.b.1.A.i",
+   "lines": [
+    "SEC. 535. SELECTIVE SERVICE SYSTEM: AUTOMATIC REGISTRATION.",
+    "(b) Technical and conforming amendments.—The Military Selective Service Act is further amended—",
+    "(1) in section 4 (50 U.S.C. 3803)—",
+    "(A) in subsection (a)—",
+    "(i) by striking “required to register” each place it appears and inserting “registered”;"
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVIII.subtC.sec822",
+   "lines": [
+    "SEC. 822. MODIFICATIONS TO REQUIREMENTS FOR THE PRESIDENT OF THE DEFENSE ACQUISITION UNIVERSITY.",
+    "Section 1746(e)(3) of title 10, United States Code, is amended by striking “term” each place it appears and inserting “tenure”."
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleX.subtC.sec1014.1.B",
+   "lines": [
+    "SEC. 1014. OVERHAUL, REPAIR, AND MAINTENANCE OF VESSELS IN THE COMMONWEALTH OF THE NORTHERN MARIANA ISLANDS.",
+    "Section 8680 of title 10, United States Code, is amended—",
+    "(1) in subsection (a)—",
+    "(B) by striking “the United States or Guam” each place it appears and inserting “the United States, Guam, or the Commonwealth of the Northern Mariana Islands”; and"
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtD.sec1233.a.2.A",
+   "lines": [
+    "SEC. 1233. MODIFICATION OF CERTAIN TEMPORARY AUTHORIZATIONS RELATED TO MUNITIONS REPLACEMENT.",
+    "(a) In general.—Section 1244 of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 136 Stat. 2844) is amended—",
+    "(2) in subsection (a)—",
+    "(A) in paragraph (1), by striking “or Israel” each place it appears and inserting “Israel, or the United States defense industrial base”; and"
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtD.sec1233.a.2.B",
+   "lines": [
+    "SEC. 1233. MODIFICATION OF CERTAIN TEMPORARY AUTHORIZATIONS RELATED TO MUNITIONS REPLACEMENT.",
+    "(a) In general.—Section 1244 of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 136 Stat. 2844) is amended—",
+    "(2) in subsection (a)—",
+    "(B) in paragraph (5), by striking “or Israel” each place it appears and inserting “Israel, or the United States defense industrial base”."
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtF.sec1251.b.2",
+   "lines": [
+    "SEC. 1251. EXTENSION OF PACIFIC DETERRENCE INITIATIVE.",
+    "(b) Reports and briefings.—Subsection (d) of such section is amended—",
+    "(2) in paragraph (2), by striking “fiscal years 2025 and 2026” each place it appears and inserting “fiscal years 2027 and 2028”."
+   ],
+   "expect": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.A",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(A) by striking “subsections (b) and (c)” and inserting “subsection (b)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.B",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(B) by striking “through 2025” and inserting “through 2026”;"
+   ],
+   "must_not": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.5",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(5) in subsection (c), as so redesignated, by striking “subsection (c)(2)” and inserting “subsection (b)(2)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a.2",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—",
+    "(2) in paragraph (2), by striking “below 466” and inserting “below the applicable level specified in paragraph (1)”."
+   ],
+   "must_not": {
+    "op": "STRIKE_INSERT",
+    "occurrence": "each"
+   }
+  }
+ ]
+}

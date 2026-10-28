@@ -1,0 +1,119 @@
+{
+ "pattern": "P1",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—"
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec143",
+   "lines": [
+    "SEC. 143. EXTENSION OF LIMITATIONS AND MINIMUM INVENTORY REQUIREMENT RELATING TO RQ–4 AIRCRAFT.",
+    "Section 9062(m)(1) of title 10, United States Code, is amended, in the matter preceding subparagraph (A), by striking “September 30, 2029” and inserting “September 30, 2030”."
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec144",
+   "lines": [
+    "SEC. 144. MODIFICATION TO ANNUAL REPORT ON AIR FORCE TACTICAL FIGHTER AIRCRAFT FORCE STRUCTURE.",
+    "Section 9062a(a) of title 10, United States Code, is amended—"
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec212",
+   "lines": [
+    "SEC. 212. MODIFICATION TO MECHANISMS TO PROVIDE FUNDS TO DEFENSE LABORATORIES AND OTHER ENTITIES FOR RESEARCH AND DEVELOPMENT OF TECHNOLOGIES FOR MILITARY MISSIONS.",
+    "Section 4123 of title 10, United States Code, is amended—"
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec214.a",
+   "lines": [
+    "SEC. 214. MODIFICATION TO AUTHORITY FOR ACQUISITION, CONSTRUCTION, OR FURNISHING OF TEST FACILITIES AND EQUIPMENT.",
+    "(a) Jointly funded projects.—Section 4174 of title 10, United States Code, is amended—"
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtD.sec251",
+   "lines": [
+    "SEC. 251. MODIFICATION OF ENERGETIC MATERIALS STRATEGIC PLAN AND INVESTMENT STRATEGY OF JOINT ENERGETICS TRANSITION OFFICE.",
+    "Section 148(c)(1) of title 10, United States Code, is amended—"
+   ],
+   "expect": {
+    "target_kind": "usc"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "sec3.2",
+   "lines": [
+    "SEC. 3. DEFINITIONS.",
+    "In this Act:",
+    "(2) The term “congressional defense committees” has the meaning given that term in section 101(a)(16) of title 10, United States Code."
+   ],
+   "must_not": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtB.sec112.a",
+   "lines": [
+    "SEC. 112. MULTIYEAR PROCUREMENT AUTHORITY FOR UH–60 BLACKHAWK AIRCRAFT.",
+    "(a) Authority for multiyear procurement.—Subject to section 3501 of title 10, United States Code, the Secretary of the Army may enter into one or more multiyear contracts, beginning with the fiscal year 2027 program year, for the procurement of UH–60 Blackhawk aircraft."
+   ],
+   "must_not": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec126.c",
+   "lines": [
+    "SEC. 126. AUTHORITY FOR ADVANCE PROCUREMENT OF CERTAIN COMPONENTS TO SUPPORT CONTINUOUS PRODUCTION OF VIRGINIA-CLASS SUBMARINES.",
+    "(c) Budget requests.—In the budget justification materials submitted in support of the budget of the Department of Defense (as submitted with the budget of the President under section 1105(a) of title 31, United States Code) for fiscal year 2027 and each fiscal year thereafter, the Secretary of the Navy shall include a separate budget display identifying the amounts requested pursuant to this section set forth by the specific program, project, or activity under the Virginia-class submarine program for which such funds are requested."
+   ],
+   "must_not": {
+    "target_kind": "usc"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec127.b",
+   "lines": [
+    "SEC. 127. PROCUREMENT AUTHORITIES FOR MEDIUM LANDING SHIPS.",
+    "(b) Certification required.—A contract may not be entered into under subsection (a) unless the Secretary of the Navy certifies to the congressional defense committees, in writing, not later than 30 days before entry into the contract, each of the following, which shall be prepared by the milestone decision authority (as defined in section 4251(e) of title 10, United States Code) for the Medium Landing Ship program:"
+   ],
+   "must_not": {
+    "target_kind": "usc"
+   }
+  }
+ ]
+}

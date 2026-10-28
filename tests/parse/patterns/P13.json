@@ -1,0 +1,137 @@
+{
+ "pattern": "P13",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleVIII.subtB.sec812.a.4.A.i",
+   "lines": [
+    "SEC. 812. MODIFICATIONS TO CURRENT DEFENSE ACQUISITION REQUIREMENTS.",
+    "(a) Modifications to title 10.—Title 10, United States Code, is amended—",
+    "(4) in section 3069—",
+    "(A) in subsection (a)—",
+    "(i) by striking “the head of an agency” and all that follows through “findings:” and inserting “a contracting officer making the acquisition may acquire a higher quantity of the end item than the quantity specified for the end item in a law providing for the funding of that acquisition if that contracting officer determines in writing that:”;"
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVIII.subtB.sec812.a.4.B",
+   "lines": [
+    "SEC. 812. MODIFICATIONS TO CURRENT DEFENSE ACQUISITION REQUIREMENTS.",
+    "(a) Modifications to title 10.—Title 10, United States Code, is amended—",
+    "(4) in section 3069—",
+    "(B) in subsection (b), by striking “The regulations shall” and all that follows through “3205 of this title.”;"
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIX.subtB.sec912.d.1",
+   "lines": [
+    "SEC. 912. JOINT INTERAGENCY TASK FORCE 401.",
+    "(d) Counter unmanned aerial system threat library.—Section 353 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 130i note) is amended—",
+    "(1) in subsection (a), by striking “Not later” and all that follows through “Office,” and inserting “Not later than June 30, 2027, the Director of the Joint Interagency Task Force 401”; and"
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIX.subtB.sec912.d.2.A",
+   "lines": [
+    "SEC. 912. JOINT INTERAGENCY TASK FORCE 401.",
+    "(d) Counter unmanned aerial system threat library.—Section 353 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 130i note) is amended—",
+    "(2) in subsection (c)—",
+    "(A) by striking “The Secretary” and all that follows through “Office,” and inserting “The Director of the Joint Interagency Task Force 401”; and"
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtA.sec1201.a.2.F",
+   "lines": [
+    "SEC. 1201. MODIFICATION OF AUTHORITIES.",
+    "(a) Training with friendly foreign countries: payment of training and exercise expenses.—",
+    "(2) Authority To pay training and exercise expenses.—Subsection (b) of such section is amended—",
+    "(F) in paragraph (3), as so redesignated, by striking “training described in” and all that follows through “paragraph (4)” and inserting “training and exercises conducted pursuant to this section”."
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXVIII.subtA.sec1806.b.3.A.i",
+   "lines": [
+    "SEC. 1806. MATTERS RELATED TO COST ACCOUNTING STANDARDS.",
+    "(b) Amendments to cost accounting standards board.—",
+    "(3) Duties.—Subsection (c) of such section 1501 is amended—",
+    "(A) in paragraph (2)—",
+    "(i) by striking “within one year” and all that follows through “conform such standards” and inserting the following: “not later than 180 days after the date of enactment of this paragraph, and biennially thereafter, review any cost accounting standards established under section 1502 of this title and eliminate or conform such standards”; and"
+   ],
+   "expect": {
+    "op": "STRIKE_THROUGH"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.A",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(A) by striking “subsections (b) and (c)” and inserting “subsection (b)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.B",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(B) by striking “through 2025” and inserting “through 2026”;"
+   ],
+   "must_not": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.5",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(5) in subsection (c), as so redesignated, by striking “subsection (c)(2)” and inserting “subsection (b)(2)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE_THROUGH"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a.2",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—",
+    "(2) in paragraph (2), by striking “below 466” and inserting “below the applicable level specified in paragraph (1)”."
+   ],
+   "must_not": {
+    "op": "STRIKE_THROUGH"
+   }
+  }
+ ]
+}

@@ -1,0 +1,137 @@
+{
+ "pattern": "P8",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.4",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(4) by redesignating subsections (c) and (d) as subsections (b) and (c), respectively;"
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.b.2",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(b) Retention within aircraft inventory.—Such section is further amended—",
+    "(2) by redesignating paragraph (3) as paragraph (4); and"
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec142.b.3",
+   "lines": [
+    "SEC. 142. MODIFICATION OF PROHIBITION ON RETIREMENT OF F–15E AIRCRAFT.",
+    "(b) Repeal.—Section 150 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1812) is amended—",
+    "(3) by redesignating subsections (b) and (c) as subsections (a) and (b), respectively."
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtE.sec161.b.1.B",
+   "lines": [
+    "SEC. 161. REQUIREMENTS RELATING TO EXECUTIVE AIRLIFT AIRCRAFT.",
+    "(b) Responsibilities.—",
+    "(1) In general.—Section 120(b) of title 10, United States Code, is amended—",
+    "(B) by redesignating paragraph (3) as paragraph (4); and"
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtE.sec162.2",
+   "lines": [
+    "SEC. 162. AMENDMENTS TO PROHIBITION ON OPERATION, PROCUREMENT, AND CONTRACTING RELATED TO FOREIGN-MADE LIGHT DETECTION AND RANGING.",
+    "Section 164 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 4651 note prec.) is amended—",
+    "(2) by redesignating subsection (e) as subsection (f);"
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtC.sec241.1",
+   "lines": [
+    "SEC. 241. SUPPORT FOR RESEARCH AND DEVELOPMENT OF BIOINDUSTRIAL MANUFACTURING PROCESSES.",
+    "Section 215 of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 10 U.S.C. 4841 note) is amended—",
+    "(1) by redesignating subsections (d) through (f) as subsections (e) through (g), respectively; and"
+   ],
+   "expect": {
+    "op": "REDESIGNATE"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.5",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(5) in subsection (c), as so redesignated, by striking “subsection (c)(2)” and inserting “subsection (b)(2)”; and"
+   ],
+   "must_not": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtE.sec162.4",
+   "lines": [
+    "SEC. 162. AMENDMENTS TO PROHIBITION ON OPERATION, PROCUREMENT, AND CONTRACTING RELATED TO FOREIGN-MADE LIGHT DETECTION AND RANGING.",
+    "Section 164 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 4651 note prec.) is amended—",
+    "(4) in subsection (f) (as so redesignated), by amending paragraph (3) to read as follows:",
+    "“(3) The term ‘covered LiDAR technology’ means LiDAR technology and any related services and equipment—",
+    "“(A) manufactured by a covered LiDAR company;",
+    "“(B) uses operating software developed in a covered foreign country or by an entity domiciled in a covered foreign country; or",
+    "“(C) uses network connectivity or data storage located in a covered foreign country or administered by an entity domiciled in a covered foreign country.”."
+   ],
+   "must_not": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtB.sec315.4.A.ii.III",
+   "lines": [
+    "SEC. 315. MODIFICATION OF REQUIREMENTS RELATING TO REPLACEMENT OF FLUORINATED AQUEOUS FILM-FORMING FOAM.",
+    "Section 322 of the National Defense Authorization Act for Fiscal Year 2020 (Public Law 116–92; 10 U.S.C. 2661 note prec.) is amended—",
+    "(4) in subsection (e)—",
+    "(A) in paragraph (1)—",
+    "(ii) in subparagraph (B)—",
+    "(III) in clause (iii), as so redesignated, by striking “and does not require revision”; and"
+   ],
+   "must_not": {
+    "op": "REDESIGNATE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtD.sec361.2.C",
+   "lines": [
+    "SEC. 361. REPORTING REQUIREMENTS FOR OUT-YEAR UNCONSTRAINED TOTAL MUNITIONS REQUIREMENTS AND OUT-YEAR INVENTORY NUMBERS.",
+    "Section 222c of title 10, United States Code, is amended—",
+    "(2) in subsection (e)—",
+    "(C) in paragraph (2), as so redesignated—"
+   ],
+   "must_not": {
+    "op": "REDESIGNATE"
+   }
+  }
+ ]
+}

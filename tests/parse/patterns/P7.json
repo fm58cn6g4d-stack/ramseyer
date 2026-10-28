@@ -1,0 +1,159 @@
+{
+ "pattern": "P7",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec121",
+   "lines": [
+    "SEC. 121. MODIFICATION TO REQUIREMENTS FOR RECAPITALIZATION OF TACTICAL FIGHTER AIRCRAFT OF THE NAVY RESERVE.",
+    "Section 127 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1806) is amended by striking subsection (c) and inserting the following:"
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtC.sec523.1.B",
+   "lines": [
+    "SEC. 523. HONORARY PROMOTIONS ON THE INITIATIVE OF THE DEPARTMENT OF DEFENSE.",
+    "Section 1563a of title 10, United States Code, is amended—",
+    "(1) in subsection (a)—",
+    "(B) by striking paragraph (2) and inserting the following:",
+    "“(2) The honorary grade to which a member described in paragraph (1) is promoted shall be commensurate with such member’s contributions to the armed forces or the national defense.",
+    "“(3) The Secretary of a military department is not authorized to make an honorary promotion under paragraph (1) solely on the basis that a member described in paragraph (1) was recommended for such promotion prior to separating from the armed forces.",
+    "“(4)",
+    "“(A) The Secretary of a military department is only authorized to make an honorary promotion under paragraph (1) upon receipt of a favorable recommendation by a board of at least three independent officers convened specifically for the purpose of reviewing the proposed honorary promotion.",
+    "“(B) For purposes of this paragraph, an officer is an independent officer if—",
+    "“(i) the officer has no relationship with the former member or retired member of the armed forces whose proposed honorary promotion is the subject of review by the board on which such officer will serve under this paragraph; and",
+    "“(ii) the officer has no personal interest in the proposed honorary promotion.”;"
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVI.subtC.sec621.a.1.A",
+   "lines": [
+    "SEC. 621. MODIFICATIONS TO CALCULATION OF BASIC ALLOWANCE FOR SUBSISTENCE FOR ENLISTED MEMBERS.",
+    "(a) Modification.—",
+    "(1) In general.—Section 402(b) of title 37, United States Code, is amended—",
+    "(A) by striking paragraph (1) and inserting the following new paragraph:",
+    "“(1)",
+    "“(A) The monthly rate of basic allowance for subsistence to be in effect for an enlisted member for a year (beginning on January 1 of that year) shall be equal to the monthly cost of a liberal food plan for a male in the United States who is between 19 and 50 years of age, as determined by the Secretary of Agriculture on October 1 of the preceding year.",
+    "“(B) With respect to a member who is subject to monthly deduction from pay for meals under section 1011(b) of this title, the amount payable under subparagraph (A) shall be reduced by the amount of such deduction from pay, in accordance with policies prescribed by the Secretary of Defense.",
+    "“(C) The monthly rate of basic allowance for subsistence to be in effect for an enlisted member for a year under subparagraph (A) may not decrease relative to the rate in effect for the preceding year.”; and"
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVI.subtG.sec663.3",
+   "lines": [
+    "SEC. 663. EXPANSION OF PILOT PROGRAM TO INCREASE ACCESS TO FOOD ON MILITARY INSTALLATIONS.",
+    "Section 654 of the Servicemember Quality of Life Improvement and National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 1060a note) is amended—",
+    "(3) by striking subsection (d) and inserting the following new subsection (d):",
+    "“(d) Reporting.—",
+    "“(1) Progress reports.—At the end of each calendar quarter until the pilot program terminates, the Secretary of a military department shall submit to the Committees on Armed Services of the Senate and House of Representatives a progress report regarding implementation of the pilot program.",
+    "“(2) Final report.—Not later than 90 days after the pilot program terminates, the Secretary of a military department shall submit to the Committees on Armed Services of the Senate and House of Representatives a final report regarding the pilot program. Such report shall include the following elements:",
+    "“(A) Lessons learned from the pilot program.",
+    "“(B) The recommendation of the Secretary whether to expand or make permanent the pilot program.",
+    "“(C) If the Secretary recommends expansion, the military installations covered by such recommended expansion.",
+    "“(D) Limitations to the operation or expansion of the pilot program.",
+    "“(E) Any information the Secretary determines appropriate.”."
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleX.subtA.sec1002.a.2.B",
+   "lines": [
+    "SEC. 1002. CONSOLIDATION OF REPORTING REQUIREMENTS RELATING TO DEPARTMENT OF DEFENSE FINANCIAL IMPROVEMENT AND AUDIT REMEDIATION PLAN.",
+    "(a) Financial improvement and audit remediation plan.—Section 240b of title 10, United States Code, is amended—",
+    "(2) in subsection (b)—",
+    "(B) in paragraph (2), by striking subparagraph (B) and inserting the following new subparagraph (B):",
+    "“(B) The January 31 briefing under subparagraph (A) shall include a ranking of all of the military departments and Defense Agencies in order of how advanced each is in achieving auditable financial statements, as required by law.”;"
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleX.subtF.sec1063.2",
+   "lines": [
+    "SEC. 1063. EXTENSION OF MOBILITY CAPABILITY REQUIREMENTS STUDY.",
+    "Section 1068 of the Servicemember Quality of Life Improvement and National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 2067) is amended—",
+    "(2) by striking subsection (c) and inserting the following:",
+    "“(c) Report and briefing.—Not later than January 15, 2027, the Commander of the United States Transportation Command, in coordination with the Chairman of the Joint Chiefs of Staff, the Secretaries of the military departments, and the commanders of the combatant commands, shall—",
+    "“(1) submit to the congressional defense committees a final report on the study required under subsection (a); and",
+    "“(2) provide to such committees a briefing on the report.”."
+   ],
+   "expect": {
+    "op": "REPLACE_UNIT"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.A",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(A) by striking “subsections (b) and (c)” and inserting “subsection (b)”; and"
+   ],
+   "must_not": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.B",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(B) by striking “through 2025” and inserting “through 2026”;"
+   ],
+   "must_not": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.5",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(5) in subsection (c), as so redesignated, by striking “subsection (c)(2)” and inserting “subsection (b)(2)”; and"
+   ],
+   "must_not": {
+    "op": "REPLACE_UNIT"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a.1",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—",
+    "(1) in paragraph (1), by striking “a total aircraft inventory of air refueling tanker aircraft of not less than 466 aircraft.” and inserting\n“a total aircraft inventory of air refueling tanker aircraft—",
+    "“(A) of not less than 466 aircraft during the period ending on September 30, 2026;",
+    "“(B) of not less than 478 aircraft during the period beginning on October 1, 2026, and ending on September 30, 2027;",
+    "“(C) of not less than 490 aircraft during the period beginning on October 1, 2027, and ending on September 30, 2028; and",
+    "“(D) of not less than 502 aircraft beginning on October 1, 2028.”; and"
+   ],
+   "must_not": {
+    "op": "REPLACE_UNIT"
+   }
+  }
+ ]
+}

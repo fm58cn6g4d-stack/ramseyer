@@ -1,0 +1,141 @@
+{
+ "pattern": "P4",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtB.sec111",
+   "lines": [
+    "SEC. 111. STRATEGY FOR ARMY TACTICAL WHEELED VEHICLE PROGRAM.",
+    "Section 112(a) of the National Defense Authorization Act for Fiscal Year 2024 (Public Law 118–31; 10 U.S.C. 7013 note) is amended by inserting “2027,” after “fiscal years 2025,”."
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec212.3",
+   "lines": [
+    "SEC. 212. MODIFICATION TO MECHANISMS TO PROVIDE FUNDS TO DEFENSE LABORATORIES AND OTHER ENTITIES FOR RESEARCH AND DEVELOPMENT OF TECHNOLOGIES FOR MILITARY MISSIONS.",
+    "Section 4123 of title 10, United States Code, is amended—",
+    "(3) in subsection (a)(3), by inserting “or test organizations” after “laboratories”; and"
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec215",
+   "lines": [
+    "SEC. 215. EXTENSION OF LIMITATION ON AVAILABILITY OF FUNDS FOR FUNDAMENTAL RESEARCH COLLABORATION WITH CERTAIN ACADEMIC INSTITUTIONS.",
+    "Section 238(a) of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1842) is amended by inserting “or fiscal year 2026” after “fiscal year 2025”."
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtB.sec315.4.A.ii.I",
+   "lines": [
+    "SEC. 315. MODIFICATION OF REQUIREMENTS RELATING TO REPLACEMENT OF FLUORINATED AQUEOUS FILM-FORMING FOAM.",
+    "Section 322 of the National Defense Authorization Act for Fiscal Year 2020 (Public Law 116–92; 10 U.S.C. 2661 note prec.) is amended—",
+    "(4) in subsection (e)—",
+    "(A) in paragraph (1)—",
+    "(ii) in subparagraph (B)—",
+    "(I) in clause (ii), by inserting “or to maintain military readiness” after “safety”;"
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtC.sec332",
+   "lines": [
+    "SEC. 332. AUTHORITY TO PROVIDE SUPPLIES INCIDENTAL TO SUPPORT AND SERVICES FOR ELIGIBLE NON-DEPARTMENT OF DEFENSE ORGANIZATIONS.",
+    "Section 2012(a) of title 10, United States Code, is amended by inserting “, including supplies incidental to such support and services,” after “and services”."
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtD.sec361.1.A",
+   "lines": [
+    "SEC. 361. REPORTING REQUIREMENTS FOR OUT-YEAR UNCONSTRAINED TOTAL MUNITIONS REQUIREMENTS AND OUT-YEAR INVENTORY NUMBERS.",
+    "Section 222c of title 10, United States Code, is amended—",
+    "(1) in subsection (c)—",
+    "(A) in paragraph (1), by inserting “and including OPLANs for operations involving the People’s Republic of China, the Russian Federation, the Democratic People’s Republic of North Korea, and the Islamic Republic of Iran” after “(OPLAN)”; and"
+   ],
+   "expect": {
+    "op": "INSERT_AFTER"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.b.3",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(b) Retention within aircraft inventory.—Such section is further amended—",
+    "(3) by inserting after paragraph (2) the following new paragraph:",
+    "“(3) In the case of a KC–135 aircraft that is replaced in the aircraft inventory by a KC–46 aircraft, the Secretary of the Air Force may reassign the KC–135 aircraft to any Air Refueling Wing that has the capacity to expand its aircraft inventory to include such reassigned aircraft. In determining whether an Air Refueling Wing has the capacity to so expand its inventory, the Secretary shall consider, among other things, the capacity of the Air Refueling Wing to man the additional aircraft and support pilot training requirements for the additional aircraft.”."
+   ],
+   "must_not": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtE.sec161.b.1.C",
+   "lines": [
+    "SEC. 161. REQUIREMENTS RELATING TO EXECUTIVE AIRLIFT AIRCRAFT.",
+    "(b) Responsibilities.—",
+    "(1) In general.—Section 120(b) of title 10, United States Code, is amended—",
+    "(C) by inserting after paragraph (1) the following new paragraphs:",
+    "“(2) The Secretary of Defense shall establish standards for prioritizing access to executive aircraft controlled by the Secretaries of the military departments among authorized users of such aircraft within the Federal Government.",
+    "“(3) The Secretary of Defense shall assign a career appointee (as that term is defined in section 3132(a) of title 5) in the Senior Executive Service of the Department of Defense to coordinate the efficient tasking of executive aircraft controlled by the Secretaries of the military departments and compliance with rules, regulations, policies, and guidance relating to such aircraft, including the standards established under paragraph (2). The career appointee shall, as determined by the Secretary of Defense, have knowledge and experience relating to executive aircraft, including familiarity with the executive aircraft fleets controlled by the Secretaries of the military departments and procedures for the prioritization of executive aircraft users.”."
+   ],
+   "must_not": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtE.sec162.3",
+   "lines": [
+    "SEC. 162. AMENDMENTS TO PROHIBITION ON OPERATION, PROCUREMENT, AND CONTRACTING RELATED TO FOREIGN-MADE LIGHT DETECTION AND RANGING.",
+    "Section 164 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 10 U.S.C. 4651 note prec.) is amended—",
+    "(3) by inserting after subsection (d) the following new subsection:",
+    "“(e) Mitigation of risk of use of covered LiDAR technology.—",
+    "“(1) Strategy required.—The Secretary of Defense shall develop a strategy to mitigate the risk to the Department of Defense of the use of covered LiDAR technology by defense contractors and subcontractors (at any tier).",
+    "“(2) Elements.—In developing the strategy required by paragraph (1), the Secretary shall—",
+    "“(A) publish a list of covered LiDAR companies in the Federal Register;",
+    "“(B) conduct an assessment of the potential risks to the Department associated with the use of covered LiDAR technology by defense contractors, including an assessment of the severity and likelihood of occurrence of each such risk and a prioritization of such risks; and",
+    "“(C) solicit input from defense contractors and subcontractors (at any tier) to identify effective approaches to reducing or eliminating use of covered LiDAR technology by such contractors and subcontractors.",
+    "“(3) Implementation.—Not later than June 1, 2027, the Secretary shall implement the strategy required by paragraph (1). Such strategy shall actively monitor risk mitigation measures related to the use of covered LiDAR technology by defense contractors based on the assessment conducted and the input received under paragraph (2).”; and"
+   ],
+   "must_not": {
+    "op": "INSERT_AFTER"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtC.sec241.2",
+   "lines": [
+    "SEC. 241. SUPPORT FOR RESEARCH AND DEVELOPMENT OF BIOINDUSTRIAL MANUFACTURING PROCESSES.",
+    "Section 215 of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 10 U.S.C. 4841 note) is amended—",
+    "(2) by inserting after subsection (c) the following new subsection:",
+    "“(d) Funding.—Funds authorized to be appropriated or otherwise made available to the Department of Defense for research, development, test, and evaluation may be used to carry out the activities described in subsection (c), including the design and construction activities described in subsection (c).”."
+   ],
+   "must_not": {
+    "op": "INSERT_AFTER"
+   }
+  }
+ ]
+}

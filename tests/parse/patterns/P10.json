@@ -1,0 +1,132 @@
+{
+ "pattern": "P10",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.1",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(1) in the section heading, by inserting “; recapitalization” after “barriers”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec142.b.1",
+   "lines": [
+    "SEC. 142. MODIFICATION OF PROHIBITION ON RETIREMENT OF F–15E AIRCRAFT.",
+    "(b) Repeal.—Section 150 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1812) is amended—",
+    "(1) in the section heading, by striking “Prohibition on retirement of F–15E aircraft and”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec212.1",
+   "lines": [
+    "SEC. 212. MODIFICATION TO MECHANISMS TO PROVIDE FUNDS TO DEFENSE LABORATORIES AND OTHER ENTITIES FOR RESEARCH AND DEVELOPMENT OF TECHNOLOGIES FOR MILITARY MISSIONS.",
+    "Section 4123 of title 10, United States Code, is amended—",
+    "(1) in the section heading, by inserting “and test organizations” after “defense laboratories”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtA.sec501.b.1.A",
+   "lines": [
+    "SEC. 501. SPACE FORCE GENERAL OFFICER MANAGEMENT.",
+    "(b) Authorized strength of Space Force general officers on active service.—Section 526 of such title is amended—",
+    "(1) in subsection (c)—",
+    "(A) in the subsection heading, by inserting “and of the Space Force” after “components”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtF.sec555.b.1",
+   "lines": [
+    "SEC. 555. MILITARY SERVICE ACADEMY NOMINATIONS.",
+    "(b) United States Naval Academy.—Section 8454 of title 10, United States Code, is amended—",
+    "(1) in the section heading, by striking “number” and inserting “appointment; numbers, territorial distribution”; and"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtI.sec582.b.1",
+   "lines": [
+    "SEC. 582. ENROLLMENT OF CHILDREN OF CERTAIN AMERICAN RED CROSS EMPLOYEES IN SCHOOLS OPERATED BY THE DEPARTMENT OF DEFENSE EDUCATION ACTIVITY.",
+    "(b) Certain domestic schools.—Section 2164(i) of title 10, United States Code, is amended—",
+    "(1) in the subsection heading, by striking “in Puerto Rico” and inserting “in certain areas”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtF.sec559.a.1",
+   "lines": [
+    "SEC. 559. DETAIL OF MEMBERS OF THE SPACE FORCE AS INSTRUCTORS AT AIR FORCE INSTITUTE OF TECHNOLOGY.",
+    "(a) In general.—Section 9414 of title 10, United States Code, is amended—",
+    "(1) by striking the heading and inserting the following new heading:",
+    "“SEC. 9414. UNITED STATES AIR FORCE INSTITUTE OF TECHNOLOGY: DEGREE GRANTING AUTHORITY; FACULTY, REIMBURSEMENT AND TUITION; ACCEPTANCE OF RESEARCH GRANTS.”;"
+   ],
+   "must_not": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVI.subtA.sec601.b.1.B",
+   "lines": [
+    "SEC. 601. CODIFICATION OF APPLICABILITY TO SPACE FORCE OF CERTAIN PAY AND ALLOWANCE AUTHORITIES.",
+    "(b) Basic pay.—",
+    "(1) References to officer grades.—Section 201(a) of such title is amended—",
+    "(B) by striking “and Marine Corps” in the heading of the second column of the table and inserting “Marine Corps, and Space Force”; and"
+   ],
+   "must_not": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVII.subtA.sec701.a.2.A",
+   "lines": [
+    "SEC. 701. REIMBURSEMENT FOR TRAVEL EXPENSES RELATING TO SPECIALTY CARE FOR CERTAIN MEMBERS OF THE ARMED FORCES AND DEPENDENTS.",
+    "(a) In general.—Section 1074i of title 10, United States Code, is amended—",
+    "(2) in subsection (b)—",
+    "(A) by striking the heading and inserting “Special rules for certain members and dependents.—”;"
+   ],
+   "must_not": {
+    "op": "AMEND_HEADING"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVII.subtB.sec712.1",
+   "lines": [
+    "SEC. 712. MILITARY-CIVILIAN MEDICAL SURGE PROGRAM.",
+    "Section 1096 of title 10, United States Code, is amended—",
+    "(1) in the section heading, by adding at the end the following: “; medical surge program”; and"
+   ],
+   "must_not": {
+    "op": "AMEND_HEADING"
+   }
+  }
+ ]
+}

@@ -1,0 +1,119 @@
+{
+ "pattern": "P9",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec122.a",
+   "lines": [
+    "SEC. 122. MODIFICATION TO LIMITATIONS ON NAVY MEDIUM AND LARGE UNMANNED SURFACE VESSELS.",
+    "(a) Repeal.—Section 122 of the William M. (Mac) Thornberry National Defense Authorization Act for Fiscal Year 2021 (Public Law 116–283; 134 Stat. 3425) is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec150.e",
+   "lines": [
+    "SEC. 150. B–21 BOMBER AIRCRAFT PROGRAM ACCOUNTABILITY MATRICES.",
+    "(e) Repeal.—Section 238 of the National Defense Authorization Act for Fiscal Year 2017 (Public Law 114–328; 130 Stat. 2067) is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec213.b",
+   "lines": [
+    "SEC. 213. PROGRAM FOR THE ENHANCEMENT OF THE RESEARCH, DEVELOPMENT, TEST, AND EVALUATION CENTERS OF THE DEPARTMENT OF DEFENSE.",
+    "(b) Conforming repeal.—Section 233 of the National Defense Authorization Act for Fiscal Year 2017 (Public Law 114–328; 10 U.S.C. 4141 note prec.) is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtE.sec542.c",
+   "lines": [
+    "SEC. 542. NUMBER OF JUNIOR RESERVE OFFICERS’ TRAINING CORPS UNITS.",
+    "(c) Repeal of superseded provision.—Section 545 of the Servicemember Quality of Life Improvement and National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159) is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtE.sec544",
+   "lines": [
+    "SEC. 544. REPEAL OF ANNUAL CERTIFICATIONS RELATED TO THE READY, RELEVANT LEARNING INITIATIVE OF THE NAVY.",
+    "Section 545 of the National Defense Authorization Act for Fiscal Year 2018 (Public Law 115–91; 10 U.S.C. 8431 note prec.) is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIX.subtA.sec901.b",
+   "lines": [
+    "SEC. 901. PROHIBITION OF DIVERSITY, EQUITY, AND INCLUSION PROGRAMS OF THE DEPARTMENT OF DEFENSE.",
+    "(b) Repeal of Chief Diversity Officer.—Section 147 of title 10, United States Code, is repealed."
+   ],
+   "expect": {
+    "op": "REPEAL"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleVIII.subtB.sec815.1",
+   "lines": [
+    "SEC. 815. AMENDMENT TO PROCUREMENT OF SERVICES DATA ANALYSIS AND REQUIREMENTS VALIDATION.",
+    "Section 4506 of title 10, United States Code, is amended—",
+    "(1) by repealing subsection (e); and"
+   ],
+   "must_not": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divF.sec6001.c",
+   "lines": [
+    "SEC. 6001. SHORT TITLE; TABLE OF CONTENTS.",
+    "(c) Automatic execution of clerical changes.—Except as otherwise expressly provided, when an amendment made by this division amends an Act to add a section or larger organizational unit to that Act, repeals or transfers a section or larger organizational unit in that Act, or amends the designation or heading of a section or larger organizational unit in that Act, that amendment also shall have the effect of amending any table of contents of that Act to alter the table to conform to the changes made by the amendment."
+   ],
+   "must_not": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divG.titleLXXIII.subtD.sec7331.d",
+   "lines": [
+    "SEC. 7331. PILOT PROGRAM FOR GOVERNANCE AND OVERSIGHT OF SMALL UNCREWED MARITIME SYSTEMS.",
+    "(d) Savings clause.—Nothing in this section may be construed to repeal, replace, or preclude application of chapter 551 of title 46, United States Code."
+   ],
+   "must_not": {
+    "op": "REPEAL"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divH.titleLXXXIV.subtB.sec8411",
+   "lines": [
+    "SEC. 8411. REFERENCES TO SOUTH PACIFIC TUNA ACT OF 1988.",
+    "Except as otherwise expressly provided, wherever in this subtitle an amendment or repeal is expressed in terms of an amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to a section or other provision of the South Pacific Tuna Act of 1988 (16 U.S.C. 973 et seq.)."
+   ],
+   "must_not": {
+    "op": "REPEAL"
+   }
+  }
+ ]
+}

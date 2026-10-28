@@ -26,6 +26,8 @@ uv venv -p python3.11 .venv && uv pip install -p .venv/bin/python -e '.[dev]'
 .venv/bin/python scripts/m2_gate.py           # M2 gate; writes var/m2_gate.md
 .venv/bin/python scripts/build_corpus.py      # M3 corpus + oracle index (~15 min, ~7 GB under var/oracle)
 .venv/bin/python scripts/m3_gate.py           # M3 gate; writes var/m3_gate.md
+.venv/bin/python scripts/m4_gate.py           # M4 gate; writes var/m4_gate.md
+.venv/bin/billmap parse draft.txt --out var/ir.json   # parse a draft (drafts stay under var/)
 ```
 
 Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`.
@@ -38,7 +40,8 @@ Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`
 | M1 | `billmap sync` builds `var/index/billmap.sqlite`; `scripts/m1_gate.py` -> `var/m1_gate.md` |
 | M2 | `scripts/m2_gate.py` -> `var/m2_gate.md` |
 | M3 | `scripts/build_corpus.py` builds `tests/oracle/corpus.json` and `var/oracle/oracle.sqlite`; `scripts/m3_gate.py` -> `var/m3_gate.md`, `tests/oracle/baseline.json` |
-| M4+ | added as each milestone is built; listed in `records/milestones.md` |
+| M4 | `scripts/m4_gate.py` -> `var/m4_gate.md`, residue in `var/m4_residue.jsonl`; pattern fixtures from `scripts/harvest_patterns.py` |
+| M5+ | added as each milestone is built; listed in `records/milestones.md` |
 
 ## Commits and files
 

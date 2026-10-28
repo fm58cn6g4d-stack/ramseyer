@@ -149,3 +149,61 @@ Found along the way:
   indexes and foreign-key checks off during the drop: 2 h+ down to seconds.
 - **Size and time:** the oracle index (22 partial release points) is 7.1 GB under `var/oracle/`, and
   a clean build takes about 15 minutes.
+
+## M4: Parser and IR, pasted text (2026-10-28) — gate PASS
+
+**Gate** (from `docs/00-build-plan.md` and `docs/04-draft-parser.md`): on the corpus, the number of
+instructions in the source equals the number in the IR plus UNPARSED; deterministic coverage is measured
+and logged.
+
+**Built** (`billmap.parse`):
+- **Normalization** keeps an offset map back to the original text.
+- **Segmentation** builds a tree of divisions, titles, sections and enumerated units. Quoted blocks attach
+  to the unit that introduces them. Ambiguous enumerators (`(i)`, `(I)`) are settled by reading ahead to
+  the next enumerator that follows on from an open unit. Table-of-contents headings are kept out of the structure.
+- **Classification** marks units AMENDATORY, FREESTANDING (with a type), STRUCTURAL or TABLE_OF_CONTENTS.
+- **Grammar:** patterns P1–P15 with a scope stack, so that "(1) in subsection (b)—(A) by striking …"
+  inherits target and path. Multi-scope instructions ("in subsections (a) and (b)") fan out to one
+  instruction per scope.
+- **IR:** a pydantic model with the fields in tab 3, plus `through`, `unit` and `redesignate`.
+- **Accounting:** every instruction the parser cannot match becomes UNPARSED, with its source text and a reason.
+- **CLI:** `billmap parse draft.txt --out ir.json`.
+
+**How the gate is measured honestly:** the parser reads only plain text rendered from each enrolled bill's XML,
+as a staffer would paste it. The "count in" comes from the XML markup itself (`xmltext.xml_counts`): its
+quote and unit boundaries come from `<quote>`, `<quoted-block>` and the structural elements, not from text. Both
+counts use the same rule for where an instruction starts, so they agree only if the parser's segmentation and
+quote detection agree with the markup at every bill location.
+
+**Run:** `.venv/bin/python scripts/m4_gate.py` (10 s); output in `var/m4_gate.md`, residue in `var/m4_residue.jsonl`.
+
+| Check | Result | Measured |
+| --- | --- | --- |
+| Instructions in = IR + UNPARSED on the corpus | PASS | 3,088 in; 2,933 IR + 155 UNPARSED; 0 per-location mismatches |
+| Deterministic coverage measured and logged | PASS | **0.902** (2,785 of 3,088 parsed at confidence ≥ 0.8; 148 low-confidence, 155 UNPARSED). The tab-11 target is 0.85 |
+
+Instructions by op: STRIKE_INSERT 1,199; ADD_END 435; INSERT_AFTER 222; STRIKE 212; REDESIGNATE 191;
+ADD_UNIT_AFTER 157; UNPARSED 155; REPLACE_UNIT 109; STRIKE_UNIT 97; AMEND_HEADING 69; STRIKE_THROUGH 68;
+CONFORM_TOC 58; REPEAL 50; INSERT_BEFORE and ADD_UNIT_BEFORE the rest.
+
+**Pattern fixtures:** `tests/parse/patterns/P1.json`–`P15.json` hold 6 positive and 3–4 negative examples
+for each pattern, taken from the corpus enrolled text by regexes independent of the grammar
+(`scripts/harvest_patterns.py`). 150 fixture tests pass. Writing them caught two parser bugs (heading
+insertions not marked AMEND_HEADING; a replacement quote starting on the next line), now fixed. They also
+exposed five harvest regexes that had mislabeled correct parses, now corrected.
+
+**Segmentation bugs found by the accounting check and fixed:** enumerators longer than three letters
+(`(viii)`); a block closed by `”and` with no space; a real title heading straight after the table of contents;
+`(i)` opening a clause versus continuing `(h)`, and the reverse case for `(I)` after `(H)`.
+
+**Residue** (what the model fallback in M11 would see, and the input for promotion by recurrence):
+- **Largest shape:** appropriations project-table edits ("striking recipient “…” and inserting “…”", 25 in 119-75).
+- **Other shapes:** `transferring` and `moving` instructions; block insertions anchored on a punctuation description
+  ("inserting a comma after “…”"); and redesignation lists qualified with "as so amended".
+
+**Notes for M5/M6:**
+- **Freestanding laws:** 119-88, 119-116 and 119-133 contain no amendatory instructions. Their Code
+  changes are freestanding sections that OLRC places in the Code, so the dry-run needs a classification
+  path for them, not an amendment path.
+- **Act targets:** 63% of corpus instructions target Acts, through an Act section plus a parenthetical
+  U.S.C. cite (the resolver's Act-to-Code job), not Code sections directly.

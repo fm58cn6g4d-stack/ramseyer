@@ -54,6 +54,25 @@ def sync(force: bool = typer.Option(False, help="Rebuild the release point even 
     typer.echo(f"indexed {rp.label} into {cfg.index_path}")
 
 
+@app.command()
+def parse(draft: str = typer.Argument(..., help="Path to a .txt or .md draft, or published bill XML (.xml)."),
+          out: str = typer.Option(None, help="Write the IR JSON here (default: print a summary).")) -> None:
+    """Parse a draft into amendatory instructions (IR). Drafts stay local; nothing is sent anywhere."""
+    from pathlib import Path
+
+    from billmap.parse import parse_text
+    from billmap.parse.xmltext import render
+    path = Path(draft)
+    text = render(path) if path.suffix.lower() == ".xml" else path.read_text(encoding="utf-8")
+    result = parse_text(text)
+    if out:
+        Path(out).write_text(result.model_dump_json(indent=1))
+    unparsed = [i for i in result.instructions if i.op == "UNPARSED"]
+    typer.echo(f"{len(result.instructions)} instructions, {len(unparsed)} UNPARSED, coverage {result.coverage:.3f}")
+    for i in unparsed:
+        typer.echo(f"  UNPARSED {i.bill_loc}: {i.reason}")
+
+
 @app.command("serve-mcp")
 def serve_mcp() -> None:
     """Start the statute MCP server on stdio."""

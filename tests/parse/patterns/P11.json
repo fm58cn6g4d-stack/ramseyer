@@ -1,0 +1,119 @@
+{
+ "pattern": "P11",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleX.subtE.sec1043.b.2",
+   "lines": [
+    "SEC. 1043. MODIFICATION OF REQUIREMENTS RELATING TO SUPPORT OF CIVIL AUTHORITIES BY ARMED FORCES.",
+    "(b) Conforming and clerical amendments.—",
+    "(2) Clerical amendment.—The table of sections at the beginning of chapter 41 of title 10, United States Code, is amended by striking the item relating to section 723 and inserting the following new item:",
+    "“723. Support of civil authorities: requirement for use of members of the Armed Forces and Federal law enforcement personnel.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtA.sec1201.a.4.B",
+   "lines": [
+    "SEC. 1201. MODIFICATION OF AUTHORITIES.",
+    "(a) Training with friendly foreign countries: payment of training and exercise expenses.—",
+    "(4) Conforming amendments.—",
+    "(B) Table of sections.—The table of sections for subchapter III of chapter 16 of title 10, United States Code, is amended by striking the item relating to section 321 and inserting the following:",
+    "“321. Training and exercises with friendly foreign countries: payment of training and exercise expenses.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtD.sec1233.b.1",
+   "lines": [
+    "SEC. 1233. MODIFICATION OF CERTAIN TEMPORARY AUTHORIZATIONS RELATED TO MUNITIONS REPLACEMENT.",
+    "(b) Clerical amendments.—",
+    "(1) The table of contents at the beginning of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 136 Stat. 2395) is amended by striking the item relating to section 1244 and inserting the following:",
+    "“1244. Temporary authorizations related to Ukraine, Taiwan, Israel, and the United States defense industrial base.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtD.sec1233.b.2",
+   "lines": [
+    "SEC. 1233. MODIFICATION OF CERTAIN TEMPORARY AUTHORIZATIONS RELATED TO MUNITIONS REPLACEMENT.",
+    "(b) Clerical amendments.—",
+    "(2) The table of contents at the beginning of title XII of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 (Public Law 117–263; 136 Stat. 2820) is amended by striking the item relating to section 1244 and inserting the following:",
+    "“1244. Temporary authorizations related to Ukraine, Taiwan, Israel, and the United States defense industrial base.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divC.titleXXXI.subtB.sec3113.b",
+   "lines": [
+    "SEC. 3113. STOCKPILE RESPONSIVENESS AND RAPID CAPABILITIES PROGRAMS OF THE NATIONAL NUCLEAR SECURITY ADMINISTRATION.",
+    "(b) Clerical amendment.—The table of contents for such Act is amended by inserting after the item relating to section 4224 the following new item:",
+    "“Sec. 4225. Rapid capabilities program.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divC.titleXXXI.subtB.sec3117.b",
+   "lines": [
+    "SEC. 3117. APPROPRIATE SCOPING OF ARTIFICIAL INTELLIGENCE RESEARCH WITHIN THE NATIONAL NUCLEAR SECURITY ADMINISTRATION.",
+    "(b) Clerical amendment.—The table of contents for the Atomic Energy Defense Act is amended by inserting after the item relating to section 4815 the following new item:",
+    "“Sec. 4816. Appropriate scoping of artificial intelligence research within the Administration.”."
+   ],
+   "expect": {
+    "op": "CONFORM_TOC"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divG.titleLXXIII.subtA.sec7301.f",
+   "lines": [
+    "SEC. 7301. MERCHANT MARINER CREDENTIALING.",
+    "(f) Repeal.—Section 7314 of title 46, United States Code, and the item relating to such section in the analysis for chapter 73 of such title, are repealed."
+   ],
+   "must_not": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-75",
+   "loc": "divD.titleIV.sec421.b.1",
+   "lines": [
+    "SEC. 421. X.",
+    "(b) In the table of projects entitled “Community Project Funding/Congressionally Directed Spending” in the explanatory statement for division L of the Consolidated Appropriations Act, 2023 (Public Law 117–328) described in section 4 in the matter preceding division A of such Act—",
+    "(1) the item relating to “Lower Shore Clinic Co-Occurring Disorder Treatment Facility Housing” is deemed to be amended by:"
+   ],
+   "must_not": {
+    "op": "CONFORM_TOC"
+   }
+  },
+  {
+   "law": "119-75",
+   "loc": "divD.titleIV.sec421.e",
+   "lines": [
+    "SEC. 421. X.",
+    "(e) Amounts made available under the heading “Department of Transportation—Consolidated Rail Infrastructure and Safety Improvements” for the item relating to “Midway Crossing” in the table of projects entitled “Community Project Funding/Congressionally Directed Spending” in the explanatory statement for division L of the Consolidated Appropriations Act, 2023 (Public Law 117–328) described in section 4 in the matter preceding division A of such Act shall be transferred to “Department of Transportation—Transit Infrastructure Grants” and shall be available under the heading to which transferred for its original purpose."
+   ],
+   "must_not": {
+    "op": "CONFORM_TOC"
+   }
+  }
+ ]
+}

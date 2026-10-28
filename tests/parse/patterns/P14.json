@@ -1,0 +1,126 @@
+{
+ "pattern": "P14",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtC.sec525",
+   "lines": [
+    "SEC. 525. REQUIREMENT OF EQUAL OPPORTUNITY, RACIAL NEUTRALITY, AND EXCLUSIVE USE OF MERIT IN MILITARY PERSONNEL ACTIONS.",
+    "Section 529C of the National Defense Authorization Act for Fiscal Year 2024 (10 U.S.C. note prec. 501) is amended, in subsection (a), by striking “or a promotion” and inserting “, promotion, or command selection”."
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtI.sec588",
+   "lines": [
+    "SEC. 588. ASSISTANCE FOR DEPLOYMENT-RELATED SUPPORT OF MEMBERS OF THE ARMED FORCES UNDERGOING DEPLOYMENT AND THEIR FAMILIES BEYOND THE YELLOW RIBBON REINTEGRATION PROGRAM.",
+    "Section 582 of the National Defense Authorization Act for Fiscal Year 2008 (10 U.S.C. 10101 note) is amended—"
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleX.subtE.sec1044",
+   "lines": [
+    "SEC. 1044. AUTHORITY OF SECRETARY OF DEFENSE TO ENTER INTO CONTRACTS TO PROVIDE CERTAIN ASSISTANCE TO SECURE THE SOUTHERN LAND BORDER OF THE UNITED STATES.",
+    "Section 1059(a) of the National Defense Authorization Act for Fiscal Year 2016 (10 U.S.C. 284 note; Public Law 114–92) is amended—"
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXI.sec1108",
+   "lines": [
+    "SEC. 1108. DEFINITION OF DEFENSE INDUSTRIAL BASE FACILITY FOR PURPOSES OF DIRECT HIRE AUTHORITY.",
+    "Section 1125(c) of the National Defense Authorization Act for Fiscal Year 2017 (10 U.S.C. 1580 note prec.; Public Law 114–328) is amended by inserting “and includes supporting units of a facility at an installation or base” after “United States”."
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXI.sec1112",
+   "lines": [
+    "SEC. 1112. MODIFICATION OF DIRECT HIRE AUTHORITY FOR DOMESTIC DEFENSE INDUSTRIAL BASE FACILITIES.",
+    "Section 1125(a) of the National Defense Authorization Act for Fiscal Year 2017 (10 U.S.C. 1580 note prec.) is amended by inserting “, including to Navy Supervisor of Shipbuilding, Conversion, and Repair positions” after “Facilities Base”."
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleXII.subtB.sec1211.c",
+   "lines": [
+    "SEC. 1211. IMPROVEMENTS TO SECURITY COOPERATION WORKFORCE AND DEFENSE ACQUISITION WORKFORCE.",
+    "(c) Foreign military sales continuous process improvement board.—Section 1210(b)(2) of the National Defense Authorization Act for Fiscal Year 2025 (22 U.S.C. 2671 note) is amended to read as follows:",
+    "“(2) Membership.—",
+    "“(A) In general.—The Board shall be composed of not fewer than seven members, each of whom shall have expertise in security cooperation, security assistance, defense acquisition, business process reform, or any disciplines the Secretary determines to be important to the functioning of the Board.",
+    "“(B) Certain members.—",
+    "“(i) In general.—Up to three of the members of the Board may be selected from among individuals who are not any of the following:",
+    "“(I) Officers or employees of the Department of Defense.",
+    "“(II) Members of the Armed Forces.",
+    "“(III) A registered lobbyist.",
+    "“(ii) Clearance.—Each member of the Board described in this subparagraph shall be individuals who are determined to be eligible for access to classified information necessary to participate on the Board.”."
+   ],
+   "expect": {
+    "target_kind": "act"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—"
+   ],
+   "must_not": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec143",
+   "lines": [
+    "SEC. 143. EXTENSION OF LIMITATIONS AND MINIMUM INVENTORY REQUIREMENT RELATING TO RQ–4 AIRCRAFT.",
+    "Section 9062(m)(1) of title 10, United States Code, is amended, in the matter preceding subparagraph (A), by striking “September 30, 2029” and inserting “September 30, 2030”."
+   ],
+   "must_not": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec144",
+   "lines": [
+    "SEC. 144. MODIFICATION TO ANNUAL REPORT ON AIR FORCE TACTICAL FIGHTER AIRCRAFT FORCE STRUCTURE.",
+    "Section 9062a(a) of title 10, United States Code, is amended—"
+   ],
+   "must_not": {
+    "target_kind": "act"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleII.subtB.sec212",
+   "lines": [
+    "SEC. 212. MODIFICATION TO MECHANISMS TO PROVIDE FUNDS TO DEFENSE LABORATORIES AND OTHER ENTITIES FOR RESEARCH AND DEVELOPMENT OF TECHNOLOGIES FOR MILITARY MISSIONS.",
+    "Section 4123 of title 10, United States Code, is amended—"
+   ],
+   "must_not": {
+    "target_kind": "act"
+   }
+  }
+ ]
+}

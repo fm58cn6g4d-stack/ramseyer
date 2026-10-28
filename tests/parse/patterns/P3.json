@@ -1,0 +1,144 @@
+{
+ "pattern": "P3",
+ "source": "enrolled text of the oracle corpus laws (tests/oracle/corpus.json)",
+ "positive": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtB.sec315.4.A.ii.III",
+   "lines": [
+    "SEC. 315. MODIFICATION OF REQUIREMENTS RELATING TO REPLACEMENT OF FLUORINATED AQUEOUS FILM-FORMING FOAM.",
+    "Section 322 of the National Defense Authorization Act for Fiscal Year 2020 (Public Law 116–92; 10 U.S.C. 2661 note prec.) is amended—",
+    "(4) in subsection (e)—",
+    "(A) in paragraph (1)—",
+    "(ii) in subparagraph (B)—",
+    "(III) in clause (iii), as so redesignated, by striking “and does not require revision”; and"
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtC.sec335.2.A",
+   "lines": [
+    "SEC. 335. MODIFICATION OF PROHIBITION ON CONTRACTS FOR PERFORMANCE OF FIREFIGHTING OR SECURITY-GUARD FUNCTIONS.",
+    "Section 2465(b)(4) of title 10, United States Code, is amended—",
+    "(2) in subparagraph (B)—",
+    "(A) by striking “only”;"
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtC.sec335.2.B",
+   "lines": [
+    "SEC. 335. MODIFICATION OF PROHIBITION ON CONTRACTS FOR PERFORMANCE OF FIREFIGHTING OR SECURITY-GUARD FUNCTIONS.",
+    "Section 2465(b)(4) of title 10, United States Code, is amended—",
+    "(2) in subparagraph (B)—",
+    "(B) by striking “firefighting”; and"
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtC.sec335.2.C",
+   "lines": [
+    "SEC. 335. MODIFICATION OF PROHIBITION ON CONTRACTS FOR PERFORMANCE OF FIREFIGHTING OR SECURITY-GUARD FUNCTIONS.",
+    "Section 2465(b)(4) of title 10, United States Code, is amended—",
+    "(2) in subparagraph (B)—",
+    "(C) by striking “by reason of a deployment”."
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleIII.subtD.sec361.2.C.i",
+   "lines": [
+    "SEC. 361. REPORTING REQUIREMENTS FOR OUT-YEAR UNCONSTRAINED TOTAL MUNITIONS REQUIREMENTS AND OUT-YEAR INVENTORY NUMBERS.",
+    "Section 222c of title 10, United States Code, is amended—",
+    "(2) in subsection (e)—",
+    "(C) in paragraph (2), as so redesignated—",
+    "(i) by striking “additional”; and"
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleV.subtC.sec523.1.A.ii",
+   "lines": [
+    "SEC. 523. HONORARY PROMOTIONS ON THE INITIATIVE OF THE DEPARTMENT OF DEFENSE.",
+    "Section 1563a of title 10, United States Code, is amended—",
+    "(1) in subsection (a)—",
+    "(A) in paragraph (1)—",
+    "(ii) by striking “if the Secretary determines that the promotion is merited”; and"
+   ],
+   "expect": {
+    "op": "STRIKE"
+   }
+  }
+ ],
+ "negative": [
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.A",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(A) by striking “subsections (b) and (c)” and inserting “subsection (b)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.2.B",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(2) in subsection (a)—",
+    "(B) by striking “through 2025” and inserting “through 2026”;"
+   ],
+   "must_not": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtC.sec123.5",
+   "lines": [
+    "SEC. 123. RECAPITALIZATION OF NAVY WATERBORNE SECURITY BARRIERS; MODIFICATION OF PROHIBITION ON AVAILABILITY OF FUNDS FOR LEGACY WATERBORNE SECURITY BARRIERS.",
+    "Section 130 of the John S. McCain National Defense Authorization Act for Fiscal Year 2019 (Public Law 115–232; 132 Stat. 1665), as most recently amended by section 123 of the National Defense Authorization Act for Fiscal Year 2025 (Public Law 118–159; 138 Stat. 1805), is further amended—",
+    "(5) in subsection (c), as so redesignated, by striking “subsection (c)(2)” and inserting “subsection (b)(2)”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE"
+   }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleI.subtD.sec141.a.1",
+   "lines": [
+    "SEC. 141. MODIFICATION OF MINIMUM INVENTORY REQUIREMENTS FOR AIR REFUELING TANKER AIRCRAFT.",
+    "(a) Minimum inventory requirement.—Section 9062(j) of title 10, United States Code, is amended—",
+    "(1) in paragraph (1), by striking “a total aircraft inventory of air refueling tanker aircraft of not less than 466 aircraft.” and inserting\n“a total aircraft inventory of air refueling tanker aircraft—",
+    "“(A) of not less than 466 aircraft during the period ending on September 30, 2026;",
+    "“(B) of not less than 478 aircraft during the period beginning on October 1, 2026, and ending on September 30, 2027;",
+    "“(C) of not less than 490 aircraft during the period beginning on October 1, 2027, and ending on September 30, 2028; and",
+    "“(D) of not less than 502 aircraft beginning on October 1, 2028.”; and"
+   ],
+   "must_not": {
+    "op": "STRIKE"
+   }
+  }
+ ]
+}
