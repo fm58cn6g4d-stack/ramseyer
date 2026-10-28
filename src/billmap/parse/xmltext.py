@@ -66,6 +66,8 @@ def _head_line(el, in_block=False) -> str:
     if tag == "section" and in_block == "USC":
         # A new Code section in a quoted block prints in Code form, with its header's own case.
         return f"§ {enum.rstrip('.')}. {header}" if header else f"§ {enum.rstrip('.')}."
+    if tag == "section" and in_block:             # a quoted Act section keeps its header's case
+        return f"SEC. {enum.rstrip('.')}. {header}." if header else f"SEC. {enum.rstrip('.')}."
     if tag == "section":
         return f"SEC. {enum.rstrip('.')}. {header.upper()}." if header else f"SEC. {enum.rstrip('.')}."
     return ""

@@ -44,13 +44,16 @@ DATE = r"(?:January|February|March|April|May|June|July|August|September|October|
 def _text(el) -> str:
     """Section text with footnote reference markers removed (OLRC adds and removes footnotes editorially)."""
     el = copy.deepcopy(el)
-    for ref in el.xpath(".//*[local-name()='ref'][@class='footnoteRef']"):
+    marks = el.xpath(".//*[local-name()='ref'][@class='footnoteRef'] | .//*[local-name()='note'][@type='footnote']"
+                     " | .//*[local-name()='sup'][re:test(., '^\\s*\\d+\\s*$')]",
+                     namespaces={"re": "http://exslt.org/regular-expressions"})
+    for ref in marks:
         parent, tail = ref.getparent(), ref.tail or ""
         prev = ref.getprevious()
         if prev is not None:
-            prev.tail = (prev.tail or "") + tail
+            prev.tail = (prev.tail or "").rstrip("\u202f") + tail
         else:
-            parent.text = (parent.text or "") + tail
+            parent.text = (parent.text or "").rstrip("\u202f") + tail
         parent.remove(ref)
     for h in el.iter("{*}heading"):     # heading case is OLRC's editorial choice (records/milestones.md, M6)
         for n in h.iter():

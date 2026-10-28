@@ -284,6 +284,8 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P2p", re.compile(rf"^striking {DESCR}(?: at the end(?: (?:thereof|of [\w ]+?(?: \([\w]+\))*))?| after {q('anchor')})?{OCC} "
                        rf"and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                        rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash))"), "STRIKE_INSERT"),
+    ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})(?: of [\w ]+? {LABELS})?"
+                       rf"(?:,? as (?:so )?redesignated(?: by [^,]+)?,?)? to read as follows:?"), "REPLACE_UNIT"),
     ("P7b", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
      "STRIKE_UNIT"),
     ("P3", re.compile(rf"^striking {q('a')}{AT_END}{OCC}"), "STRIKE"),
@@ -362,7 +364,7 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
             out |= {"op": op, "find": get("a"), "through": get("b") or gd.get("toend") or "end of unit",
                     "replace": get("c"),
                     "new_text": block if uses_block else None}
-        elif pid == "P7":
+        elif pid in ("P7", "P7a"):
             out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}", "new_text": block}
         elif pid in ("P2", "P2p"):
             find = get("a") if pid == "P2" else PUNCT[gd["punct"]]
@@ -406,7 +408,7 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
             out |= {"op": op, "unit": gd["units"].strip(" ,"), "redesignate": list(zip(src, dst))}
             if len(src) != len(dst):
                 out["flags"] = [f"redesignation counts differ: {len(src)} -> {len(dst)}"]
-        out["needs_block"] = uses_block or pid in ("P7", "P6", "P6s", "P4b")
+        out["needs_block"] = uses_block or pid in ("P7", "P7a", "P6", "P6s", "P4b")
         return out
     return None
 

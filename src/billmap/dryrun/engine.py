@@ -689,11 +689,11 @@ class Engine:
         if " through " in unit_phrase and len(labels) == 2:
             from billmap.parse.grammar import _expand
             labels = [x.strip("()") for x in _expand(unit_phrase)]
-        out = []
-        for lab in labels:
-            u = self.work.unit([f"({lab})"], root=scope)
-            out.append(u)
-        return out
+        if scope is None:
+            return []
+        if len(labels) > 1 and re.fullmatch(r"[a-z]+ (?:\(\w+\))+", unit_phrase.strip()):
+            return [self.work.unit([f"({lab})" for lab in labels], root=scope)]     # "subparagraph (B)(v)(I)"
+        return [self.work.unit([f"({lab})"], root=scope) for lab in labels]
 
     def _op_strike_unit(self, ins, scope, path):
         units = self._children_named(scope, ins.unit or "")
@@ -735,7 +735,12 @@ class Engine:
         new = units[0]
         if scope is None or scope is self.work.el:
             if local(new) == "section":
+                # An Act section replaced in full keeps its Code section number.
                 new.set("identifier", self.work.identifier)
+                code_num = self.work.identifier.rsplit("/s", 1)[1]
+                num = new.find(NS + "num")
+                num.set("value", code_num)
+                num.text = f"\u00a7 {code_num}."
                 self.work.el, self.work.removed = new, False
                 return Result(ins.id, "CLEAN", "section replaced")
             return Result(ins.id, "AMBIGUOUS", "section-level replacement is not a section")
