@@ -1,0 +1,47 @@
+# 5 Dry-run engine
+
+The engine applies every instruction to a working copy of the real section text, in bill order, and reports for each one whether it worked cleanly and, if not, exactly why. It is deterministic and never edits the stored statute.
+
+## Semantics
+
+- One working copy per target section: an ordered tree of units addressed by path, such as (a)(2)(B)
+- Instructions apply in bill order and statefully, so a later instruction sees earlier edits to the same section
+- The same input and release point always give the same output
+
+## Rules by operation
+
+| Op | Rule | Typical failure |
+| --- | --- | --- |
+| STRIKE\_INSERT, STRIKE | Find the quoted text within scope: exact, then quote and whitespace normalized, then case-insensitive. Fuzzy hits are reported, never applied | Text not found; found more than once without each |
+| INSERT\_AFTER, INSERT\_BEFORE | The anchor text must be unique within scope | Anchor missing or ambiguous |
+| ADD\_END | Append to the unit and check the previous item's trailing punctuation or conjunction | Dangling and or or, wrong terminal punctuation (warning) |
+| ADD\_UNIT\_AFTER, REPLACE\_UNIT | Check label collisions and ordering | Label already exists |
+| REDESIGNATE | Apply the label map, then use the refs table to find references to old labels in the same section and across the Code | Broken references |
+| REPEAL, strike unit | Check inbound references | Orphaned citations |
+| AMEND\_HEADING, CONFORM\_TOC | Heading and table-of-sections text must match | Heading mismatch |
+| STRIKE\_THROUGH | Both endpoints found, in order | End before start |
+
+## Result statuses
+
+| Status | Meaning |
+| --- | --- |
+| CLEAN | Applied exactly as drafted |
+| WARN | Applied, with an advisory such as punctuation or a conjunction |
+| AMBIGUOUS | More than one possible match, or only a fuzzy match |
+| NOT\_FOUND | Quoted text is absent from the target |
+| TARGET\_MISSING | Target is repealed, omitted, transferred or unknown |
+| STALE\_BASELINE | The quoted text matches a prior release point but not the current one, so the draft was written against older law |
+| CONFLICT | Two instructions touch the same span |
+| UNPARSED | Carried over from the parser |
+
+STALE\_BASELINE is likely the check committee staff will value most. It needs the stored prior release points from tab 1.
+
+## Output per instruction
+
+Status, before span, after span, match count, 200 characters of surrounding evidence, release point, and the instruction's source span.
+
+## Performance and tests
+
+- Batch by section and cache section trees
+- Property tests: applying and then reversing an edit reproduces the original; mutating a quote produces NOT\_FOUND
+- The oracle test in tab 11 is the main acceptance gate

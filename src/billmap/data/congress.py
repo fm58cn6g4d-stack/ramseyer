@@ -22,5 +22,11 @@ def text_versions(fetcher: Fetcher, congress: int, bill_type: str, number: int) 
     return json.loads(r.text())["textVersions"]
 
 
-def xml_urls(versions: list[dict]) -> list[str]:
-    return [f["url"] for v in versions for f in v.get("formats", []) if f["url"].endswith(".xml")]
+# Verified 2026-10-28 on 119 hr 1: each version lists "Formatted XML" (GPO bill DTD) and, for
+# some versions, "United States Legislative Markup" (*_uslm.xml, namespace schemas.gpo.gov).
+FORMATTED_XML = "Formatted XML"
+USLM_XML = "United States Legislative Markup"
+
+
+def xml_urls(versions: list[dict], fmt: str = FORMATTED_XML) -> list[str]:
+    return [f["url"] for v in versions for f in v.get("formats", []) if f["type"] == fmt]
