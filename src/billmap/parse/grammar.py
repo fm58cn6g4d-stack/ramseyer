@@ -23,6 +23,7 @@ UNIT_RANK = {u: i for i, u in enumerate(UNIT_WORDS)}
 PLURAL = {u + "s": u for u in UNIT_WORDS} | {"sections": "section"}
 LABEL = r"\((?:[0-9]+[A-Za-z]?|[a-z]{1,4}|[A-Z]{1,4})\)"
 LABELS = rf"(?:{LABEL})+"
+SECTION_NUM = r"\d+[\w\u2013-]*"
 UNIT = r"(?:sub)?(?:section|paragraph|clause|item)s?|subparagraphs?|subclauses?|subitems?"
 OCC = (r"(?:\s+(?P<occ>each place (?:it|such term|that term|the term|such terms|they|such phrase|such words?) "
        r"appears?(?: in [^,;]*?)?|(?:the|in the) (?P<nth>first|second|third|fourth|last) place (?:it|such term) "
@@ -142,6 +143,9 @@ QUALIFIERS = [
 ]
 LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})*) of (?:such )?section ",
                         re.I)
+_SN = r"\d[\w\u2013-]*+"           # possessive: no backtracking between the digits and the suffix
+SECTION_LIST = re.compile(rf"\b[Ss]ections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) {_SN}(?:{LABELS})?)+)"
+                          r" of (?:such title|this title|title \d+,? United States Code)\b")
 TOC_HEAD = re.compile(r"\b[Tt]he (?:table of (?:sections|contents|chapters)|analysis)\b")
 
 
@@ -184,6 +188,17 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="pl", cite_raw=m.group(0), section=m["sec"], public_law=m["pl"].replace("–", "-"),
                             usc_parenthetical=m["paren"])
         _section_path(ctx, m["path"])
+        ctx.qualifiers, ctx.is_target_set = [], True
+    elif (m := SECTION_LIST.search(h)):
+        # "Sections 351(a), 352(a), and 353(b) of such title": the first here; parse_unit_text fans out the rest.
+        tm = re.search(r"title (\d+)", m.group(0))
+        base = (Target(kind="usc", title=tm.group(1)) if tm else
+                ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target)
+        t = base.model_copy(deep=True)
+        first = re.match(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?", m["list"])
+        t.section, t.cite_raw, t.usc_parenthetical = first["sec"], m.group(0), None
+        ctx.target = t
+        _section_path(ctx, first["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := SUCH.search(h)):
         base = ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target
@@ -253,7 +268,8 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                 unit = PLURAL.get(m["unit"], m["unit"])
                 rank = UNIT_RANK.get(unit, 0)
                 base = [p for p in ctx.path if p[0] < rank]
-                ctx.multi = [base + [(rank, lab)] for lab in re.findall(LABEL, m["labels"])]
+                ctx.multi = [base + [(rank + i, lab) for i, lab in enumerate(_labels(chain))]
+                             for chain in re.findall(LABELS, m["labels"])]
                 flags.append("multi_scope")
             else:
                 _set_path(ctx, m["unit"], m["labels"])
@@ -275,7 +291,6 @@ def q(name: str) -> str:
 
 LABEL_LIST = rf"{LABELS}(?:(?:,? and|,| through|, and| or) {LABELS})*"
 UNIT_LIST = rf"(?:(?:{UNIT}) {LABEL_LIST}(?: of (?:{UNIT}) {LABELS})?(?:(?:,? and|,) (?=(?:{UNIT}) ))?)+"
-SECTION_NUM = r"\d+[\w\u2013-]*"
 ITEM = (r"(?P<item>the (?:items?|matter) relating to (?:(?:sections?|chapters?|subchapters?|parts?|subtitles?|titles?|"
         r"articles?) [\dIVXL][\w\u2013.-]*(?:(?:,| and|, and| through) [\dIVXL][\w\u2013.-]*)*|\u27e6(?P<itemq>\d+)\u27e7))")
 FOLLOWING = r"the following(?: new [a-z ]+)?:?"
@@ -457,6 +472,24 @@ def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
     return out
 
 
+def _section_list(head: str, ctx: Ctx) -> list[Ctx]:
+    """"Sections 351(a), 352(a), 353(a), and 353(b) of such title are amended by ...": one target per section."""
+    m = SECTION_LIST.search(head)
+    if not m or ctx.target.kind != "usc":
+        return []
+    out = []
+    for sm in re.finditer(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?(?=,| and|$)", m["list"]):
+        if not sm["sec"]:
+            continue
+        d = ctx.copy()
+        d.target = ctx.target.model_copy(deep=True)
+        d.target.section, d.target.cite_raw = sm["sec"], m.group(0)
+        _section_path(d, sm["path"])
+        d.multi = []
+        out.append(d)
+    return out if len(out) > 1 else []
+
+
 def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[Instruction], Ctx]:
     """Instructions in one unit's own text. Returns them and the context its children inherit."""
     lifted, quotes, qflags = lift_quotes(node.text)
@@ -475,6 +508,7 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
         child_ctx.memory["last"] = child_ctx.target_out()
     out: list[Instruction] = []
     listed = _distributed(node, child_ctx) if starts and node.children and DISTRIBUTED.search(head) else []
+    listed = listed or (_section_list(head, child_ctx) if starts else [])
     for i, st in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(lifted)
         clause = lifted[st.start():end]
