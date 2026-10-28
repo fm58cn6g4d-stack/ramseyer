@@ -88,10 +88,11 @@ class Ctx:
     multi: list[list[tuple[int, str]]] = field(default_factory=list)  # P12 "in each of subsections (a) and (b)"
     toc: bool = False
     is_target_set: bool = False
+    memory: dict = field(default_factory=dict)    # shared by every unit of one bill section: the last target named
 
     def copy(self) -> "Ctx":
         return Ctx(self.target.model_copy(deep=True), list(self.path), list(self.qualifiers),
-                   [list(p) for p in self.multi], self.toc, self.is_target_set)
+                   [list(p) for p in self.multi], self.toc, self.is_target_set, self.memory)
 
     def target_out(self) -> Target:
         t = self.target.model_copy(deep=True)
@@ -104,17 +105,27 @@ class Ctx:
 
 USC_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w–-]*)(?P<path>{LABELS})? of title (?P<t>\d+),? United "
                          r"States Code")
-USC_UNIT = re.compile(r"\b(?P<unit>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubtitle) (?P<x>[\w]+)(?: of (?:chapter|"
-                      r"subtitle|part) [\w]+)* of title (?P<t>\d+),? United States Code")
+USC_UNIT = re.compile(r"\b(?P<chain>(?:[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart|[Ss]ubtitle) [\w]+(?: of (?:chapter|"
+                      r"subchapter|subtitle|part|subpart) [\w]+)*) of title (?P<t>\d+),? United States Code")
+# An Act's name: words up to "Act" (or Code, Resolution, ...), with an optional year or fiscal-year qualifier and
+# short parenthesized words inside it ("William M. (Mac) Thornberry National Defense Authorization Act ...").
+ACT_NAME = (r"(?:the )?[A-Z](?:[^()\u27e6;,]|\([A-Z][a-z]{1,12}\)|\u27e6\d+\u27e7|, (?=Jr\.|Sr\.|[A-Z]|and ))*?"
+            r"(?:Act|Code|Resolution|Amendments|Law)"
+            r"(?: of \d{4}| for (?:the )?Fiscal Years? \d{4}(?: (?:and|through) \d{4})?)?(?:, \d{4})?")
 USC_TITLE = re.compile(r"\b[Tt]itle (?P<t>\d+),? United States Code")
-ACT_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})? of (?P<act>(?:the )?[A-Z][^()⟦;]*?"
-                         r"(?:Act|Code|Resolution|Amendments|Law)(?: of \d{4})?(?:, \d{4})?)"
+ACT_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of (?P<act>{ACT_NAME})"
                          r"(?:\s*\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
 PL_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})? of Public Law (?P<pl>\d+[–-]\d+)"
                         r"(?:\s*\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
-WHOLE_ACT = re.compile(r"^(?P<act>The [A-Z][^()⟦;]*?(?:Act|Code)(?: of \d{4})?)\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)"
-                       r"[^()]*)*)\))?\s+(?:is|are) (?:further )?amended")
-SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})? of such (?P<what>Act|title|Code|law)")
+ACT_UNIT = re.compile(rf"\b(?P<unit>[Tt]itle|[Ss]ubtitle|[Pp]art|[Cc]hapter|[Ss]ubchapter|[Dd]ivision) (?P<x>[\w]+) of "
+                      rf"(?P<act>{ACT_NAME})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
+WHOLE_ACT = re.compile(rf"^(?P<act>{ACT_NAME.replace('(?:the )?', 'The ', 1)})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)"
+                       r"[^()]*)*)\))?,?(?:\s+as amended by [^,]+,)?\s+(?:is|are) (?:further )?amended")
+SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of such (?P<what>Act|title|Code|law)")
+SUCH_SECTION = re.compile(rf"^(?:(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause)s? (?P<labels>{LABELS}) of )?"
+                          r"[Ss]uch section\b")
+PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
+                           r"(?:\([^()]*\)[^()]*)*)\)")
 BARE_SECTION = re.compile(rf"^(?:[Ss]ection|in section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)")
 IN_SECTION = re.compile(rf"\bin section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?! of)")
 LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
@@ -148,10 +159,17 @@ def _section_path(ctx: Ctx, path: str | None) -> None:
     ctx.path = [(i, lab) for i, lab in enumerate(_labels(path or ""))]
 
 
-def apply_head(head: str, ctx: Ctx) -> list[str]:
+def _unquote(s: str | None, quotes: list[str] | None) -> str | None:
+    if s is None or not quotes:
+        return s
+    return PH_RE.sub(lambda m: "\u201c" + quotes[int(m.group(1))] + "\u201d", s)
+
+
+def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str]:
     """Update ctx from a head phrase (target and location). Returns flags."""
     flags: list[str] = []
     h = usc_variants(head)
+    h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
     if TOC_HEAD.search(h):
         ctx.toc = True
     m = USC_SECTION.search(h)
@@ -165,21 +183,38 @@ def apply_head(head: str, ctx: Ctx) -> list[str]:
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := SUCH.search(h)):
-        t = ctx.target.model_copy(deep=True)
+        base = ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target
+        t = base.model_copy(deep=True)
         t.section, t.cite_raw, t.usc_parenthetical = m["sec"], m.group(0), None
         ctx.target = t
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := ACT_SECTION.search(h)) and "United States Code" not in m.group(0):
-        act = re.sub(r"^the ", "", m["act"]).strip()
+        act = _unquote(re.sub(r"^the ", "", m["act"]).strip(), quotes)
         ctx.target = Target(kind="act", cite_raw=m.group(0), section=m["sec"], act=act, usc_parenthetical=m["paren"])
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := USC_UNIT.search(h)):
         ctx.target = Target(kind="usc", cite_raw=m.group(0), title=m["t"])
+        ctx.path, ctx.qualifiers, ctx.is_target_set = [], [" of ".join(p.lower() for p in m["chain"].split(" of "))], True
+    elif (m := ACT_UNIT.search(h)) and "United States Code" not in m.group(0):
+        ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^the ", "", m["act"]), quotes),
+                            usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [f"{m['unit'].lower()} {m['x']}"], True
+    elif (m := SUCH_SECTION.search(h.strip())) and ctx.memory.get("last") is not None:
+        ctx.target = ctx.memory["last"].model_copy(deep=True)
+        ctx.path = [(i, lab) for i, lab in enumerate(ctx.target.path)]
+        if m["labels"]:
+            _set_path(ctx, m["unit"].lower(), m["labels"])
+        ctx.qualifiers, ctx.is_target_set = [], True
+    elif (m := PAREN_SECTION.search(h.strip())) and ctx.target.kind in ("unknown", "act"):
+        # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision.
+        act = ctx.target.act if ctx.target.kind == "act" else None
+        ctx.target = Target(kind="act", cite_raw=m.group(0), section=m["sec"], act=act, usc_parenthetical=m["paren"])
+        _section_path(ctx, m["path"])
+        ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := WHOLE_ACT.search(h)):
-        ctx.target = Target(kind="act", cite_raw=m.group(0), act=re.sub(r"^The ", "", m["act"]),
+        ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^The ", "", m["act"]), quotes),
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
     elif (m := USC_TITLE.search(h)) and not ctx.is_target_set:
@@ -394,7 +429,9 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
     starts = op_starts(PH_RE.sub(lambda m: m.group(0), lifted))
     child_ctx = ctx.copy()
     head = lifted[:starts[0].start()] if starts else lifted
-    flags = list(qflags) + apply_head(head, child_ctx)
+    flags = list(qflags) + apply_head(head, child_ctx, quotes)
+    if child_ctx.target.kind != "unknown" and child_ctx.target.section:
+        child_ctx.memory["last"] = child_ctx.target_out()
     out: list[Instruction] = []
     for i, st in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(lifted)

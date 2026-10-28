@@ -210,3 +210,69 @@ exposed five harvest regexes that had mislabeled correct parses, now corrected.
   23 target a public law by number. For 608 (20%) the parser recognized no target (kind `unknown`),
   e.g. enacting clauses it did not read as a target, or heads naming the target in a form outside P1/P14.
   Those reach the resolver as UNKNOWN; the resolver milestone (M5) must measure and reduce them.
+
+## M5: Resolver and Act-to-Code (2026-10-28) — gate PASS
+
+**Gate** (from `docs/00-build-plan.md` and `docs/05-resolver.md`): zero silent mis-resolutions on 50 Act-section
+references drawn from the oracle corpus, checked against the next release point.
+
+**Built** (`billmap.resolve`):
+- **Code targets:** a section and unit, a chapter or subchapter chain, or a whole title resolves to its node.
+  Duplicate section numbers, missing units and repealed sections are reported, never guessed.
+- **Act targets:** the Act is identified from the drafted public law, the OLRC Popular Name table, or both.
+  Its Code location then comes from three layers, which are cross-checked:
+  1. Source credits from the Code itself: each section's enacting credit names the Act and the Act section.
+     For Acts cited by date and chapter, the section is read from the credit text, because the link omits it.
+  2. OLRC classification tables.
+  3. Act text set out in notes ("…, provided that:"), giving NOTE locations. A note on a chapter heading
+     is cited as "note prec. <first section>", as OLRC does.
+- **The drafted parenthetical is a second witness.** When it agrees, the result is `verified`. When it
+  disagrees, the result is UNKNOWN with both candidates. When it is the only evidence, the result is
+  flagged "unverified: parenthetical only".
+- **Outcomes:** CODIFIED, NOTE, SPLIT, UNCODIFIED and UNKNOWN, each with evidence, flags and a reason.
+  Positive-law status is stamped on every result.
+- **Wiring:** the statute server's `act_to_code` tool now uses the resolver, and `billmap resolve "<target as drafted>"` runs it from the command line.
+
+**Decision (mine, recorded):** layer 1 ignores positive-law titles. There, a section's first credit names the
+law that inserted it (10 U.S.C. 1791 credits Pub. L. 104-106 § 568), not an Act section codified there. Using
+it would silently send references to those laws into title 10.
+
+**Ground truth:** OLRC's classification table row whose law section matches the instruction's bill location
+names the Code section, or note, that the amendment changed. When the table and a resolution disagree only on
+section text versus note at the same section, the oracle settles it: did the section text or its notes
+change between the law's release points? A resolution is silently wrong when it claims a location the truth
+contradicts without being flagged.
+
+**Run:** `.venv/bin/python scripts/m5_gate.py` (about 60 s, including 32 s to build the Act-to-Code index); output in `var/m5_gate.md`.
+
+| Check | Result | Measured |
+| --- | --- | --- |
+| Zero silent mis-resolutions on 50 Act-section references (seed 20261028) | PASS | 40 correct, **0 silent wrong**, 1 wrong but flagged, 3 UNCODIFIED, 6 UNKNOWN |
+| Resolved sections show the law at the next release point | PASS | 34/34: text changed 32; 2 amendments set out as pending-effective-date notes |
+| All checkable Act references in the corpus (measurement) | PASS | 988 checkable (1,287 Act references): 831 correct, **0 silent wrong**, 3 wrong but flagged, 5 SPLIT, 39 UNCODIFIED, 110 UNKNOWN |
+
+Outcomes over all 2,933 parsed corpus instructions: Act targets CODIFIED 1,041, NOTE 314, UNCODIFIED 195, UNKNOWN 168,
+SPLIT 5; Code targets CODIFIED 1,131, UNKNOWN 7; public-law targets NOTE 15, UNCODIFIED 5; unknown targets 52.
+
+**The three flagged wrong answers are all real hard cases, caught:**
+- **Atomic Energy Defense Act:** 119-60 § 3111 repealed the Act's title 50 sections and re-enacted them in title 10,
+  while §§ 3114–3115 of the same bill amend them at their old citations ("50 U.S.C. 2661"). This is the "amendments
+  to text another section of the same bill amends" case. The resolver lands on a repealed section and flags it.
+- **Intelligence Authorization Act for FY1985 § 601:** credits and notes point to different places. Flagged.
+
+**Parser improvements made for M5:** the M4 gate is unchanged, at 3,088 = 2,933 + 155 and coverage 0.902.
+- **Target recognition:** instructions with no recognized target dropped from 580 to 52.
+- **Header fix:** "In general.—" headers were not split from the unit text, because headers beginning "In " were refused.
+- **New target forms:** Act names with commas, quoted nicknames and fiscal-year qualifiers; Act-level titles
+  ("Title II of the National Housing Act"); "such section", "Subsection (d) of such section" and "such title"
+  across sibling units (each bill section remembers the last target); "Section 2(6) (16 U.S.C. 973(6))" with
+  the Act implied.
+
+**Found along the way:**
+- **Delayed effective dates:** OLRC does not execute amendments with a delayed effective date. It sets them out
+  in an "Amendment of Section" note (e.g. 119-60 § 535(b)(4) under 50 U.S.C. 3811, effective one year after
+  enactment). The M6 dry-run oracle must accept "pending" as an outcome.
+- **Note versus section:** the classification table sometimes lists a section where the amended text is
+  actually the Act text in its note (NDAA FY2019 § 1792 under 50 U.S.C. 4531). The oracle settles these.
+- **Index fix:** the main index lacked the new `source_credits(section_id)` index (the database predates it).
+  Opening the Indexer applies the schema, so this is fixed in place.

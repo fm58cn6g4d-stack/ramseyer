@@ -47,3 +47,13 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | "Except" release points | `119-73not60` (through 119-73 except 119-60) and `119-102not101` exist. The label carries the exception, and so do the zip names (`xml_usc49@119-73not60.zip`). The "not" release point comes before the plain one, which is the first to include the held-back law |
 | Newer release point | 119-136 (October 22, 2026) is now current. The pin stays at 119-134 until a deliberate re-index |
 | Congress.gov law endpoint | `/v3/law/{congress}/pub/{number}` returns `bill.type`, `bill.number` and `bill.title`; e.g. 119-75 is H.R. 7148 |
+
+## M5 (checked 2026-10-28)
+
+| Item | Finding |
+| --- | --- |
+| Popular Name tool | `https://uscode.house.gov/popularnames/popularnames.html` is one 8 MB page with 13,661 names. Each entry is `div.popular-name-table-entry` > `p.popular-name` plus one or more `p.popular-name-information[content-type=cite]`, whose `t3searchkey` is a public law ("107-188") or year:chapter ("1944:373"), with `datekey` the enactment date. Each entry also has a `release-point` attribute (119-136 on the day fetched) |
+| Positive-law titles | The browse page marks positive-law titles with "*" ("This title has been enacted as positive law. However, any Appendix to this title has not been enacted"). Its 27 titles (1, 3, 4, 5, 9, 10, 11, 13, 14, 17, 18, 23, 28, 31, 32, 35, 36, 37, 38, 39, 40, 41, 44, 46, 49, 51, 54) are exactly the titles whose XML has `is-positive-law = yes` |
+| Source-credit links | For Acts cited by date and chapter, the credit link is `/us/act/1944-07-01/ch373` with no section. The Act section appears only in the credit text ("title III, §317U, as added …"). Links for public laws carry the full path (`/us/pl/116/94/dN/tI/s404/b`) |
+| Act text in notes | Statutory notes that carry an Act section's text open with its citation and "provided that:" ("Pub. L. 116–283, div. A, title V, § 589, Jan. 1, 2021, …, provided that:"). Notes on a chapter heading are what OLRC cites as "note prec. <first section>" |
+| Delayed amendments | An amendment with a delayed effective date is not executed at the next release point. It appears as an "Amendment of Section" note ("provided that, effective one year after Dec. 18, 2025, this section is amended as follows: …") |

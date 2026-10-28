@@ -266,7 +266,8 @@ class Segmenter:
                 self.units.pop()
         header, text = None, rest
         h = HEADER_RE.match(rest)
-        if h and not h.group(1).strip().startswith(("in ", "by ", "In ", "By ")) and len(h.group(1).split()) <= 20:
+        # A header ends with ".—" ("In general.—"); lowercase starts are instruction text, never headers.
+        if h and not h.group(1).strip().startswith(("in ", "by ")) and len(h.group(1).split()) <= 20:
             header, text = h.group(1).strip(), h.group(2).strip()
         node = Node(loc=self._loc(level, enum), level=level, enum=enum, header=header, text=text, span=span)
         parent = self.units[-1] if self.units else self.section

@@ -73,6 +73,23 @@ def parse(draft: str = typer.Argument(..., help="Path to a .txt or .md draft, or
         typer.echo(f"  UNPARSED {i.bill_loc}: {i.reason}")
 
 
+@app.command()
+def resolve(phrase: str = typer.Argument(..., help="A target as drafted, e.g. 'Section 317U(b) of the Public Health "
+                                                   "Service Act (42 U.S.C. 247b-23)'")) -> None:
+    """Resolve one drafted target to its Code location (or say exactly why not)."""
+    from billmap.data.index import Index
+    from billmap.parse.grammar import Ctx, apply_head, lift_quotes
+    from billmap.statute import StatuteService
+    cfg = config.load()
+    ctx = Ctx()
+    head, quotes, _ = lift_quotes(phrase)
+    apply_head(head, ctx, quotes)
+    svc = StatuteService()
+    res = svc.resolver(Index(cfg.index_path, cfg.release_pin)).resolve(ctx.target_out())
+    typer.echo(json.dumps({"target": ctx.target_out().model_dump(exclude_defaults=True), **res.model_dump()},
+                          indent=2, ensure_ascii=False))
+
+
 @app.command("serve-mcp")
 def serve_mcp() -> None:
     """Start the statute MCP server on stdio."""

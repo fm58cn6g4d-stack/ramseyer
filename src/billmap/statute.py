@@ -343,32 +343,36 @@ class StatuteService:
                 "edition_content_differences": db.execute(
                     "SELECT count(*) FROM edition_diffs WHERE rp=? AND kind='content'", (ix.rp_id,)).fetchone()[0]}
 
-    def act_to_code(self, public_law: str, section: str, as_of: str | None = None) -> dict:
-        """Code sections whose source credit cites the Act section (layer 1 of docs/05-resolver.md).
-
-        This layer is unvalidated until M5; results say so. A credit for "s301" also matches
-        "s301/b" (a subsection of the Act section), and never matches "s3010".
-        """
+    def act_to_code(self, public_law: str, section: str, as_of: str | None = None, act: str | None = None) -> dict:
+        """Code location of an Act section via the resolver (docs/05-resolver.md): source credits, notes,
+        classification tables and the popular name table, cross-checked; never a guess."""
+        from billmap.parse.ir import Target
         ix = self._index(as_of)
-        m = re.search(r"(\d+)\s*[–-]\s*(\d+)", public_law)
-        if not m:
+        m = re.search(r"(\d+)\s*[\u2013-]\s*(\d+)", public_law or "")
+        if not m and not act:
             raise StatuteError("not_found", f"not a public law number: {public_law!r}", ix.release_point)
-        pl = f"{m.group(1)}-{m.group(2)}"
-        sec = str(section).strip().lstrip("§ ").strip()
-        rows = ix.db.execute("SELECT c.section_id, c.pl_section FROM source_credits c JOIN nodes n ON "
-                             "n.id=c.section_id WHERE c.pl=? AND n.rp=?", (pl, ix.rp_id)).fetchall()
-        found: dict[int, list[str]] = {}
-        for sid, pl_section in rows:
-            parts = (pl_section or "").split("/")
-            if f"s{sec}" in parts:
-                found.setdefault(sid, []).append(pl_section)
-        results = []
-        for sid, credits in found.items():
-            n = ix._node(sid)
-            results.append({**self._brief(n, ix), "credit_paths": sorted(set(credits))})
-        results.sort(key=lambda r: r["identifier"])
-        return {"release_point": ix.release_point, "public_law": pl, "act_section": sec,
-                "method": "source credits (layer 1; unvalidated until M5)", "results": results}
+        sec = str(section).strip().lstrip("\u00a7 ").strip()
+        path = re.findall(r"\([\w]+\)", sec)
+        sec = re.sub(r"\(.*$", "", sec)
+        target = Target(kind="pl" if m else "act", section=sec, path=path, act=act,
+                        public_law=f"{m.group(1)}-{m.group(2)}" if m else None,
+                        cite_raw=f"section {section} of {public_law or act}")
+        res = self.resolver(ix).resolve(target)
+        return {"release_point": ix.release_point, "public_law": target.public_law, "act": act, "act_section": sec,
+                **res.model_dump(exclude={"release_point"})}
+
+    def resolver(self, ix: Index):
+        if not hasattr(self, "_resolvers"):
+            self._resolvers = {}
+        if ix.release_point not in self._resolvers:
+            from billmap.data.http import Fetcher
+            from billmap.resolve import popular
+            from billmap.resolve.actcode import classification_map
+            from billmap.resolve.resolver import Resolver, classification_rows
+            cfg = config.load()
+            self._resolvers[ix.release_point] = Resolver(ix, popular.load(), classification_map(
+                classification_rows(Fetcher(cfg), cfg.olrc_base)))
+        return self._resolvers[ix.release_point]
 
     def _limit(self, limit: int, ix: Index) -> int:
         if not 1 <= int(limit) <= MAX_LIMIT:
