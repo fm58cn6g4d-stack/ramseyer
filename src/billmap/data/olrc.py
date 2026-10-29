@@ -6,6 +6,7 @@ parsers are deliberately small and pinned by fixture tests in tests/unit/test_ol
 from __future__ import annotations
 
 import html as htmlmod
+import json
 import re
 from dataclasses import dataclass, field
 from urllib.parse import urljoin
@@ -81,6 +82,23 @@ _PL_RE = re.compile(r"^\d+-\d+$")
 _TAIL_RE = re.compile(r'^(.*?)(?:\s+|(?<="))(\d+(?:-\d+)?)\s*$')
 
 
+def _parse_ct_records(page: str) -> list[ClassificationRow]:
+    """The table's other layout (the 118th Congress tables, seen 2026-10-29): rows as a JSON array assigned to
+    `var ctRecords` in a script, rendered client-side. Records missing a field raise."""
+    m = re.search(r"var ctRecords\s*=\s*(?=\[)", page)
+    if not m:
+        raise ValueError("classification table ctRecords array not found")
+    records, _ = json.JSONDecoder().raw_decode(page, m.end())
+    rows: list[ClassificationRow] = []
+    for r in records:
+        pl = r["publiclaw"].strip()
+        if not _PL_RE.match(pl):
+            raise ValueError(f"unparsed classification record: {r!r}")
+        rows.append(ClassificationRow(r["usctitle"].strip(), r["uscsection"].strip(), r["uscdescription"].strip(), pl,
+                                      htmlmod.unescape(r["publiclawsection"]).strip(), r["statutesatlargepage"].strip()))
+    return rows
+
+
 def parse_classification_table(page: str) -> list[ClassificationRow]:
     """Parse a 'Sorted in Public Law order' table (fixed-width text inside <PRE>).
 
@@ -89,6 +107,8 @@ def parse_classification_table(page: str) -> list[ClassificationRow]:
     """
     start = page.upper().find("<PRE>")
     end = page.upper().find("</PRE>", start)
+    if (start < 0 or end < 0) and "var ctRecords" in page:
+        return _parse_ct_records(page)
     if start < 0 or end < 0:
         raise ValueError("classification table <PRE> block not found")
     raw = re.sub(r"<[^>]+>", "", page[start:end])

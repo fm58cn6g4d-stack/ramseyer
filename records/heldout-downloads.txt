@@ -1,0 +1,32 @@
+# M6b held-out snapshots: 29 OLRC release-point zips (USLM XML, per title) archived by the Internet Archive.
+# Chosen 2026-10-29 from the archive's index of /download/releasepoints/us/pl/118/ (uploaded by Espen).
+# Not used: downloading these needs web.archive.org, which this environment cannot reach, and a manual download was not practical. Kept for provenance.
+https://web.archive.org/web/20241020055251id_/https://uscode.house.gov/download/releasepoints/us/pl/118/14/xml_usc49@118-14.zip
+https://web.archive.org/web/20250209175827id_/https://uscode.house.gov/download/releasepoints/us/pl/118/151/xml_usc49@118-151.zip
+https://web.archive.org/web/20250209221047id_/https://uscode.house.gov/download/releasepoints/us/pl/118/157/xml_usc42@118-157.zip
+https://web.archive.org/web/20250209221023id_/https://uscode.house.gov/download/releasepoints/us/pl/118/157/xml_usc49@118-157.zip
+https://web.archive.org/web/20250209134548id_/https://uscode.house.gov/download/releasepoints/us/pl/118/158/xml_usc42@118-158.zip
+https://web.archive.org/web/20241020053203id_/https://uscode.house.gov/download/releasepoints/us/pl/118/16/xml_usc49@118-16.zip
+https://web.archive.org/web/20241020043823id_/https://uscode.house.gov/download/releasepoints/us/pl/118/21/xml_usc07@118-21.zip
+https://web.archive.org/web/20241020044851id_/https://uscode.house.gov/download/releasepoints/us/pl/118/21/xml_usc42@118-21.zip
+https://web.archive.org/web/20241020041530id_/https://uscode.house.gov/download/releasepoints/us/pl/118/22/xml_usc07@118-22.zip
+https://web.archive.org/web/20241020042633id_/https://uscode.house.gov/download/releasepoints/us/pl/118/22/xml_usc42@118-22.zip
+https://web.archive.org/web/20241020034654id_/https://uscode.house.gov/download/releasepoints/us/pl/118/30/xml_usc49@118-30.zip
+https://web.archive.org/web/20241020030720id_/https://uscode.house.gov/download/releasepoints/us/pl/118/34/xml_usc42@118-34.zip
+https://web.archive.org/web/20241020030929id_/https://uscode.house.gov/download/releasepoints/us/pl/118/34/xml_usc49@118-34.zip
+https://web.archive.org/web/20241020024738id_/https://uscode.house.gov/download/releasepoints/us/pl/118/39/xml_usc42@118-39.zip
+https://web.archive.org/web/20241020023302id_/https://uscode.house.gov/download/releasepoints/us/pl/118/40/xml_usc49@118-40.zip
+https://web.archive.org/web/20241020021502id_/https://uscode.house.gov/download/releasepoints/us/pl/118/41/xml_usc49@118-41.zip
+https://web.archive.org/web/20241020013326id_/https://uscode.house.gov/download/releasepoints/us/pl/118/44/xml_usc22@118-44.zip
+https://web.archive.org/web/20241020011535id_/https://uscode.house.gov/download/releasepoints/us/pl/118/47/xml_usc22@118-47.zip
+https://web.archive.org/web/20241020012247id_/https://uscode.house.gov/download/releasepoints/us/pl/118/47/xml_usc50@118-47.zip
+https://web.archive.org/web/20241020005744id_/https://uscode.house.gov/download/releasepoints/us/pl/118/49/xml_usc22@118-49.zip
+https://web.archive.org/web/20241020010519id_/https://uscode.house.gov/download/releasepoints/us/pl/118/49/xml_usc50@118-49.zip
+https://web.archive.org/web/20241020004039id_/https://uscode.house.gov/download/releasepoints/us/pl/118/51/xml_usc22@118-51.zip
+https://web.archive.org/web/20241020004743id_/https://uscode.house.gov/download/releasepoints/us/pl/118/51/xml_usc50@118-51.zip
+https://web.archive.org/web/20241019233653id_/https://uscode.house.gov/download/releasepoints/us/pl/118/64/xml_usc49@118-64.zip
+https://web.archive.org/web/20240604065941id_/https://uscode.house.gov/download/releasepoints/us/pl/118/64not63/xml_usc49@118-64not63.zip
+https://web.archive.org/web/20241019225831id_/https://uscode.house.gov/download/releasepoints/us/pl/118/66/xml_usc42@118-66.zip
+https://web.archive.org/web/20241019224022id_/https://uscode.house.gov/download/releasepoints/us/pl/118/70/xml_usc42@118-70.zip
+https://web.archive.org/web/20240927031220id_/https://uscode.house.gov/download/releasepoints/us/pl/118/82/xml_usc38@118-82.zip
+https://web.archive.org/web/20241118202907id_/https://uscode.house.gov/download/releasepoints/us/pl/118/90/xml_usc38@118-90.zip

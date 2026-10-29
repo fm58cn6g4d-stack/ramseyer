@@ -46,3 +46,16 @@ def test_classification_unknown_line_fails_loud():
         "119-70   2 ", "11970    2 ")
     with pytest.raises(ValueError, match="unparsed classification line"):
         olrc.parse_classification_table(page)
+
+
+def test_classification_table_json_layout():
+    # The other layout (118th Congress tables): records in a script array, synthetic values.
+    page = ('<html><table id="ctHTMLTable"></table><script>var statVolume = "1";\nvar ctRecords = [\n'
+            '{"usctitle": "99", "uscsection": "101", "uscdescription": "", "publiclaw": "118-63", '
+            '"publiclawsection": "201(a)", "statutesatlargepage": "1001", "dateofenactment": "05/16/2024"},\n'
+            '{"usctitle": "99", "uscsection": "102", "uscdescription": "nt new", "publiclaw": "118-63", '
+            '"publiclawsection": "1", "statutesatlargepage": "1000", "dateofenactment": "05/16/2024"}\n];\n'
+            'var other = [1];</script></html>')
+    rows = olrc.parse_classification_table(page)
+    assert [(r.title, r.section, r.description, r.public_law, r.law_section) for r in rows] == [
+        ("99", "101", "", "118-63", "201(a)"), ("99", "102", "nt new", "118-63", "1")]
