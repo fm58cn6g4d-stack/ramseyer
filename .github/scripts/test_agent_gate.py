@@ -116,6 +116,18 @@ class Reviews(unittest.TestCase):
         self.assertFalse(self.ev([a, b])[0])
         self.assertTrue(self.ev([a, b, c])[0])
 
+    def test_edited_into_block_counts_from_the_edit(self):
+        old = item(review("changes-requested"), t="2026-10-26T10:00:00Z", app="claude")
+        old["updated_at"] = "2026-10-26T12:00:00Z"
+        later = item(review(), t="2026-10-26T11:00:00Z", app="claude")
+        self.assertFalse(self.ev([old, later])[0])
+
+    def test_edited_old_approval_does_not_lift_a_later_block(self):
+        old = item(review(), t="2026-10-26T10:00:00Z", app="claude")
+        old["updated_at"] = "2026-10-26T12:00:00Z"
+        block = item(review("changes-requested"), t="2026-10-26T11:00:00Z", app="claude")
+        self.assertFalse(self.ev([old, block])[0])
+
     def test_outsider_comment_ignored(self):
         self.assertFalse(self.ev([item(review(), user="someone-else", app="claude")])[0])
 

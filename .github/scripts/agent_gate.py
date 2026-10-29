@@ -315,7 +315,8 @@ def same_changes(old, new):
 def review_items(comments, reviews):
     """Issue comments and formal PR reviews as review inputs. A dismissed approval is withdrawn and does not count; a
     dismissed changes-requested still blocks, since a block stands until the same reviewer approves."""
-    items = [{"body": c.get("body"), "created_at": c["created_at"], "user": c["user"]["login"],
+    items = [{"body": c.get("body"), "created_at": c["created_at"], "updated_at": c.get("updated_at") or "",
+              "user": c["user"]["login"],
               "app": (c.get("performed_via_github_app") or {}).get("slug")} for c in comments]
     for r in reviews:
         dismissed = (r.get("state") or "").upper() == "DISMISSED"
@@ -325,13 +326,22 @@ def review_items(comments, reviews):
     return items
 
 
+def verdict_time(it):
+    """When a review item's verdict was given. A comment edited into changes-requested blocks from its edit; an
+    approval dates from when it was posted, so editing an old approval cannot outrun a later block."""
+    p = parse_review(it.get("body"))
+    if p and p[0] == "changes-requested":
+        return max(it["created_at"], it.get("updated_at") or "")
+    return it["created_at"]
+
+
 def evaluate_reviews(items, head_sha, author, owners, policy, carries=lambda h: False, ignore_blocks=False):
     """items: [{'body','created_at','app'}] in any order. `carries(h)` says whether an approval of commit h still
     describes the head (see same_changes). Returns (ok, summary, approvals, blocks)."""
     author_agent, author_session = author
     latest = {}
     trusted = set(policy["trusted_logins"])
-    for it in sorted(items, key=lambda x: x["created_at"]):
+    for it in sorted(items, key=verdict_time):
         if it.get("user") not in trusted:
             continue  # on a public repository anyone can comment
         p = parse_review(it["body"])
