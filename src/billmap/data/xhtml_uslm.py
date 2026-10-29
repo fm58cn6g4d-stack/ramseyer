@@ -60,7 +60,7 @@ def _text(el) -> str:
         if not isinstance(c.tag, str):
             parts.append(c.tail or "")
             continue
-        if c.tag == "sup" and c.find("a") is not None and (c.text_content() or "").strip().isdigit():
+        if c.tag == "sup" and (c.text_content() or "").strip().isdigit():     # footnote marker, linked or not
             parts.append(f"{FN_OPEN}{c.text_content().strip()}{FN_CLOSE}")
         elif c.tag == "br":
             parts.append(" ")
@@ -314,8 +314,7 @@ def _emit_items(el, items, tag, notes):
         if kind == "table":
             _put_text(el, "", tag, notes).append(_table(val))
         elif kind == "block":
-            q = etree.SubElement(_put_text(el, "", tag, notes), NS + "quotedContent")
-            q.text = val
+            _put_text(_put_text(el, "", tag, notes), val, "quotedContent", notes)
         else:
             _put_text(el, " " + val if tag == "content" else val, tag, notes)
 

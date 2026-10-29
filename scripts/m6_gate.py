@@ -62,9 +62,9 @@ def _text(el) -> str:
         parent, tail = ref.getparent(), ref.tail or ""
         prev = ref.getprevious()
         if prev is not None:
-            prev.tail = (prev.tail or "").rstrip("\u202f") + tail
+            prev.tail = (prev.tail or "").rstrip("\u202f\u00a0 ") + tail
         else:
-            parent.text = (parent.text or "").rstrip("\u202f") + tail
+            parent.text = (parent.text or "").rstrip("\u202f\u00a0 ") + tail
         parent.remove(ref)
     for h in el.iter("{*}heading"):     # heading case is OLRC's editorial choice (records/milestones.md, M6)
         for n in h.iter():
@@ -157,11 +157,23 @@ def main() -> int:
          f"of targets)"),
     ]
     by_stage = collections.Counter(o.stage for o in mism)
+    halves = []
+    if tag == "m6b_govinfo":
+        # Dev half (even public-law numbers) is used to find and fix errors; the test half (odd) is only measured.
+        for name, keep in (("dev (even laws)", 0), ("test (odd laws)", 1)):
+            os_ = [o for o in rep.outcomes if int(o.pl.split("-")[1]) % 2 == keep]
+            tg = sum(o.outcome in ("match", "mismatch", "missed") for o in os_)
+            cl = [o for o in os_ if o.outcome in ("match", "mismatch") and o.status == "CLEAN"]
+            sub = sum(o.outcome == "mismatch" and o.stage != "editorial" for o in cl)
+            halves.append(f"- {name}: targets {tg}, matched {sum(o.outcome == 'match' for o in os_)}, CLEAN {len(cl)} "
+                          f"({len(cl) / max(tg, 1):.1%} of targets), substantive false-clean {sub} "
+                          f"({sub / max(len(cl), 1):.2%}), raw {sum(o.outcome == 'mismatch' for o in cl)}")
     lines = [f"# {tag.upper()} gate" + heading, "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
              f"{time.monotonic() - t0:.0f}s.", "", "| Check | Result | Measured |", "| --- | --- | --- |"]
     lines += [f"| {n} | {'PASS' if ok else 'FAIL'} | {d.replace('|', '/')} |" for n, ok, d in checks]
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
               "", "Mismatches by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
+              *(["", "Halves:", *halves] if halves else []),
               "", "## Per law", ""]
     lines += [f"- {pl}: " + ", ".join(f"{k} {v}" for k, v in sorted(c.items())) for pl, c in rep.by_law.items()]
     lines += ["", f"## Mismatches (first {args.show}; CLEAN ones first)", ""]

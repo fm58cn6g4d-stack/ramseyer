@@ -80,7 +80,9 @@ def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
 
 # ---- OLRC's editorial form of Act cross-references ------------------------------------------
 ACT_XREF = re.compile(r"section (?P<sec>[\w\u2013.-]+?(?:\([\w]+\))*) of (?:the )?(?P<act>[A-Z][^()\u201c\u201d]*?"
-                      r"(?:Act|Code)(?: of \d{4})?) \((?P<t>\d+) U\.S\.C\. (?P<z>[\w\u2013.-]+?(?:\([\w]+\))*)\)")
+                      r"(?:Act|Code)(?: of \d{4})?|Act of (?:January|February|March|April|May|June|July|August|"
+                      r"September|October|November|December) \d{1,2}, \d{4}(?:, ch\. \d+)?) "
+                      r"\((?P<t>\d+) U\.S\.C\. (?P<z>[\w\u2013.-]+?(?:\([\w]+\))*)\)")
 
 
 # Measured on the subsection headings of titles 10, 14 and 46 (records/milestones.md, M6): these stay lowercase;
@@ -367,9 +369,9 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
             new = new + " " + old
         else:
             new = new + old
-        if new and left and not new[0].isspace() and not left[-1].isspace() and new[0].isalnum() \
-                and left[-1].isalnum():
-            new = " " + new
+        if new and left and not new[0].isspace() and not left[-1].isspace() and WORD_START.match(new) \
+                and WORD_END.search(left[-1]):
+            new = " " + new                     # "subparagraph (A)" + "and shall ..." -> "(A) and shall"
     lc = left[-1:] if not new or not new[0].isspace() else " "
     rc = right[:1]
     if not new or new.isspace():
@@ -426,7 +428,9 @@ def build_units(block: str, positive_law: bool = False, dash: bool | None = None
         num = etree.SubElement(sec, NS + "num", value=m.group(1))
         num.text = f"§ {m.group(1)}."
         h = etree.SubElement(sec, NS + "heading")
-        h.text = " " + m.group(2).rstrip(".")
+        # "§ 15735. Mid-Atlantic Regional Commission." is printed with the law's period (and a "So in original"
+        # footnote, 40 U.S.C. 15735); the period after a rendered "SEC. N. Header." is the renderer's.
+        h.text = " " + (m.group(2) if lines[0].startswith("§") else m.group(2).rstrip("."))
         units, loose = build_units("\n".join("\u201c" + x for x in lines[1:]) + "\u201d", positive_law, dash, case) \
             if len(lines) > 1 else ([], [])
         if loose:

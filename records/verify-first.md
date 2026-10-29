@@ -87,3 +87,19 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | github.com/CourtGPT/us-code | A JSON mirror of OLRC, flattened to section `text`. Its history is 4 commits, with one data snapshot (release 119-100, 2026-07-13), so it has no earlier versions |
 | GovInfo USCODE collection (api.govinfo.gov with the api.data.gov key) | 1,552 packages, annual editions from 1994. Title 49's 2023 edition has 1,761 granules, one per section (e.g. `USCODE-2023-title49-subtitleV-partC-chap243-sec24301`), with htm, pdf, mods and premis links but no USLM. The htm is OLRC's XHTML: `documentid`, `itempath`, `currentthrough` comments, `field-start:statute`, and `p.statutory-body`, `-1em`, `-2em` with the enumerators inline. Currency: 2023 edition `currentthrough:20240103`, 2024 edition `currentthrough:20250106` |
 | GovInfo bulk data (github.com/usgpo/bulk-data; `www.govinfo.gov/bulkdata/{json,xml}/...` with an Accept header) | 15 collections: CFR, FR, BILLSTATUS, CBD, PPP, SCD, BILLS, GOVMAN, BILLSUM, PAI, ECFR, HMAN, PLAW (USLM beta, Congresses 113–119), STATUTE (USLM beta) and COMPS (USLM beta). **No USCODE**: `bulkdata/json/USCODE` returns 404. COMPS is one file per compiled Act (e.g. `COMPS-10282.xml`) plus `COMPS.zip`, current versions only. None of these gives a dated Code snapshot |
+| Internet Archive | The Wayback CDX index lists 51 archived 118th-Congress release-point zips from OLRC (URLs kept in `records/heldout-downloads.txt`). From this environment, `web.archive.org` resets the connection and the availability API returns 429, so they could not be used |
+| GPO USLM repo (github.com/usgpo/uslm) | `USLM.xsd` 1.0.18 declares namespace `http://xml.house.gov/schemas/uslm/1.0`, which is the one OLRC's release XML uses. The converter's output uses the same elements (`section`, `subsection` … `subitem`, `num`, `heading`, `chapeau`, `content`, `continuation`, `quotedContent`, `ref class="footnoteRef"`, `note type="footnote"`, `sourceCredit`) |
+
+## M6b: GovInfo XHTML conventions (checked 2026-10-29 on 119-134 XHTML against the USLM release)
+
+| Item | Finding |
+| --- | --- |
+| Chunking | One `<!-- documentid:… -->` chunk per section, with `itempath` giving the hierarchy. Fields are marked `field-start:head`, `statute`, `sourcecredit`, `*-note`, `footnote`, `repealedhead`, `omittedhead` |
+| Indentation | The `statutory-body-Nem` class does not reliably give depth: "(b)(1)" chains sit flush, and an "(A)" can sit at the same class as its parent "(1)". The converter places units by enumerator sequence, and uses indentation only to break the "(i)" (subsection or clause) and "(I)" ties |
+| Headings | Positive-law titles print subsection headings inline (`cap-smallcap`). Other titles use `h4.*-head` lines, often followed by the unit's first child on its own line |
+| Footnotes | Markers are `&#160;<sup><a …>n</a></sup>`, where USLM has ` <ref class="footnoteRef">n</ref>`. The no-break space before the marker differs between the two forms; the false-clean detector strips trailing spaces before a removed marker |
+| Repeal stubs | "[(c) Repealed. …]" with the bracket before the enumerator, matching USLM's `<num>[(c)</num>` |
+| "§" spacing | XHTML prints "§12" where USLM prints "§ 12" |
+| Measured | 57,660 of 58,696 sections (98.2%) convert with text and unit paths equal to the USLM index (`scripts/xhtml_check.py`) |
+| Source errors in an edition | 42 U.S.C. 280i–4: the 2024 edition (and the 119-134 USLM) print "appropriated 28,100,000" without "$"; the enrolled law has "$". Labelled editorial |
+| OLRC punctuation at a removed footnote | 10 U.S.C. 2218(c)(1)(D): 119-60 strikes "section 11 of the Merchant Ship Sales Act of 1946 (50 U.S.C. 4405)" and inserts "section 57100 of title 46". The comma after the parenthesis is not struck, but OLRC removed it together with the References-in-Text footnote. Labelled editorial |

@@ -124,12 +124,14 @@ ACT_UNIT = re.compile(rf"\b(?P<unit>[Tt]itle|[Ss]ubtitle|[Pp]art|[Cc]hapter|[Ss]
 WHOLE_ACT = re.compile(rf"^(?P<act>{ACT_NAME.replace('(?:the )?', 'The ', 1)})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)"
                        r"[^()]*)*)\))?,?(?:\s+as amended by [^,]+,)?\s+(?:is|are) (?:further )?amended")
 SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of such (?P<what>Act|title|Code|law)")
-SUCH_SECTION = re.compile(rf"^(?:(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause)s? (?P<labels>{LABELS}) of )?"
+SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause)s? (?P<labels>{LABELS}) of "
+# "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
+SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           r"[Ss]uch section\b")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
 BARE_SECTION = re.compile(rf"^(?:[Ss]ection|[Ii]n section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)")
-IN_SECTION = re.compile(rf"\b(?:[Ii]n|for) section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?![\w–(])(?! of)")
+IN_SECTION = re.compile(rf"\b(?:[Ii]n|for|of) section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?![\w–(])(?! of)")
 LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
                       rf" (?P<labels>{LABELS}(?:(?:,| and| or|, and) {LABELS})*)")
 EACH_OF = re.compile(rf"\bin each of (?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})+)")
@@ -233,8 +235,11 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     elif (m := SUCH_SECTION.search(h.strip())) and ctx.memory.get("last") is not None:
         ctx.target = ctx.memory["last"].model_copy(deep=True)
         ctx.path = [(i, lab) for i, lab in enumerate(ctx.target.path)]
-        if m["labels"]:
-            _set_path(ctx, m["unit"].lower(), m["labels"])
+        units = list(re.finditer(SUCH_UNIT_OF, m["chain"]))
+        if units:
+            ctx.path = []
+            for u in reversed(units):                 # outermost unit is named last
+                _set_path(ctx, u["unit"].lower(), u["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := PAREN_SECTION.search(h.strip())) and ctx.target.kind in ("unknown", "act"):
         # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision.
@@ -281,7 +286,9 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         unit = PLURAL.get(m["unit"], m["unit"])
         rank = UNIT_RANK.get(unit, 0)
         base = [p for p in ctx.path if p[0] < rank]
-        ctx.multi = [base + [(rank, lab)] for lab in _labels(m["labels"])]
+        # "in each of paragraphs (1)(A) and (2)(C)": chains, not single labels
+        ctx.multi = [base + [(rank + i, lab) for i, lab in enumerate(_labels(chain))]
+                     for chain in re.findall(LABELS, m["labels"])]
         flags.append("multi_scope")
     else:
         for m in LOCATION.finditer(h):
