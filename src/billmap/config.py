@@ -28,6 +28,7 @@ class Config:
     release_pin: str
     olrc_base: str
     govinfo_bulk: str
+    govinfo_api: str
     congress_api: str
     min_interval: float
     timeout: float
@@ -50,6 +51,7 @@ def load(root: Path = ROOT) -> Config:
         release_pin=raw["release"]["pin"],
         olrc_base=raw["sources"]["olrc_base"],
         govinfo_bulk=raw["sources"]["govinfo_bulk"],
+        govinfo_api=raw["sources"].get("govinfo_api", "https://api.govinfo.gov/"),
         congress_api=raw["sources"]["congress_api"],
         min_interval=float(raw["net"]["min_interval_seconds"]),
         timeout=float(raw["net"]["timeout_seconds"]),

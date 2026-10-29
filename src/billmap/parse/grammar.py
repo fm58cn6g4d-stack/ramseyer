@@ -255,9 +255,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="usc", cite_raw=m.group(0), title=m["t"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
     elif (m := BARE_SECTION.search(h.strip())) or (m := IN_SECTION.search(h)):
-        if ctx.target.kind != "unknown":
-            t = ctx.target.model_copy(deep=True)
-            t.section, t.cite_raw, t.usc_parenthetical = m["sec"], m.group(0), None
+        base = ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last")
+        if base is not None:
+            # "(2) Notice.—Section 41731(a)(1)(D)(ii) is amended ..." after "(1) ... Section 41731(a)(1)(C) of
+            # title 49, United States Code, is amended": the root comes from the bill section's last citation.
+            if ctx.target.kind == "unknown":
+                flags.append(f"root from context: {base.cite_raw}")
+            t = base.model_copy(deep=True)
+            t.section, t.cite_raw, t.usc_parenthetical, t.path = m["sec"], m.group(0), None, []
             ctx.target = t
             _section_path(ctx, m["path"])
             ctx.qualifiers = []

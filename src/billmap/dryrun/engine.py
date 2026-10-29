@@ -925,6 +925,18 @@ class Engine:
         flags = [f for f in ins.flags if f.startswith("redesignation counts differ")]
         if nested:
             flags.append("units found below the named unit, not directly in it")
+        # A "[(d) Repealed ...]" stub that the redesignation leaves out of order goes (49 U.S.C. 308, Pub. L.
+        # 118-63 § 218: (e) became (c) past the (d) stub, and the Code dropped the stub).
+        parent = found[0][0].getparent() if found else None
+        if parent is not None:
+            units = [c for c in parent if local(c) in LEVEL_TAGS and c.find(NS + "num") is not None]
+            for i, c in enumerate(units):
+                num = c.find(NS + "num")
+                later = [u.find(NS + "num").get("value") or "" for u in units[i + 1:]
+                         if not (u.find(NS + "num").text or "").startswith("[")]
+                if (num.text or "").startswith("[") and later and _label_key(later[0]) <= _label_key(num.get("value") or ""):
+                    _remove_keep_tail(c)
+                    flags.append(f"dropped the repeal stub {num.text.rstrip()} left out of order")
         return Result(ins.id, "WARN" if flags else "CLEAN", "; ".join(flags) or f"redesignated {len(found)} unit(s)")
 
     def _redesignate_inline(self, ins, scope, moves):
@@ -951,6 +963,17 @@ class Engine:
             return Result(ins.id, "CLEAN", "section repealed")
         scope.getparent().remove(scope)
         return Result(ins.id, "CLEAN", f"{''.join(path)} repealed")
+
+
+def _label_key(label: str) -> tuple:
+    """Order of unit labels: (2) < (10); (b) < (c) < (aa); (iii) < (iv)."""
+    from billmap.parse.segment import is_roman, roman_to_int
+    if label[:1].isdigit():
+        m = re.match(r"\d+", label)
+        return (0, int(m.group(0)), label[m.end():])
+    if len(label) > 1 and is_roman(label):
+        return (1, roman_to_int(label), "")
+    return (2, len(label), label.lower())
 
 
 def worst(statuses) -> str:

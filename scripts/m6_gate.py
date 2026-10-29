@@ -6,6 +6,8 @@ section dry-run on its text at the law's R_before release point. The harness com
 
 Run:  .venv/bin/python scripts/m6_gate.py [--law 119-118] [--show 30]
 Writes var/m6_gate.md, var/m6_report.json and tests/oracle/m6_baseline.json.
+With --set govinfo (M6b): 2024 laws on GovInfo's 2023/2024 Code editions (tests/oracle/heldout_govinfo.json,
+built by scripts/build_govinfo_heldout.py); writes var/m6b_govinfo_gate.md and tests/oracle/m6b_govinfo_baseline.json.
 With --heldout (M6b): the held-out laws (tests/oracle/heldout.json, built by scripts/build_heldout.py); writes
 var/m6b_gate.md, var/m6b_report.json and tests/oracle/m6b_baseline.json.
 """
@@ -37,6 +39,12 @@ from billmap.resolve.resolver import Resolver, classification_rows
 
 HELDOUT = MANIFEST.with_name("heldout.json")
 HELDOUT_DB = store.ORACLE_DB.with_name("heldout.sqlite")
+SETS = {   # name: (manifest, oracle db, output tag, heading)
+    "tuning": (MANIFEST, store.ORACLE_DB, "m6", ""),
+    "heldout": (HELDOUT, HELDOUT_DB, "m6b", " (held-out laws)"),
+    "govinfo": (MANIFEST.with_name("heldout_govinfo.json"), store.ORACLE_DB.with_name("govinfo.sqlite"), "m6b_govinfo",
+                " (held-out: 2024 laws on GovInfo's 2023/2024 editions)"),
+}
 FALSE_CLEAN_TARGET = 0.01
 
 
@@ -82,18 +90,18 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--law")
     ap.add_argument("--show", type=int, default=30)
-    ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b)")
+    ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b); same as --set heldout")
+    ap.add_argument("--set", choices=sorted(SETS), default="tuning")
     args = ap.parse_args()
     cfg = config.load()
     f = Fetcher(cfg)
     t0 = time.monotonic()
     resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(),
                         classification_map(classification_rows(f, cfg.olrc_base)))
-    corpus = Corpus.load(HELDOUT if args.heldout else MANIFEST)
-    tag = "m6b" if args.heldout else "m6"
+    manifest, db, tag, heading = SETS["heldout" if args.heldout else args.set]
+    corpus = Corpus.load(manifest)
     if args.law:
         corpus.laws = [corpus.law(args.law)]
-    db = HELDOUT_DB if args.heldout else store.ORACLE_DB
     open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
     statuses = collections.Counter()
     runs = {}
@@ -149,7 +157,7 @@ def main() -> int:
          f"of targets)"),
     ]
     by_stage = collections.Counter(o.stage for o in mism)
-    lines = [f"# {tag.upper()} gate" + (" (held-out laws)" if args.heldout else ""), "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
+    lines = [f"# {tag.upper()} gate" + heading, "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
              f"{time.monotonic() - t0:.0f}s.", "", "| Check | Result | Measured |", "| --- | --- | --- |"]
     lines += [f"| {n} | {'PASS' if ok else 'FAIL'} | {d.replace('|', '/')} |" for n, ok, d in checks]
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),

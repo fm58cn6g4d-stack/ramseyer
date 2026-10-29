@@ -74,6 +74,7 @@ class ClassificationRow:
     public_law: str   # "119-75"
     law_section: str  # "7070(b)(1) \"33\"" kept verbatim
     stat_page: str
+    enacted: str | None = None   # "2024-05-16"; given by the JSON layout only
 
 
 _PL_RE = re.compile(r"^\d+-\d+$")
@@ -94,8 +95,10 @@ def _parse_ct_records(page: str) -> list[ClassificationRow]:
         pl = r["publiclaw"].strip()
         if not _PL_RE.match(pl):
             raise ValueError(f"unparsed classification record: {r!r}")
+        mm, dd, yy = (r.get("dateofenactment") or "//").split("/")
         rows.append(ClassificationRow(r["usctitle"].strip(), r["uscsection"].strip(), r["uscdescription"].strip(), pl,
-                                      htmlmod.unescape(r["publiclawsection"]).strip(), r["statutesatlargepage"].strip()))
+                                      htmlmod.unescape(r["publiclawsection"]).strip(), r["statutesatlargepage"].strip(),
+                                      f"{yy}-{mm}-{dd}" if yy else None))
     return rows
 
 
