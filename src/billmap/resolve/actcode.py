@@ -26,6 +26,7 @@ NOTE_TYPES_EXCLUDED = {"amendments", "effectiveDateOfAmendment", "priorProvision
 PL_CITE = re.compile(r"Pub\. L\. (\d+)[–-](\d+)")
 ACT_CITE = re.compile(r"\bact (\w+)\.? (\d+), (\d{4}), ch\. (\w+)", re.I)
 SECTION_IN = re.compile(r"§+\s*([\w–.-]+?)((?:\([\w]+\))*)(?=[,;\s)]|$)")
+CREDIT_DATE = re.compile(r"\b([A-Z][a-z]{2,8})\.? (\d{1,2}), (\d{4})\b")
 PROVIDED = re.compile(r"\b(?:provided(?: that)?:|provided as follows|which (?:read|provided)|enacted)", re.I)
 
 
@@ -58,6 +59,7 @@ class ActCodeIndex:
         self.ix = ix
         self.codified: dict[tuple[str, str], list[Location]] = defaultdict(list)
         self.notes: dict[tuple[str, str], list[Location]] = defaultdict(list)
+        self.by_date: dict[str, set[str]] = defaultdict(set)   # "1976-06-03" -> {"pl:94-304"}: enactment dates
         self._build()
 
     def _build(self) -> None:
@@ -78,10 +80,14 @@ class ActCodeIndex:
                 sec = parts[k][1:]
                 path = tuple(f"({p})" for p in parts[k + 1:])
                 self.codified[(f"pl:{pl}", sec)].append(Location(sid, path, evidence=raw[:160]))
+                d = CREDIT_DATE.search(_enacting_segment(raw))
+                if d and (key := _date_key(*d.groups())):
+                    self.by_date[key].add(f"pl:{pl}")
             else:
                 ident = _act_identity(act_ref, raw)
                 if not ident:
                     continue
+                self.by_date[ident.split(":")[1]].add(ident)
                 for m in SECTION_IN.finditer(_enacting_segment(raw)):
                     sec, path = m.group(1).rstrip("."), tuple(re.findall(r"\([\w]+\)", m.group(2)))
                     self.codified[(ident, sec)].append(Location(sid, path, evidence=raw[:160]))
@@ -105,6 +111,8 @@ class ActCodeIndex:
                     ident, cite_end = (f"act:{d}:{a.group(4)}" if d else None), a.end()
             if not ident:
                 continue
+            if ident.startswith("act:"):
+                self.by_date[ident.split(":")[1]].add(ident)
             seg = head[cite_end:].split(";")[0]
             s = SECTION_IN.search(seg)
             if s and s.start() < 80:

@@ -30,7 +30,8 @@ ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubcha
                      r"(?! of the )(?!,? United States Code)(?! of Public Law)(?! \()"
                      r"|\bthis (?:title|Act|subtitle)\b")
 MARGINS = re.compile(r",? and (?:by )?(?:adjusting|moving) the (?:margins|indentation)[^;.]*(?:[;.]|; and)?")
-LEVEL_TAGS = {"subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem"}
+ORDER = ["subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem"]
+LEVEL_TAGS = set(ORDER)
 
 
 @dataclass
@@ -327,7 +328,7 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
 WORD_END = re.compile(r"[\w).,;:\u201d\"'%]$")
 WORD_START = re.compile(r"^[\w(\u201c$]")
 CLOSE_PUNCT = ".,;:)"
-BARE_ACT_REF = re.compile(r"\bsection (?P<sec>\d+[A-Za-z]?(?:[\u2013-]\d+)?)(?P<path>(?:\(\w+\))*)(?![\w\u2013-])"
+BARE_ACT_REF = re.compile(r"\bsection (?P<sec>\d+[A-Za-z]{0,3}(?:[\u2013-]\d+)?)(?P<path>(?:\(\w+\))*)(?![\w\u2013-])"
                           r"(?! of )(?!,? United States Code)(?! \()")
 STRAY_SPACE = re.compile(r"(?<=\w) +([,;:])")
 SECTION_LINE = re.compile(r"^(?:§+|SEC\.|Sec\.)\s*([\w–-]+(?:\.\d+)?)\.\s*(.*)$")
@@ -407,9 +408,31 @@ def block_lines(block: str) -> list[str]:
     return [nested_to_double(x) for x in lines if x]
 
 
+PLACEHOLDER = "zzcontextzz"     # text of the synthetic context lines build_units sets before a block
+
+
+def _predecessor(level: str, enum: str) -> str | None:
+    """The label before `enum` at `level` ("ii" -> "i", "C" -> "B", "3" -> "2"), or None for a first label."""
+    from billmap.parse.segment import FIRST, int_to_roman, roman_to_int
+    if enum == FIRST.get(level):
+        return None
+    if enum[:1].isdigit():
+        n = int(re.match(r"\d+", enum).group())
+        return str(n - 1) if n > 1 else None
+    if level in ("clause", "subclause"):
+        n = roman_to_int(enum)
+        return (int_to_roman(n - 1) if level == "clause" else int_to_roman(n - 1).upper()) if n > 1 else None
+    if len(enum) == 2 and enum[0] == enum[1]:
+        return enum[0] if enum[0] not in "aA" else None
+    return chr(ord(enum[-1]) - 1) if enum[-1] not in "aA" else None
+
+
 def build_units(block: str, positive_law: bool = False, dash: bool | None = None,
-                case: dict[str, str | None] | None = None) -> tuple[list[etree._Element], list[str]]:
-    """Quoted block -> USLM unit (or section) elements. Returns (elements, plain text lines that had no unit)."""
+                case: dict[str, str | None] | None = None, level: str | None = None
+                ) -> tuple[list[etree._Element], list[str]]:
+    """Quoted block -> USLM unit (or section) elements. Returns (elements, plain text lines that had no unit).
+    `level` sets the level of the block's first unit where its label alone is ambiguous ("(i)": subsection or
+    clause): synthetic ancestor lines (and the label before it) are set ahead of the block and dropped after."""
     lines = [nested_to_double(x) for x in block_lines(block)]
     sec_re = SECTION_LINE
     starts = [i for i, x in enumerate(lines) if sec_re.match(x)]
@@ -446,11 +469,27 @@ def build_units(block: str, positive_law: bool = False, dash: bool | None = None
             return [], lines
         units, _ = build_units("\n".join("\u201c" + x for x in lines[first:]) + "\u201d", positive_law, dash, case)
         return units, lines[:first]
-    text = "SEC. 0. X.\n" + "\n".join(lines) + "\n"
+    prefix = []
+    if level in ORDER:
+        from billmap.parse.segment import FIRST
+        prefix = [f"({FIRST[lv]}) {PLACEHOLDER}" for lv in ORDER[:ORDER.index(level)]]
+        m = re.match(r"^\((\w+)\)", lines[0])
+        pred = _predecessor(level, m.group(1)) if m else None
+        if pred:
+            prefix.append(f"({pred}) {PLACEHOLDER}")
+    text = "SEC. 0. X.\n" + "\n".join(prefix + lines) + "\n"
     nodes = Segmenter(normalize(text)).run()
     section = next((n for n in walk(nodes) if n.level == "section"), None)
     if section is None:
         return [], lines
+    if prefix:
+        holder = section            # descend through the synthetic lines to the parent of the block's units
+        while not any(c.text.strip() != PLACEHOLDER for c in holder.children) and holder.children:
+            holder = holder.children[-1]
+        real = [c for c in holder.children if c.text.strip() != PLACEHOLDER]
+        if not real or real[0].level != level:
+            return [], lines
+        section = holder.model_copy(update={"children": real})
 
     def make(node) -> etree._Element:
         tag = node.level if node.level in LEVEL_TAGS else "paragraph"
@@ -511,7 +550,8 @@ class Engine:
         why = None
         added = ins.replace if ins.replace is not None else ins.new_text
         text_op = ins.op in ("STRIKE_INSERT", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH", "AMEND_HEADING")
-        if text_op and added and (STRUCTURAL.search(added) or "\n" in added.strip()):
+        if text_op and added and (STRUCTURAL.search(added) or "\n" in added.strip()) \
+                and not r.detail.startswith("split"):
             why = "the inserted text adds an enumerated unit or heading, which the Code sets as structure"
         elif added and not self.work.positive_law and ACT_REF.search(self._tr(nested_to_double(added))):
             why = ("the inserted text refers to a provision of the Act; the Code sets such references in Code form, "
@@ -674,7 +714,98 @@ class Engine:
         return Result(ins.id, status, detail, evidence=after_hay[ev_at:ev_at + 200], before_span=before,
                       after_span=make_new(before), matches=len(hits))
 
+    def _split(self, ins, scope):
+        """A text edit whose replacement starts new enumerated units restructures the text (42 U.S.C. 284g(a)(1),
+        Pub. L. 118-180 § 2(a); 40 U.S.C. 15702(c)(3), Pub. L. 118-272 § 2250(c)):
+        - "striking “to a county” and inserting “to—“(A) a county”": the text up to the match plus the lead line
+          ("to—") becomes a lead-in (chapeau) over the new units, which are children of the unit;
+        - "striking “toxicology, and interventions” and inserting “toxicology ...; and“(ii) on interventions”": the
+          lead line ends the unit's text and the new units follow as siblings, of the unit or of the ancestor at
+          their level ("disorder; and“(B) ensure ...—“(i) investigates");
+        - "striking “In determining” and inserting “(1) In general.—In determining”" at the start of the text: the
+          whole text moves into the new unit.
+        The rest of the original text continues the last new unit. Returns None when the edit is not of one of these
+        shapes (or later units would have to move), so the literal text edit applies instead."""
+        raw = ins.replace if ins.replace is not None else ins.new_text
+        if not raw or scope is None:
+            return None
+        lines = block_lines(raw)
+        k = next((i for i, x in enumerate(lines) if re.match(r"^\(\w{1,6}\) ", x)), None)
+        if k is None or k > 1:
+            return None
+        find = nested_to_double(ins.find or "")
+        found = []
+        for u in [scope] + [e for e in scope.iter() if local(e) in LEVEL_TAGS and e is not scope]:
+            c = u.find(NS + "content")
+            if c is not None:
+                segs = Working.segments(c)
+                hay = linear(segs)
+                found += [(u, c, segs, hay, h) for h in find_all(hay, find, [(0, len(hay))])[0]
+                          if hay[h[0]:h[1]] == find]
+        if len(found) != 1:
+            return None
+        host, content, segs, hay, (a, b) = found[0]
+        from billmap.parse.segment import candidates
+        lead = self._tr(lines[0]) if k == 1 else ""
+        host_level = local(host)
+        cands = [c for c in candidates(re.match(r"^\((\w+)\)", lines[k]).group(1)) if c in ORDER]
+        deeper = [c for c in cands if host_level == "section" or ORDER.index(c) > ORDER.index(host_level)]
+        anchor = None
+        if k == 0 or lead.rstrip().endswith(("\u2014", ":")):
+            if (k == 0 and hay[:a].strip()) or not deeper or any(local(c) in SUB for c in host):
+                return None             # an enumerated unit starting mid-sentence is not this shape
+            mode, level = ("push" if k == 0 else "children"), deeper[0]
+        else:
+            # Siblings: of the host, or of the ancestor at the new units' level. No unit may follow anywhere on that
+            # chain, or it would have to move (and its label could collide with a new one).
+            mode, anchor = "siblings", host
+            while True:
+                if anchor is None or anchor is self.work.el or any(local(x) in SUB for x in anchor.itersiblings()):
+                    return None
+                if local(anchor) in cands:
+                    break
+                anchor = anchor.getparent()
+            level = local(anchor)
+        units, loose = build_units("\n".join("\u201c" + x for x in lines[k:]) + "\u201d", self.work.positive_law,
+                                   self.work._heading_style(host), self.work.case, level=level)
+        last = [e for e in units[-1].iter(NS + "content")][-1:] if units else []
+        if not units or loose or not last or local(units[0]) != level:
+            return None
+        if not self.work.positive_law:
+            for u in units:
+                for t in u.iter():
+                    if t.text:
+                        t.text = self._tr(t.text)
+        rest = copy.deepcopy(content)
+        replace_span(Working.segments(rest), 0, b, "")
+        replace_span(segs, a, len(hay), lead)
+        if mode == "push":
+            host.remove(content)
+        elif mode == "children":
+            content.tag = NS + "chapeau"
+        dst = last[0]
+        if len(dst):
+            dst[-1].tail = (dst[-1].tail or "") + (rest.text or "")
+        else:
+            dst.text = (dst.text or "") + (rest.text or "")
+        for c in list(rest):
+            dst.append(c)
+        if mode == "siblings":
+            parent, idx = anchor.getparent(), anchor.getparent().index(anchor) + 1
+        else:
+            parent = host
+            idx = (host.index(content) + 1 if mode == "children" else
+                   next((i for i, c in enumerate(host) if local(c) in ("continuation", "notes", "sourceCredit")),
+                        len(host)))
+        for j, u in enumerate(units):
+            parent.insert(idx + j, u)
+        return Result(ins.id, "CLEAN", f"split ({mode}): {len(units)} new unit(s) from the replacement text",
+                      before_span=hay[a:b], after_span=" / ".join(lines))
+
     def _op_strike_insert(self, ins, scope, path):
+        split = self._split(ins, scope) if not ins.target.qualifiers and ins.find else None
+        if split is not None:
+            return split
         new = self._tr(nested_to_double(ins.replace if ins.replace is not None else
                                         "\n".join(block_lines(ins.new_text or ""))))
         positional = any(f.startswith("positional") for f in ins.flags)

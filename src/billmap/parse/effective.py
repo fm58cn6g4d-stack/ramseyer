@@ -47,7 +47,9 @@ def flag_delayed(roots: list[Node], instructions: list[Instruction]) -> int:
     scopes: list[tuple[str, str]] = []
     for n in walk(roots):
         for m in RULE.finditer(n.text or ""):
-            when = m["when"]
+            # Only the "take effect" part decides: "shall take effect on October 1, 2025, and shall apply to payments
+            # ..." is delayed (Pub. L. 118-258 § 117; OLRC left 42 U.S.C. 625 unamended in the 2024 edition).
+            when = re.split(r",? and (?:shall )?apply\b", m["when"])[0]
             if DELAYED.search(when) and not NOT_DELAYED.search(when):
                 scopes += [(s, m.group(0)[:160]) for s in _scopes(n, m["what"])]
     flagged = 0

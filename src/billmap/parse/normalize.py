@@ -56,5 +56,6 @@ def normalize(original: str) -> Normalized:
 
 
 def usc_variants(s: str) -> str:
-    """'U. S. C.', 'USC', 'U.S.C.A.' -> 'U.S.C.' (used on cite text only, not on whole drafts)."""
+    """'U. S. C.', 'USC', 'U.S.C.A.' -> 'U.S.C.'; a misspelled "United Sates Code" (used on cite text only, not on whole drafts)."""
+    s = re.sub(r"\bUnited Sates Code\b", "United States Code", s)        # so drafted in Pub. L. 118-159 § 566(b)
     return re.sub(r"\bU\.?\s?S\.?\s?C\.?(?:\s?A\.?)?(?=[\s)§,;]|$)", "U.S.C.", s)

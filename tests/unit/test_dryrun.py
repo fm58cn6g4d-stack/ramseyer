@@ -90,6 +90,14 @@ def test_delayed_effective_date_is_flagged():
     assert any(f.startswith("delayed effective date") for f in ins[0].flags)
 
 
+def test_future_date_with_application_clause_is_delayed():
+    ins = parse_text("TITLE I—ALPHA\nSEC. 101. AMENDMENT.\nSection 1 of title 99, United States Code, is amended by "
+                     "striking “alpha” and inserting “beta”.\nSEC. 102. EFFECTIVE DATE.\nThe amendments made by this "
+                     "title shall take effect on October 1, 2025, and shall apply to payments for quarters beginning on "
+                     "or after such date.\n").instructions
+    assert any(f.startswith("delayed effective date") for f in ins[0].flags)
+
+
 def test_listed_repeals_fan_out_with_unknown_items_kept():
     ins = parse_text("SEC. 2. REPEALS.\n(a) Title 99.—The following provisions of title 99, United States Code, are hereby "
                      "repealed:\n(1) Chapter 5.\n(2) Section 7.\n(3) The Placeholder Act (99 U.S.C. 1 et seq.).\n").instructions
@@ -108,3 +116,30 @@ def test_strike_at_start_of_text_after_heading():
     text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “The determiner” "
                     "and inserting “The reviewer”.")
     assert res[0].status == "CLEAN" and "The reviewer shall review" in text
+
+
+def test_split_into_lead_in_and_new_units():
+    # "by striking “x” and inserting “y—“(A) x”": the unit's text becomes a chapeau, the rest continues (A).
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a)—\n"
+                    "(1) by striking “review each” and inserting the following: “review—\n“(A) each”; and\n"
+                    "(2) by adding at the end the following:\n“(B) the beta program.”.")
+    assert res[0].status == "CLEAN" and res[0].detail.startswith("split")
+    assert "shall review— (A) each term of the alpha program. (B) the beta program." in " ".join(text.split())
+
+
+def test_text_moves_into_a_new_first_unit():
+    # "by striking “The determiner” and inserting “(1) In general.—The determiner”" at the start of the text.
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a)—\n"
+                    "(1) by striking “The determiner” and inserting “(1) In general.—The determiner”; and\n"
+                    "(2) by adding at the end the following:\n“(2) Beta.—The beta program.”.")
+    assert res[0].status == "CLEAN" and res[0].detail.startswith("split")
+    assert "Rule.— (1) In general.— The determiner shall review each term" in " ".join(text.split())
+
+
+def test_split_continues_as_siblings_at_their_level():
+    # (b)(1) "file a report;" -> "(1) file a report—(A) ...; and(B) ..." then a sibling (2) at the paragraph level.
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (b)(1)—\n"
+                    "(1) by striking “file a report” and inserting “file—\n“(A) a report”; and\n"
+                    "(2) by striking “a report;” and inserting “a report; and\n“(B) a plan;”.")
+    assert [r.detail.split(":")[0] for r in res] == ["split (children)", "split (siblings)"]
+    assert "shall— (1) file— (A) a report; and (B) a plan; (2) keep a record;" in " ".join(text.split())

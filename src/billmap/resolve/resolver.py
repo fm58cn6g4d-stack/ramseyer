@@ -5,15 +5,18 @@ both candidates and the reason, and a result relying on one unverified source sa
 """
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from billmap.data.index import Index, LookupError_
 from billmap.parse.ir import Target
-from billmap.resolve.actcode import ActCodeIndex, Location
+from billmap.resolve.actcode import ActCodeIndex, Location, _date_key
 from billmap.resolve.cites import parse_parenthetical
 from billmap.resolve.popular import norm_name
+
+DATED = re.compile(r"^(?:the )?Act (?:of |entitled.*?approved )([A-Z][a-z]+)\.? (\d{1,2}), (\d{4})$", re.S)
 
 Outcome = Literal["CODIFIED", "NOTE", "SPLIT", "UNCODIFIED", "UNKNOWN"]
 UNIT_ID = {"subtitle": "st", "part": "pt", "subpart": "spt", "chapter": "ch", "subchapter": "sch"}
@@ -154,6 +157,13 @@ class Resolver:
                         ids.append(i)
             elif not ids:
                 ev.append(f"'{t.act}' not in the popular name table")
+        if not ids and t.act and (d := DATED.match(t.act)):
+            # "the Act of March 3, 1899", "the Act entitled “…”, approved June 3, 1976": the laws the Code's source
+            # credits and notes date to that day. Several on one day stay ambiguous unless the parenthetical picks.
+            key = _date_key(*d.groups())
+            dated = sorted(self.acts.by_date.get(key, ())) if key else []
+            ids += dated
+            ev.append(f"Act dated {key}: {', '.join(dated) or 'no law of that date in the source credits'}")
         return ids, ev
 
     def _act(self, t: Target) -> Resolution:

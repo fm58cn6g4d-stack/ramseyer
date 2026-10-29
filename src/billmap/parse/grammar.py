@@ -111,26 +111,36 @@ USC_UNIT = re.compile(r"\b(?P<chain>(?:[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpa
                       r"subchapter|subtitle|part|subpart) [\w]+)*) of title (?P<t>\d+),? United States Code")
 # An Act's name: words up to "Act" (or Code, Resolution, ...), with an optional year or fiscal-year qualifier and
 # short parenthesized words inside it ("William M. (Mac) Thornberry National Defense Authorization Act ...").
-ACT_NAME = (r"(?:the )?[A-Z](?:[^()\u27e6;,]|\([A-Z][a-z]{1,12}\)|\u27e6\d+\u27e7|, (?=Jr\.|Sr\.|[A-Z]|and ))*?"
-            r"(?:Act|Code|Resolution|Amendments|Law)"
-            r"(?: [Oo]f \d{4}| for (?:the )?Fiscal Years? \d{4}(?: (?:and|through) \d{4})?)?(?:, \d{4})?")
+DATE = (r"(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, "
+        r"\d{4}")
+# An Act known by its date ("the Act of March 3, 1899 (chapter 425; 30 Stat. 1152)") or by its long title ("the Act
+# entitled “An Act to establish ...”, approved June 3, 1976").
+DATED_ACT = rf"(?:the )?Act (?:of {DATE}|entitled,? \u27e6\d+\u27e7,? approved {DATE})"
+NAMED_ACT = (r"(?:the )?[A-Z](?:[^()\u27e6;,]|\([A-Z][a-z]{1,12}\)|\u27e6\d+\u27e7|, (?=Jr\.|Sr\.|[A-Z]|and ))*?"
+             r"(?:Act|Code|Resolution|Amendments(?! Act\b)|Law(?! (?:Act|Code)\b))"
+             r"(?: [Oo]f \d{4}| for (?:the )?Fiscal Years? \d{4}(?: (?:and|through) \d{4})?)?(?:, \d{4})?")
+ACT_NAME = rf"(?:{DATED_ACT}|{NAMED_ACT})"
+# "Section 1701 of title I of the Omnibus Crime Control and Safe Streets Act of 1968"
+ACT_PART = r"(?:(?:title|subtitle|part|chapter|division) [\w]+ of )*"
 USC_TITLE = re.compile(r"\b[Tt]itle (?P<t>\d+),? United States Code")
-ACT_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of (?P<act>{ACT_NAME})"
+ACT_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of {ACT_PART}(?P<act>{ACT_NAME})"
                          r"(?:\s*\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
 PL_SECTION = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})? of Public Law (?P<pl>\d+[–-]\d+)"
                         r"(?:\s*\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
 ACT_UNIT = re.compile(rf"\b(?P<unit>[Tt]itle|[Ss]ubtitle|[Pp]art|[Cc]hapter|[Ss]ubchapter|[Dd]ivision) (?P<x>[\w]+) of "
                       rf"(?P<act>{ACT_NAME})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)[^()]*)*)\))?")
-WHOLE_ACT = re.compile(rf"^(?P<act>{ACT_NAME.replace('(?:the )?', 'The ', 1)})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)"
+WHOLE_ACT = re.compile(rf"^(?P<act>The Act of {DATE}|{NAMED_ACT.replace('(?:the )?', 'The ', 1)})\s*(?:\((?P<paren>[^()]*(?:\([^()]*\)"
                        r"[^()]*)*)\))?,?(?:\s+as amended by [^,]+,)?\s+(?:is|are) (?:further )?amended")
-SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of such (?P<what>Act|title|Code|law)")
+SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? of such (?P<what>Act|title|Code|law)"
+                  r"(?:\s*\((?P<paren>\d+ U\.S\.C\. [^()]*(?:\([^()]*\)[^()]*)*)\))?")
 SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause)s? (?P<labels>{LABELS}) of "
 # "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
 SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           r"[Ss]uch section\b")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
-BARE_SECTION = re.compile(rf"^(?:[Ss]ection|[Ii]n section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)")
+# Not "Section 3(c) of <a law the grammar does not know>": a root from context would pick the wrong law.
+BARE_SECTION = re.compile(rf"^(?:[Ss]ection|[Ii]n section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)(?! of\b)")
 IN_SECTION = re.compile(rf"\b(?:[Ii]n|for|of) section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?![\w–(])(?! of)")
 LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
                       rf" (?P<labels>{LABELS}(?:(?:,| and| or|, and) {LABELS})*)")
@@ -148,6 +158,13 @@ LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {L
 _SN = r"\d[\w\u2013-]*+"           # possessive: no backtracking between the digits and the suffix
 SECTION_LIST = re.compile(rf"\b[Ss]ections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) {_SN}(?:{LABELS})?)+)"
                           r" of (?:such title|this title|title \d+,? United States Code)\b")
+# "Except as otherwise expressly provided, wherever in this title an amendment or repeal is expressed in terms of an
+# amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to that
+# section or other provision of the Social Security Act."
+REFERENCES_CLAUSE = re.compile(
+    r"\b(?:wherever|whenever) in this (?P<scope>Act|division|title|subtitle|part|chapter|section)\b[^.]{0,200}?"
+    r"expressed in terms of an amendment[^.]{0,160}?references? shall be considered to be made to (?:a|that|the) (?:section or "
+    rf"other provision|section|provision) of (?:title (?P<title>\d+),? United States Code|(?P<act>{ACT_NAME}))")
 TOC_HEAD = re.compile(r"\b[Tt]he (?:table of (?:sections|contents|chapters)|analysis)\b")
 
 
@@ -215,8 +232,13 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := SUCH.search(h)):
         base = ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target
+        is_act = m["what"] != "title"
+        if is_act and ctx.target.kind not in ("act", "pl") and ctx.memory.get("act") is not None:
+            base = ctx.memory["act"]              # "Section 401 of such Act": the Act named last in this section
+        elif not is_act and base.kind != "usc":
+            base = _usc_base(ctx) or base         # "Section 3763 of such title" after "Subchapter V of ... title 38"
         t = base.model_copy(deep=True)
-        t.section, t.cite_raw, t.usc_parenthetical = m["sec"], m.group(0), None
+        t.section, t.cite_raw, t.usc_parenthetical = m["sec"], m.group(0), m["paren"] if is_act else None
         ctx.target = t
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
@@ -242,8 +264,12 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                 _set_path(ctx, u["unit"].lower(), u["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := PAREN_SECTION.search(h.strip())) and ctx.target.kind in ("unknown", "act"):
-        # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision.
+        # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision, or by the
+        # bill's references clause ("... shall be considered to be made to ... the Social Security Act").
         act = ctx.target.act if ctx.target.kind == "act" else None
+        if act is None and ctx.memory.get("default_act") and not ctx.memory["default_act"].startswith("title "):
+            act = ctx.memory["default_act"]
+            flags.append(f"Act from the references clause: {act}")
         ctx.target = Target(kind="act", cite_raw=m.group(0), section=m["sec"], act=act, usc_parenthetical=m["paren"])
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
@@ -271,6 +297,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
             ctx.target = t
             _section_path(ctx, m["path"])
             ctx.qualifiers = []
+        elif ctx.memory.get("default_act"):
+            act = ctx.memory["default_act"]
+            flags.append(f"root from the references clause: {act}")
+            t = re.fullmatch(r"title (\d+)", act)
+            ctx.target = (Target(kind="usc", cite_raw=m.group(0), title=t.group(1), section=m["sec"]) if t else
+                          Target(kind="act", cite_raw=m.group(0), section=m["sec"], act=act))
+            _section_path(ctx, m["path"])
+            ctx.qualifiers, ctx.is_target_set = [], True
         else:
             flags.append("section_without_root")
     m = LEAD_UNITS.match(h.strip())
@@ -548,6 +582,8 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
         child_ctx.memory["last"] = child_ctx.target_out()
     if child_ctx.target.kind == "usc" and child_ctx.target.title:
         child_ctx.memory["usc"] = child_ctx.target_out()      # for "such chapter 908" later in the section
+    if child_ctx.target.kind == "act" and child_ctx.target.act:
+        child_ctx.memory["act"] = child_ctx.target_out()      # for "section 401 of such Act"
     out: list[Instruction] = []
     listed = (_distributed(node, child_ctx) if starts and node.children and
               (DISTRIBUTED.search(head) or DISTRIBUTED_REPEAL.search(head) and starts[0]["repeal"]) else [])

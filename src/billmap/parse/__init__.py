@@ -4,13 +4,50 @@ from __future__ import annotations
 import re
 
 from billmap.parse.effective import flag_delayed
-from billmap.parse.grammar import CONFIDENCE_THRESHOLD, Ctx, freestanding_type, parse_unit_text, quote_free
+from billmap.parse.grammar import (CONFIDENCE_THRESHOLD, REFERENCES_CLAUSE, Ctx, freestanding_type, parse_unit_text,
+                                   quote_free)
 from billmap.parse.ir import Instruction, Node, ParseResult
 from billmap.parse.normalize import normalize
 from billmap.parse.ops import count_ops
-from billmap.parse.segment import Segmenter
+from billmap.parse.segment import LEVEL_PREFIX, Segmenter
 
 AMEND_WORDS = re.compile(r"\b(?:amended|amending|repealed)\b")
+
+
+def references_clauses(roots: list[Node]) -> list[tuple[str, str]]:
+    """(scope prefix, Act or "title N") for each references clause: "wherever in this title an amendment ... is expressed in
+    terms of an amendment to ... a section ..., the reference shall be considered to be made to ... of the Social
+    Security Act" covers the bill title that holds it ("titleI."); "this Act" covers the whole bill ("")."""
+    out = []
+
+    def walk(n: Node) -> None:
+        m = REFERENCES_CLAUSE.search(lift_free(n.text))
+        if m:
+            scope, parts = m["scope"].lower(), n.loc.split(".")
+            prefix = ""
+            if scope != "act":
+                lead = LEVEL_PREFIX.get(scope, "sec" if scope == "section" else scope)
+                k = next((i for i, p in enumerate(parts) if p.startswith(lead) and p[len(lead):][:1].isalnum()), None)
+                if k is None:
+                    return
+                prefix = ".".join(parts[:k + 1]) + "."
+            out.append((prefix, f"title {m['title']}" if m["title"] else re.sub(r"^the ", "", m["act"]).strip()))
+        for c in n.children:
+            walk(c)
+
+    for r in roots:
+        walk(r)
+    return out
+
+
+def default_act(defaults: list[tuple[str, str]], loc: str) -> str | None:
+    """The Act of the narrowest references clause covering a bill location."""
+    hits = [(len(p), act) for p, act in defaults if (loc + ".").startswith(p)]
+    return max(hits)[1] if hits else None
+
+
+def lift_free(text: str) -> str:
+    return text if "\u201c" not in text else quote_free(text)
 
 
 def parse_text(text: str) -> ParseResult:
@@ -18,10 +55,14 @@ def parse_text(text: str) -> ParseResult:
     roots = Segmenter(norm).run()
     instructions: list[Instruction] = []
     counts: dict[str, int] = {}
+    defaults = references_clauses(roots)
 
     def visit(node: Node, ctx: Ctx | None) -> None:
         if node.level == "section":
             ctx = Ctx()
+            act = default_act(defaults, node.loc)
+            if act:
+                ctx.memory["default_act"] = act
         child_ctx = ctx
         if node.cls != "TABLE_OF_CONTENTS" and node.text and ctx is not None:
             qf = quote_free(node.text)
