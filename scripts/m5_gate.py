@@ -42,9 +42,12 @@ def truth_for(law, bill_loc: str) -> set[tuple[str, str, bool]]:
             matches.append((len(rpath), r))
     if not matches:
         return set()
+    # Rows at or below the instruction's location all belong to it (a list-form repeal at 811(b) has rows at
+    # 811(b)(1) and 811(b)(2)(A)); otherwise the deepest row above it.
+    below = [r for n, r in matches if n >= len(path)]
     best = max(m[0] for m in matches)
     return {(r.title.lower(), normalize_section(r.section), "nt" in r.description.split())
-            for n, r in matches if n == best}
+            for r in (below or [r for n, r in matches if n == best])}
 
 
 def claim(res, ix: Index):

@@ -3,21 +3,21 @@
  "metrics": {
   "targets": 1295,
   "matched": 529,
-  "mismatched": 361,
-  "missed": 405,
+  "mismatched": 362,
+  "missed": 404,
   "extra": 1,
   "unexpected_change": 1,
   "pending": 7,
   "match_rate": 0.4085,
-  "clean": 371,
-  "false_clean": 43,
-  "false_clean_rate": 0.1159,
+  "clean": 372,
+  "false_clean": 44,
+  "false_clean_rate": 0.1183,
   "deterministic_coverage": 1.0,
   "model_tokens": 0,
   "mismatch_engine": 257,
   "mismatch_parser": 34,
   "mismatch_unclassified": 37,
-  "mismatch_editorial": 6,
+  "mismatch_editorial": 7,
   "mismatch_resolver": 27
  }
 }

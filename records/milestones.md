@@ -428,6 +428,63 @@ Testing tab rev 2) and mirrored in `docs/`:
 
 **Left unpredicted on purpose:** chapter "prec" rows (tables of sections). 46 of the 120 such sections also changed text, through edits the engine does not attribute. Predicting "unchanged" would create false CLEANs.
 
-**Open (for Espen):**
-- **The confident-answer target.**
-- **Whether to widen the held-out set** with govinfo's annual U.S. Code editions. These exist (e.g. `USCODE-2023-title49`, `USCODE-2024-title49`), but as PDF, text and HTML granules, not USLM; a title zip is about 265 MB. That would bring in title 49 laws such as the 2024 FAA reauthorization, at the cost of a second text normalizer.
+**Decisions (Espen, 2026-10-28):** widen the held-out set with GovInfo's annual editions; the confident-answer
+target is **35% of held-out targets**, with substantive false-clean under 1%.
+
+### GovInfo held-out set (2026-10-29)
+
+**Source and conversion:**
+- **Editions:** GovInfo's 2023 edition (current through 2024-01-03) and 2024 edition (current through 2025-01-06), one XHTML granule per section, fetched with the api.data.gov key.
+- **Converter:** `src/billmap/data/xhtml_uslm.py` turns OLRC's XHTML into USLM, and the standard indexer loads it as release points `usc-2023` and `usc-2024` in `var/oracle/govinfo.sqlite`.
+  - **Measured:** on the current release (119-134), 57,660 of 58,696 sections (98.2%) convert with text and unit paths equal to the USLM index (`scripts/xhtml_check.py`).
+  - **Conventions found:** recorded in `records/verify-first.md`.
+- **Laws:** 118th-Congress laws enacted between the two editions' dates (per title), using the sections each law alone changed in that window. That gives 92 laws and 1,312 targets (`tests/oracle/heldout_govinfo.json`). 11 laws are set aside with reasons: every target section was shared with another law, or no enrolled XML exists.
+- **Protocol:** the even public-law numbers form the **dev half**, used to find and fix errors. The odd ones form the **test half**, which is only measured, never inspected for fixes. The gate (`scripts/m6_gate.py --set govinfo`) reports both halves.
+
+**Results** (substantive false-clean is the gate; the raw rate counts any difference, including OLRC editorial ones):
+
+| Set | Targets | Matched | CLEAN | CLEAN share of targets | Substantive false-clean | Raw false-clean |
+| --- | --- | --- | --- | --- | --- | --- |
+| GovInfo, first run | 1,312 | — | 452 | 34.5% | 16 (3.5%): dev 8 of 126, test 8 of 326 | — |
+| GovInfo, now, all | 1,312 | 529 | 449 | **34.2%** | **7 of 449 (1.56%)** | 82 (74 by the detector, 1 labelled) |
+| GovInfo, now, dev half | 459 | 152 | 123 | 26.8% | 0 | 15 |
+| GovInfo, now, test half | 853 | 377 | 326 | **38.2%** | **7 of 326 (2.15%)** | 67 |
+| Tuning corpus, now | 1,295 | 529 | 372 | 28.7% | 0 | 44 (37 detector, 7 labelled) |
+| Release-point held-out, now | 10 | 2 | 0 | 0% | 0 of 0 | 0 |
+
+**Against the targets:**
+- **Confident answers:** they meet the 35% target on the untouched test half (38.2%) and fall just short overall (34.2%).
+- **False-clean:** it misses the under-1% target on the test half, at 2.15%. Since the test half was not used for fixes, this is the honest unseen-law rate. On the dev half, the errors found were fixed and fell from 8 to 0. The test half fell from 8 to 7 through those same general fixes.
+
+**Fixes from the dev half** (all general rules, re-measured on every set):
+- **Chained "such section":** "Paragraph (1) of subsection (c) of such section".
+- **Bare section numbers:** "Section X" with no Act takes its root from context (flagged).
+- **Location phrases:** "of section"; "each of" and location phrases across a unit chain.
+- **Act cited by date:** "Act of <Month d, yyyy>".
+- **Headings:** the law's period is kept in "§" headings.
+- **Redesignation:** repeal stubs that a redesignation leaves out of order are dropped (WARN).
+- **Spacing:** when inserting "before" text.
+
+**Detector change:** it now strips trailing spaces before a removed footnote marker. XHTML puts a no-break space there and USLM a narrow one.
+
+**Labels added:**
+- **42 U.S.C. 280i–4:** both the edition and the current USLM print "28,100,000" without "$", where the law has "$".
+- **10 U.S.C. 2218:** OLRC dropped a comma along with a References-in-Text footnote.
+
+**Checker fix (M5):** a list-form repeal at 119-60 § 811(b) was graded only against the deepest classification rows, (b)(N)(X). That made its correct resolution (§ 811(b)(1) -> 10 U.S.C. 3372 note) read as a silent mis-resolution. Rows at or below an instruction's location now all count, and M5 is back to 0 silent wrong.
+
+**The 7 test-half false-cleans**, seen in the gate output only and deliberately not fixed:
+- 42 U.S.C. 2235, 30 U.S.C. 1721 and 10 U.S.C. 9082 among them.
+- Their causes are structural: an inserted subsection numbered "c." where the Code prints "(c)", a missing subsection heading, and a subsection the prediction did not carry.
+- These are the classes to address next on the dev half.
+
+**Other gates on the same code:**
+- **M3:** passes.
+- **M4:** 3,146 = 2,990 + 156 UNPARSED, coverage 0.903.
+- **M5:** passes.
+- **Unit tests:** 206 pass.
+
+**Open (for Espen):** the false-clean target is not met on unseen laws (2.15% on the test half). M6b can close in one of three ways:
+- accept the measured rate as a known limit for now;
+- spend another round on the dev half to cut the structural classes above, then re-measure the test half once;
+- tighten what counts as CLEAN (fewer confident answers, lower false-clean).
