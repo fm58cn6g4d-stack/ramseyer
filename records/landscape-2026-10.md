@@ -106,3 +106,85 @@ What was read for this record:
 4. **Dry-run amendments to Act text in notes** (17% of instructions today).
 5. **Ramseyer / Cordon prints as the draft-stage answer key.** Collect a sample of committee reports with "changes in existing law" sections, extract their redlines, and grade billmap on the reported bills. This is the measurement closest to the real use, and it should come before M8.
 6. **Rename billmap** to avoid confusion with unitedstates/BillMap.
+
+## The House Comparative Print Suite (added 2026-10-29)
+
+The suite is the most direct analog to ramseyer, as Espen pointed out. It is internal to the House; there is no public version. Sources:
+- Hershowitz and Mador-Haim, "“Comparative Prints Suite” of the United States House of Representatives", JURIX 2023, doi:10.3233/FAIA230993;
+- the Clerk's quarterly reports to the Committee on House Administration (QR1, 15 October 2020; QR10, 30 December 2022);
+- the POPVOX write-up.
+
+**What it is:**
+- Built by the Clerk's Legislative Computer Systems with the House Office of the Legislative Counsel (HOLC) and contractors: Xcential, plus XCiteDB, a version-controlled XML database with "branches".
+- Required by clause 12 of rule XXI.
+- Live at compare.house.gov since October 2022 for House staff, with instances for CBO, the Library of Congress (CRS, which uses it for bill summaries) and the Joint Committee on Taxation. Senate staff asked for access.
+
+**Its tools:**
+1. **How a Bill Changes Current Law** (two versions). Its print is patterned on the Ramseyer report.
+2. **Bill to Bill Differences**: any two versions of a bill, resolution or amendment.
+3. **How an Amendment Changes a Bill**: the amendment impact program, carried over from HOLC.
+4. **Bill Viewer**, with planned "smart reading": defined terms, effective dates and short titles listed in the outline. The Clerk's report argues that free-standing provisions matter as much as amendatory ones.
+
+**Parsing:**
+- AMPL, the Amendment Modeling and Parsing Language, is a model grammar for amending instructions.
+- CIMPL is the same for citations.
+- Neither is published.
+
+**Point in time:**
+- Every comparison is "on-demand, point-in-time".
+- A bill is processed against the law as of its introduction or as of today, using XCiteDB branches.
+
+**Current-law repository:**
+- Positive-law titles of the Code, the Statutes at Large, and HOLC's Statute Compilations (also published in USLM on GovInfo, COMPS).
+- Non-codified law is in scope.
+
+**Automated notifications** (the suite's equivalent of ramseyer's non-CLEAN statuses):
+- Each says why an amendment could not be carried out:
+  1. an error in drafting (typos, wrong citations);
+  2. an error in the current-law data;
+  3. an error in the system (an unsupported instruction);
+  4. **the amendment has already been executed into current law.**
+- Example messages: "The Act being amended could not be found", "The provision of the Act could not be found", "The range of provisions could not be found".
+- The outline groups all amendments to one law together, in execution order rather than bill order.
+
+### Where ramseyer stands against it
+
+| | Comparative Print Suite | ramseyer now |
+| --- | --- | --- |
+| Bill → current law | Yes (Code, Statutes at Large, compilations) | Code text; Act text in notes and uncodified Acts reported NOT_EXECUTED (17% of instructions) |
+| Bill → bill (versions) | Yes | No |
+| Amendment → bill | Yes | No |
+| Draft → adopted Act | Through bill-to-bill comparison when the vehicle is the same bill | No |
+| Point in time | Introduction date or today | Pinned release point; STALE_BASELINE searches earlier ones; the 2013–2026 history is available but not loaded |
+| "Already executed" detection | Yes | **No** (a struck text that is gone with the inserted text present is reported NOT_FOUND) |
+| Measured accuracy, published | Not public | Oracle on enacted law, sealed set, error-injection benchmark, red-team report |
+| Availability | House staff and some legislative-branch agencies | Open; anyone, including Senate staff, outside groups and the public |
+
+**The case for ramseyer:** the suite's existence shows that the House values this kind of tool, and that model grammar plus a versioned law store is the working design. ramseyer's room is in being open, auditable (measured against the enacted record, with the method published) and strict about never dropping an instruction. It also offers checks the suite describes but cannot show publicly. Committee reports' "changes in existing law" sections are now probably produced with the suite, so grading ramseyer against them amounts to grading it against the suite and HOLC.
+
+## Draft bill → adopted Act (Espen, 2026-10-29)
+
+**The second layer:** match a draft (or an introduced or reported version) to the Act as adopted, and show what survived, what changed and what was dropped. Ramseyer so far does draft → Code.
+
+**How the two layers reinforce each other:**
+- **The Code checks the alignment.** Suppose a draft instruction and an enacted instruction produce the same change to the Code when both are dry-run. Then they are the same amendment, however differently worded. Two instructions that touch the same provision but change it differently are a real substantive difference.
+- **The alignment checks the dry-run, on real drafts.**
+  - For a draft whose provision was carried into an enacted law, the Code after that law is known from the release-point history.
+  - So ramseyer's prediction for the *draft* can be graded against what actually happened, with the rewording between versions set aside.
+  - That is the measurement on draft-stage text the red team asked for (F16), on thousands of introduced bills.
+
+**Matching:**
+- A draft is often enacted inside another vehicle: a section of an introduced bill folded into an NDAA or an appropriations act.
+- **Candidate vehicles:**
+  - Congress.gov related bills, which carry relationship details including text similarities identified by CRS (to be verified);
+  - the same bill's later versions;
+  - section-level text similarity.
+- **Provision alignment** goes in order of confidence:
+  1. identical normalized instruction (same target, operation and quotes);
+  2. same Code effect;
+  3. same target with a different effect (a substantive change);
+  4. similar free-standing text (the BillMap/FlatGov technique);
+  5. unmatched, reported as such.
+- **Every pairing records its evidence**, and nothing is dropped. Every draft provision ends as carried unchanged, carried with changes, moved, or not carried.
+
+**Bill versions to use:** GovInfo BILLS in USLM and the bill DTD XML, by version code (IH, RH, RS, EH, ES, EAS, ENR) through the Congress.gov text-versions API, which ramseyer already uses for enrolled text.
