@@ -103,3 +103,13 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | Measured | 57,660 of 58,696 sections (98.2%) convert with text and unit paths equal to the USLM index (`scripts/xhtml_check.py`) |
 | Source errors in an edition | 42 U.S.C. 280i–4: the 2024 edition (and the 119-134 USLM) print "appropriated 28,100,000" without "$"; the enrolled law has "$". Labelled editorial |
 | OLRC punctuation at a removed footnote | 10 U.S.C. 2218(c)(1)(D): 119-60 strikes "section 11 of the Merchant Ship Sales Act of 1946 (50 U.S.C. 4405)" and inserts "section 57100 of title 46". The comma after the parenthesis is not struck, but OLRC removed it together with the References-in-Text footnote. Labelled editorial |
+
+## Landscape check (2026-10-29; details in records/landscape-2026-10.md)
+
+| Item | Finding |
+| --- | --- |
+| Older OLRC release points | `download/releasepoints/us/pl/113/21/xml_usc01@113-21.zip` and `.../118/158/...` return 404; `.../119/73not60/...` returns the zip. uscode.house.gov runs "in a temporary format"; priorreleasepoints.html lists 119-73not60 onward only |
+| dreamproit/uscode (Hugging Face, CC0) | 381 release points 113-21 → 119-102not101, verbatim USLM XML per section version; `versions` config 489,738 rows in 20 Parquet shards (2.98 GB); manifests with source URL and zip SHA-256 in github.com/aih/uscode-redesign `data/manifests/` |
+| USLM schemas | Main branch: USLM.xsd 1.0 (namespace `http://xml.house.gov/schemas/uslm/1.0`) and USLM 2.0.0–2.1.0 (namespace `http://schemas.gpo.gov/xml/uslm`); proposed branch: 2.1.1 (committee and conference reports, `changesInExistingLaw`), 2.1.2 (CBO cost estimates) |
+| Amendment tagging in published USLM | `amendingAction` types: enact, add, amend, substitute, redesignate, repeal, repealAndReserve, insert, delete, conform, noChange, unknown. Samples use `@type` only — no `@pos`/`@posText`/`@posCount`/`@portion`. A false positive is visible ("adding" in findings prose tagged in H1000_IH) |
+| OLRC move to USLM 2.x for the Code | Cited in aih/uscode-redesign ADR-0002 (OLRC note `currency/uslmv2.html`, now 404 under the temporary site); sample titles 1, 16, 49 in USLM 2.0.12 are in that repository |
