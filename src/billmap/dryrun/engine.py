@@ -699,6 +699,16 @@ class Engine:
         if not hits and self._tr(find) != find:
             segs, hay, hits, how, err = self._locate(ins, scope, self._tr(find), positional)
             how = "with Act cross-references in Code form"
+        if not hits and "this Act" in find and not self.work.positive_law:
+            # The Code prints the Act's "this Act" as the unit it is classified to ("this chapter"); the form that
+            # occurs in the section is used for the struck and the inserted text alike (16 U.S.C. 6801).
+            for unit in ("chapter", "subchapter", "part", "title"):
+                f2 = find.replace("this Act", f"this {unit}")
+                segs2, hay2, hits2, how2, err2 = self._locate(ins, scope, f2, positional)
+                if hits2:
+                    segs, hay, hits, how = segs2, hay2, hits2, f"with “this Act” as “this {unit}”"
+                    make_new = (lambda mk, u: lambda old: mk(old).replace("this Act", f"this {u}"))(make_new, unit)
+                    break
         if not hits:
             st, why = self._status_for_missing(ins, find, path)
             return Result(ins.id, st, f"{why}: “{find[:80]}”")
@@ -716,8 +726,8 @@ class Engine:
             replace_span(segs, a2, b2, piece)
         after_hay = linear(Working.segments(scope))
         ev_at = max(0, chosen[0][0] - 80)
-        status = "AMBIGUOUS" if warn else ("WARN" if how in ("case-insensitive",
-                                                              "with Act cross-references in Code form") else "CLEAN")
+        status = "AMBIGUOUS" if warn else ("WARN" if how in ("case-insensitive", "with Act cross-references in Code form")
+                                           or how.startswith("with “this Act”") else "CLEAN")
         detail = "; ".join(x for x in (label, warn, f"matched {how}" if how != "exact" else "") if x)
         return Result(ins.id, status, detail, evidence=after_hay[ev_at:ev_at + 200], before_span=before,
                       after_span=make_new(before), matches=len(hits))

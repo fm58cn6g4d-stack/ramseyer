@@ -484,7 +484,61 @@ target is **35% of held-out targets**, with substantive false-clean under 1%.
 - **M5:** passes.
 - **Unit tests:** 206 pass.
 
-**Open (for Espen):** the false-clean target is not met on unseen laws (2.15% on the test half). M6b can close in one of three ways:
-- accept the measured rate as a known limit for now;
-- spend another round on the dev half to cut the structural classes above, then re-measure the test half once;
-- tighten what counts as CLEAN (fewer confident answers, lower false-clean).
+### Second round on the dev half (2026-10-29, Espen: "keep fixing, refining, and testing")
+
+**Measured on the same code:**
+
+| Set | Matched | CLEAN share of targets | Substantive false-clean | Missed |
+| --- | --- | --- | --- | --- |
+| Tuning corpus | 529 -> **553** | 28.7% -> 29.7% | 0 -> **0** | 404 -> 383 |
+| GovInfo, all | 529 -> **574** | 34.2% -> **35.4%** | 7 -> 5 | 373 -> 320 |
+| GovInfo, dev half | 152 -> 179 | 26.8% -> 28.8% | 0 -> 0 | — |
+| GovInfo, test half | 377 -> 395 | 38.2% -> **38.9%** | 7 of 326 (2.15%) -> **5 of 332 (1.51%)** | — |
+
+**Other gates on the same code:**
+- **M4:** 3,146 = 3,018 + 128 UNPARSED (was 156); deterministic coverage 0.903 -> 0.915.
+- **M5:** 898 correct Act references (was 842); 0 silent.
+- **M3:** passes.
+- **Unit tests:** 226 pass.
+
+**Parser:**
+- **References clauses:** "wherever in this title an amendment … is expressed in terms of … a section …, the reference shall be considered to be made to … the Social Security Act" (or "title 10, United States Code") now supplies the Act to "Section 425 (42 U.S.C. 625)", within the bill unit the clause names. Before this, 118-258 lost every such instruction.
+- **Acts by date or long title:** "the Act of March 3, 1899" and "the Act entitled “…”, approved June 3, 1976". The resolver finds them through the enactment dates in the Code's source credits and notes. Several laws on one day stay SPLIT unless the drafted parenthetical picks one.
+- **Act names and units:** "Section 1701 of title I of the … Act"; names ending "Amendments Act of 2003"; "Section 401 of such Act" (the Act named last in the bill section); "Section 3763 of such title" after a subchapter target; "Such subchapter is further amended" in a later bill section.
+- **One silent mis-resolution removed:** "Section 3(c) of the Act of August 13, 1946" had taken its root from the previous subsection (Flood Control Act of 1946) and resolved to 33 U.S.C. 701p. A section "of" a law the grammar does not know no longer takes a root from context.
+- **Heading edits:**
+  - "The heading for section 723 …", "In the section heading for section 430c, …" and "In the subsection heading for subsection (c) of section 3072" were read as text edits. They are now heading edits.
+  - New forms: "striking the heading and inserting “…”", "amending the section heading to read as follows", "striking the subsection heading".
+- **Insertions and replacements:**
+  - Insertions: after units "(as so redesignated)"; at punctuation ("inserting the following before the period at the end: “…”"); after a placement phrase set before "by" ("after subclause (III), by inserting the following:").
+  - Several units "to read as follows".
+  - "striking section 100905 and inserting the following".
+  - "(and conforming the table of sections … accordingly)".
+  - "the term “…” … in each place it appears in text or headings" (headings included).
+- **Blanket targets:** "Except as provided in paragraph (2)," and "(as defined in section 102 of title 10 …)" no longer name the target. "each covered defense law … is amended" is a blanket target, reported rather than guessed.
+- **Delayed effective dates:** "shall take effect on October 1, 2025, and shall apply to payments …" is now delayed. Only the "take effect" part decides. Two false-cleans on the dev half (42 U.S.C. 625, 629i) came from this.
+- **Bill typo:** "United Sates Code" (118-159 § 566) is accepted.
+
+**Engine:**
+- **Restructuring text edits:** a replacement that starts new enumerated units ("striking “to a county” and inserting “to—“(A) a county”") is built as structure. The text before it becomes a lead-in over new child units, or ends the unit with new sibling units at their own level (an ancestor's, if need be). The rest of the old text continues the last new unit. Edits that would leave later units to move fall back to the literal text edit (WARN). Example: 42 U.S.C. 284g(a)(1), six steps, all built.
+- **Ambiguous labels:** "(i)" is subsection or clause. `build_units` now sets synthetic context lines to place it at the needed level.
+- **Struck text that begins or ends with punctuation** no longer leaves two words touching ("fishing" + "and").
+- **New sections:** a section numbered in a positive-law title is predicted by its number when the unit it is added to does not resolve (WARN). Example: "Subtitle VII of chapter 20" for the Code's subchapter VII.
+- **"this Act":** a struck "this Act" that the Code prints as "this chapter" (or subchapter, part, title) is found in that form (WARN).
+
+**Self-checks (`src/billmap/dryrun/verify.py`):** independent of R_after. They lower a CLEAN section to WARN when:
+- inserted text still holds an enumerator and heading inline ("c. Application reviews.—");
+- unit labels are out of order or duplicated;
+- an unapplied instruction names the section;
+- a blanket instruction strikes words the section contains.
+
+They fire 5 times across all sets. One lowered a test-half false-clean (42 U.S.C. 2235); one lowered a correct answer. The checks are aimed at real drafts, where the parser meets new forms.
+
+**Tried and reverted:** "before the semicolon" in a unit ending "; and" was allowed to anchor at that semicolon. It gained 2 matches but made one test-half false-clean (5 U.S.C. 6323(b)(1), identified only by identifier). It was reverted. The test half was otherwise not inspected.
+
+**What remains on the dev half:**
+- **Missed new sections:** 135 of 142 are in non-positive-law titles. The editors assign their numbers (free-standing provisions; new Act sections), so they cannot be predicted.
+- **NOT_FOUND:** bill drafting slips ("Secretary of Housing Urban Development"); text the Code prints in another form ("450b" -> "5304", Act-internal "section 3(f)" -> "section 6802(f)"); and bill text that differs from the edition by a comma ("December, 31, 2024").
+- **WARN mismatches:** OLRC's editorial choices in inserted text ("this Act" -> "this chapter", proper-noun case in headings, Act-section translations on one witness).
+
+**Open (for Espen):** substantive false-clean on unseen laws is now 1.51% (test half), against the 1% target. Confident answers stand at 38.9% on the same half, against the 35% target.
