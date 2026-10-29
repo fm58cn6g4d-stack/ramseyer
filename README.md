@@ -4,7 +4,7 @@ Maps draft bills onto the U.S. Code. Every statute text comes from a local index
 OLRC release point, and every output names that release point. The build plan is in `docs/`;
 measured results per milestone are in `records/milestones.md`.
 
-Status: M0–M2 built (source probe, data layer, free statute server). Not for main yet.
+Status: M0–M6c built; see `records/milestones.md`. Merge rules: `CONTRIBUTING.md`.
 
 ## Setup
 

@@ -1,8 +1,25 @@
 # ramseyer: build-session conventions
 
 ramseyer maps draft bills onto the U.S. Code. The plan is in `docs/` (mirrored from the
-Build Plan Claude doc; see `docs/README.md`). It is developed on its own branch inside the
-project-2050 repo and is **not merged to main** until Espen says so.
+Build Plan Claude doc; see `docs/README.md`). This is its own repository (moved out of project-2050
+on 2026-10-29); measured results are in `records/milestones.md`.
+
+## Pull requests and review
+
+Merge rules are in `CONTRIBUTING.md` (plain language) and `.github/merge-policy.json` (enforced).
+In short:
+
+- Work on a `claude/` branch from current `origin/main`; one coherent PR per change.
+- Put `Agent-Author: claude-code <session id>` in each PR description. Run
+  `bash .github/scripts/run-checks.sh` before pushing. Mark the PR ready when done.
+- Reviews come from a **separate** Claude Code session, never the author's. The reviewer reads the
+  diff at the PR head and comments `Agent-Review: approve` (or `changes-requested`),
+  `Reviewed-Head: <sha>` and `Reviewer: claude-code <its session id>`.
+- The gate merges tier 1 and 2 PRs after checks and review. Tier 3 (`.github/`, `CLAUDE.md`,
+  `AGENTS.md`, `CONTRIBUTING.md`, `tests/oracle/labels.json`) is merged only by Espen. Never add
+  `espen-approved`, `espen-override` or enable auto-merge on a tier 3 PR.
+- When active, check your own PRs' feedback and any review requests left for you.
+- Never communicate with other people on Espen's behalf.
 
 ## Rules (from the kickoff prompt)
 

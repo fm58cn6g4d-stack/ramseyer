@@ -1,0 +1,46 @@
+{
+  "_about": "Machine-readable merge tiers for ramseyer. Read by .github/scripts/agent_gate.py; the plain-language rules are in CONTRIBUTING.md. Changing this file is itself a tier 3 change. Patterns use fnmatch syntax against repository paths; the first matching rule wins. Tier 1: merges when checks pass and an independent agent review approves the current head. Tier 2: the same, and Espen is notified. Tier 3: only Espen merges (label espen-approved).",
+  "espen_logins": ["fm58cn6g4d-stack"],
+  "_trusted_note": "Only comments and labels from these accounts count. Every Claude Code session posts as Espen's account through the 'claude' app; anyone can comment on a public repository, so this list is what stops outsiders from approving.",
+  "trusted_logins": ["fm58cn6g4d-stack"],
+  "espen_label_apps_allowed": [],
+  "labels": {
+    "espen_approved": "espen-approved",
+    "espen_override": "espen-override",
+    "needs_espen": "needs-espen",
+    "hold": "hold",
+    "tier_prefix": "tier-"
+  },
+  "_agents_note": "Claude Code only for now. A review must come through the 'claude' app and from a Claude Code session other than the PR's author session (Agent-Author line in the PR description). Codex or another agent can be added here later, by a tier 3 PR.",
+  "agents": {
+    "claude-code": {"branch_prefixes": ["claude/"], "apps": ["claude"]}
+  },
+  "owners": [],
+  "rules": [
+    {"pattern": ".github/*", "tier": 3, "why": "the merge rules and checks themselves"},
+    {"pattern": "CLAUDE.md", "tier": 3, "why": "agent entry rules"},
+    {"pattern": "AGENTS.md", "tier": 3, "why": "agent entry rules"},
+    {"pattern": "CONTRIBUTING.md", "tier": 3, "why": "the plain-language merge rules"},
+    {"pattern": "tests/oracle/labels.json", "tier": 3, "why": "hand labels that excuse a mismatch from the false-clean rate"},
+    {"pattern": "tests/oracle/*", "tier": 2, "why": "test-set manifests and measured baselines"},
+    {"pattern": "ramseyer.toml", "tier": 2, "why": "release pin and sources"},
+    {"pattern": "pyproject.toml", "tier": 2, "why": "dependencies"},
+    {"pattern": "docs/*", "tier": 2, "why": "the build plan (mirror of the Build Plan doc)"},
+    {"pattern": "records/*", "tier": 1, "why": "milestone records and findings"},
+    {"pattern": "src/*", "tier": 1, "why": "code"},
+    {"pattern": "scripts/*", "tier": 1, "why": "gates and builders"},
+    {"pattern": "tests/*", "tier": 1, "why": "tests and fixtures"},
+    {"pattern": "redteam/*", "tier": 1, "why": "red-team cases"},
+    {"pattern": "README.md", "tier": 1, "why": "navigation"},
+    {"pattern": "*", "tier": 2, "why": "not listed: merge but notify"}
+  ],
+  "generated_outputs": [],
+  "_generated_note": "None: ramseyer's outputs (var/) are not committed; the measured baselines under tests/oracle/ are tier 2.",
+  "wording_outputs": [],
+  "headlines": {
+    "_about": "Inert in ramseyer (no generated outputs); kept because the gate reads these keys.",
+    "relative_tolerance": 0.01,
+    "absolute_floor": 0.05,
+    "margin_tolerance_pct_gdp": 0.005
+  }
+}

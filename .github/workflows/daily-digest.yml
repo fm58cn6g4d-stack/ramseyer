@@ -1,0 +1,23 @@
+# Daily digest for Espen: one issue labeled agent-digest, rewritten each day, plus a comment on days with news.
+name: Daily digest
+on:
+  schedule:
+    - cron: '17 12 * * *'   # 12:17 UTC, about 8:17 in New York
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+jobs:
+  digest:
+    name: daily-digest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - name: Update the digest issue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 .github/scripts/agent_gate.py digest

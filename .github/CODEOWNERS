@@ -1,0 +1,7 @@
+# ramseyer code owners. Every Claude Code session pushes as Espen's account, so GitHub cannot tell agents apart
+# and an account cannot approve its own PR; the enforced rules are in .github/merge-policy.json (CONTRIBUTING.md).
+*                       @fm58cn6g4d-stack
+/.github/               @fm58cn6g4d-stack
+/CLAUDE.md              @fm58cn6g4d-stack
+/CONTRIBUTING.md        @fm58cn6g4d-stack
+/tests/oracle/labels.json @fm58cn6g4d-stack
