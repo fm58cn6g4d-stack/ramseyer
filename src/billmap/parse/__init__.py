@@ -57,9 +57,13 @@ def parse_text(text: str) -> ParseResult:
     counts: dict[str, int] = {}
     defaults = references_clauses(roots)
 
+    bill_memory: dict = {}      # the Code unit named last, for "Such subchapter is further amended" in a later section
+
     def visit(node: Node, ctx: Ctx | None) -> None:
         if node.level == "section":
             ctx = Ctx()
+            if bill_memory.get("usc") is not None:
+                ctx.memory["prior_usc"] = bill_memory["usc"]
             act = default_act(defaults, node.loc)
             if act:
                 ctx.memory["default_act"] = act
@@ -78,6 +82,8 @@ def parse_text(text: str) -> ParseResult:
                 node.freestanding_type = freestanding_type(node.text)
         for c in node.children:
             visit(c, child_ctx)
+        if node.level == "section" and ctx is not None and ctx.memory.get("usc") is not None:
+            bill_memory["usc"] = ctx.memory["usc"]
 
     for r in roots:
         visit(r, None)

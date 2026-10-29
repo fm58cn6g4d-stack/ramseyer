@@ -86,6 +86,19 @@
    "expect": {
     "op": "AMEND_HEADING"
    }
+  },
+  {
+   "law": "119-60",
+   "loc": "divA.titleVII.subtA.sec701.a.2.A",
+   "lines": [
+    "SEC. 701. REIMBURSEMENT FOR TRAVEL EXPENSES RELATING TO SPECIALTY CARE FOR CERTAIN MEMBERS OF THE ARMED FORCES AND DEPENDENTS.",
+    "(a) In general.—Section 1074i of title 10, United States Code, is amended—",
+    "(2) in subsection (b)—",
+    "(A) by striking the heading and inserting “Special rules for certain members and dependents.—”;"
+   ],
+   "expect": {
+    "op": "AMEND_HEADING"
+   }
   }
  ],
  "negative": [
@@ -117,12 +130,12 @@
   },
   {
    "law": "119-60",
-   "loc": "divA.titleVII.subtA.sec701.a.2.A",
+   "loc": "divA.titleXVIII.subtA.sec1802.b.1.A",
    "lines": [
-    "SEC. 701. REIMBURSEMENT FOR TRAVEL EXPENSES RELATING TO SPECIALTY CARE FOR CERTAIN MEMBERS OF THE ARMED FORCES AND DEPENDENTS.",
-    "(a) In general.—Section 1074i of title 10, United States Code, is amended—",
-    "(2) in subsection (b)—",
-    "(A) by striking the heading and inserting “Special rules for certain members and dependents.—”;"
+    "SEC. 1802. ESTABLISHMENT OF THE ROLE OF PORTFOLIO ACQUISITION EXECUTIVE",
+    "(b) Conforming amendments.—",
+    "(1) Covered defense laws.—Except as provided in paragraph (2), each covered defense law (as defined in section 102 of title 10, United States Code) is amended—",
+    "(A) by striking the term “program executive officer” and inserting “portfolio acquisition executive” in each place it appears in text or headings;"
    ],
    "must_not": {
     "op": "AMEND_HEADING"

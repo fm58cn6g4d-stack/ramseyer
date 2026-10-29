@@ -60,3 +60,46 @@ def test_title_of_the_code_is_not_an_act():
     t = targets("SEC. 2. CHANGE.\nTitle 10, United States Code, is amended—\n(1) in section 1558(b), by striking “a” "
                 "and inserting “b”; and\n(2) in section 1559, by striking “c” and inserting “d”.\n")
     assert (t[0].kind, t[0].title, t[0].section) == ("usc", "10", "1558")
+
+
+def test_striking_a_section_and_inserting_replaces_it():
+    ins = parse_text("SEC. 2. CHANGE.\nChapter 9 of title 99, United States Code, is amended by striking section 905 and "
+                     "inserting the following:\n“§ 905. Placeholder\n“The rule.”.\n").instructions
+    assert (ins[0].op, ins[0].target.section, ins[0].target.qualifiers) == ("REPLACE_UNIT", "905", [])
+
+
+def test_such_subchapter_reaches_back_to_an_earlier_section():
+    ins = parse_text("SEC. 2. ONE.\nSubchapter II of chapter 17 of title 99, United States Code, is amended by adding at "
+                     "the end the following new section:\n“§ 1720K. Alpha\n“The rule.”.\nSEC. 3. TWO.\nSuch subchapter is "
+                     "further amended by inserting after section 1720K (as added by section 2) the following new section "
+                     "(and conforming the table of sections at the beginning of such chapter accordingly):\n“§ 1720L. "
+                     "Beta\n“The rule.”.\n").instructions
+    t = ins[1].target
+    assert (t.title, t.qualifiers) == ("99", ["subchapter ii of chapter 17"])
+    assert ins[1].confidence == 1.0 and not any(f.startswith("unconsumed") for f in ins[1].flags)
+
+
+def test_heading_edits_are_recognised():
+    ins = parse_text("SEC. 2. HEADINGS.\n(a) One.—The heading for section 723 of title 99, United States Code, is amended by "
+                     "striking “alpha” and inserting “beta”.\n(b) Two.—Title 99, United States Code, is amended—\n(1) In "
+                     "the subsection heading for subsection (c) of section 3072, by striking “gamma” and inserting "
+                     "“delta”; and\n(2) in section 2107(k), by striking the subsection heading.\n(c) Three.—Section 9 "
+                     "of title 99, United States Code, is amended by striking the term “one” and inserting “two” in "
+                     "each place it appears in text or headings.\n").instructions
+    assert [i.op for i in ins] == ["AMEND_HEADING", "AMEND_HEADING", "AMEND_HEADING", "STRIKE_INSERT"]
+    assert (ins[1].target.section, ins[1].target.path) == ("3072", ["(c)"])
+    assert "heading struck" in ins[2].flags and "each place, headings included" in ins[3].flags
+
+
+def test_such_section_is_the_whole_section():
+    ins = parse_text("SEC. 2. CHANGES.\n(a) One.—Section 129a of title 99, United States Code, is amended in subsection "
+                     "(b) by striking “a” and inserting “b”.\n(b) Two.—Such section 129a is amended by adding at the end "
+                     "the following:\n“(h) Report.—Text.”.\n").instructions
+    assert (ins[1].target.section, ins[1].target.path) == ("129a", [])
+
+
+def test_definition_parentheticals_and_exceptions_do_not_name_the_target():
+    ins = parse_text("SEC. 2. CHANGES.\n(a) One.—Except as provided in paragraph (2), each covered law (as defined in "
+                     "section 102 of title 99, United States Code) is amended by striking the term “alpha officer” and "
+                     "inserting “beta officer” in each place it appears in text or headings.\n").instructions
+    assert ins[0].target.section is None and ins[0].target.path == []

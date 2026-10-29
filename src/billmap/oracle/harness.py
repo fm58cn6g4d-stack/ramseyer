@@ -20,7 +20,7 @@ from billmap.oracle.corpus import Corpus, CorpusLaw
 
 Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "STALE_BASELINE", "CONFLICT",
                  "UNPARSED"]
-Stage = Literal["parser", "resolver", "engine", "editorial", "unclassified"]
+Stage = Literal["parser", "resolver", "engine", "verify", "editorial", "unclassified"]   # verify: a self-check
 LABELS = Path(__file__).resolve().parents[3] / "tests" / "oracle" / "labels.json"
 QUOTES = str.maketrans({"“": '"', "”": '"', "‘": "'", "’": "'"})
 

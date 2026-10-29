@@ -25,8 +25,8 @@ LABEL = r"\((?:[0-9]+[A-Za-z]?|[a-z]{1,4}|[A-Z]{1,4})\)"
 LABELS = rf"(?:{LABEL})+"
 SECTION_NUM = r"\d+[\w\u2013-]*"
 UNIT = r"(?:sub)?(?:section|paragraph|clause|item)s?|subparagraphs?|subclauses?|subitems?"
-OCC = (r"(?:\s+(?P<occ>each place (?:it|such term|that term|the term|such terms|they|such phrase|such words?) "
-       r"appears?(?: in [^,;]*?)?|(?:the|in the) (?P<nth>first|second|third|fourth|last) place (?:it|such term) "
+OCC = (r"(?:\s+(?:in )?(?P<occ>each place (?:it|such term|that term|the term|such terms|they|such phrase|such words?) "
+       r"appears?(?: in (?:the )?text (?:and|or) (?:section |subsection )?headings?| in [^,;]*?)?|(?:the|in the) (?P<nth>first|second|third|fourth|last) place (?:it|such term) "
        r"appears?|each place it occurs))?")
 PUNCT = {"period": ".", "semicolon": ";", "comma": ",", "colon": ":", "dash": "—", "em dash": "—",
          "close quotation mark": "”", "closing quotation marks": "”", "closing parenthesis": ")",
@@ -136,7 +136,7 @@ SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})?
 SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause)s? (?P<labels>{LABELS}) of "
 # "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
 SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
-                          r"[Ss]uch section\b")
+                          rf"[Ss]uch section(?: (?P<num>{SECTION_NUM}))?\b")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
 # Not "Section 3(c) of <a law the grammar does not know>": a root from context would pick the wrong law.
@@ -145,12 +145,16 @@ IN_SECTION = re.compile(rf"\b(?:[Ii]n|for|of) section (?P<sec>\d+[\w–.-]*)(?P<
 LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
                       rf" (?P<labels>{LABELS}(?:(?:,| and| or|, and) {LABELS})*)")
 EACH_OF = re.compile(rf"\bin each of (?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})+)")
+HEADING_QUAL = re.compile(rf"(?:\b[Ii]n |^)[Tt]he (?:(?P<u>section|subsection|paragraph|subparagraph|clause) )?heading"
+                          rf"(?! of the \w+ column)(?: (?:for|of) (?P<fu>subsection|paragraph|subparagraph|clause) "
+                          rf"(?P<fl>{LABELS}))?")
 QUALIFIERS = [
     (re.compile(rf"\bin the matter (?P<w>preceding|following) (?P<u>{UNIT}) (?P<l>{LABELS})"),
      lambda m: f"matter {m['w']} {PLURAL.get(m['u'], m['u'])} {m['l']}"),
     (re.compile(r"\bin the (?P<n>first|second|third|fourth|last) sentence"), lambda m: f"{m['n']} sentence"),
-    (re.compile(r"\bin the (?:(?P<u>section|subsection|paragraph|subparagraph|clause) )?heading"),
-     lambda m: "heading" if not m["u"] else f"{m['u']} heading"),
+    # "in the heading", "In the section heading for section 430c", "The heading for section 723 of title 10 is amended",
+    # "In the subsection heading for subsection (c) of section 3072"; not "in the heading of the second column".
+    (HEADING_QUAL, lambda m: "heading" if not m["u"] else f"{m['u']} heading"),
     (re.compile(r"\bin the item relating to (?P<x>[^,;]+?)(?=,|;| by |$)"), lambda m: f"item relating to {m['x']}"),
 ]
 LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})*) of (?:such )?section ",
@@ -191,6 +195,8 @@ def _unquote(s: str | None, quotes: list[str] | None) -> str | None:
     return PH_RE.sub(lambda m: "\u201c" + quotes[int(m.group(1))] + "\u201d", s)
 
 
+# "Such subchapter is further amended" (no number): the Code unit named last, in this bill section or an earlier one.
+SUCH_BARE_UNIT = re.compile(r"^[Ss]uch (?P<u>chapter|subchapter|part|subpart|subtitle) (?:is|are) (?:further )?amended")
 SUCH_UNIT = re.compile(r"(?:\b[Ss]uch (?P<u1>chapter|subchapter|part|subpart) (?P<x1>[\w]+)|"
                        r"\b(?P<u2>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart) (?P<x2>[\w]+) of (?:such|this) title)")
 
@@ -202,15 +208,31 @@ def _usc_base(ctx: Ctx) -> Target | None:
     return None
 
 
+def _named_unit(ctx: Ctx, unit: str) -> Target | None:
+    """The Code unit target named last whose innermost unit is `unit` ("subchapter ii of chapter 17")."""
+    for t in (ctx.memory.get("usc"), ctx.memory.get("prior_usc")):
+        if t is not None and t.kind == "usc" and t.qualifiers and t.qualifiers[0].split()[0] == unit:
+            return t
+    return None
+
+
 def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str]:
     """Update ctx from a head phrase (target and location). Returns flags."""
     flags: list[str] = []
     h = usc_variants(head)
     h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
+    # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
+    h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
+    h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
     if TOC_HEAD.search(h):
         ctx.toc = True
     m = USC_SECTION.search(h)
-    if m:
+    if (b := BLANKET.search(h)):
+        # "each covered defense law ... is amended by striking the term “…” in each place it appears": no single
+        # target; reported, and the self-checks look for the struck words in every predicted section.
+        ctx.target = Target(kind="unknown", cite_raw=b.group(0))
+        ctx.path, ctx.qualifiers, ctx.is_target_set = [], [f"blanket: {b['what']}"], True
+    elif m:
         ctx.target = Target(kind="usc", cite_raw=m.group(0), title=m["t"], section=m["sec"])
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
@@ -255,13 +277,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [f"{m['unit'].lower()} {m['x']}"], True
     elif (m := SUCH_SECTION.search(h.strip())) and ctx.memory.get("last") is not None:
+        # "such section" is the whole section, not the unit the last instruction reached (10 U.S.C. 129a, Pub. L.
+        # 119-60 § 1107(c): "Such section 129a is amended by adding at the end" after an edit in subsection (b)).
         ctx.target = ctx.memory["last"].model_copy(deep=True)
-        ctx.path = [(i, lab) for i, lab in enumerate(ctx.target.path)]
-        units = list(re.finditer(SUCH_UNIT_OF, m["chain"]))
-        if units:
-            ctx.path = []
-            for u in reversed(units):                 # outermost unit is named last
-                _set_path(ctx, u["unit"].lower(), u["labels"])
+        ctx.target.path, ctx.path = [], []
+        if m["num"]:
+            ctx.target.section = m["num"]
+        for u in reversed(list(re.finditer(SUCH_UNIT_OF, m["chain"]))):     # outermost unit is named last
+            _set_path(ctx, u["unit"].lower(), u["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := PAREN_SECTION.search(h.strip())) and ctx.target.kind in ("unknown", "act"):
         # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision, or by the
@@ -277,6 +300,10 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^The ", "", m["act"]), quotes),
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
+    elif (m := SUCH_BARE_UNIT.match(h.strip())) and (prior := _named_unit(ctx, m["u"])) is not None:
+        ctx.target = prior.model_copy(deep=True)
+        ctx.path, ctx.qualifiers, ctx.is_target_set = [], list(prior.qualifiers), True
+        flags.append(f"such {m['u']}: {prior.cite_raw}")
     elif (m := SUCH_UNIT.search(h)) and _usc_base(ctx) is not None:
         # "Chapter 2003 of such title", "Such chapter 908": a unit of the title in context.
         unit, x = (m["u1"] or m["u2"]).lower(), m["x1"] or m["x2"]
@@ -340,6 +367,8 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
             q = fmt(m)
             if q not in ctx.qualifiers:
                 ctx.qualifiers.append(q)
+            if rx is HEADING_QUAL and m["fu"]:          # "the subsection heading for subsection (c)"
+                _set_path(ctx, m["fu"], m["fl"])
     return flags
 
 
@@ -356,6 +385,8 @@ UNIT_LIST = rf"(?:(?:{UNIT}) {LABEL_LIST}(?: of (?:{UNIT}) {LABELS})?(?:(?:,? an
 ITEM = (r"(?P<item>the (?:items?|matter) relating to (?:(?:sections?|chapters?|subchapters?|parts?|subtitles?|titles?|"
         r"articles?) [\dIVXL][\w\u2013.-]*(?:(?:,| and|, and| through) [\dIVXL][\w\u2013.-]*)*|\u27e6(?P<itemq>\d+)\u27e7))")
 FOLLOWING = r"the following(?: new [a-z ]+)?:?"
+TERM = r"(?:the (?:terms?|phrases?|words?|figures?) )?"       # "striking the term “program executive officer”"
+AS_REDESIGNATED = r"(?:,? \(?as (?:so )?redesignated(?: by [^,()]+)?\)?,?)?"
 PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P13", re.compile(rf"^striking {q('a')}{OCC} and all that follows through {q('b')}"
                        rf"(?: and inserting (?:{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
@@ -364,21 +395,29 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
      "STRIKE_THROUGH"),
     ("P13e", re.compile(rf"^striking {q('a')}{OCC} and all that follows(?: through the end(?: of [\w ]+?(?: \([\w]+\))*)?)?"
                         rf"(?: and inserting (?:(?:the following:? ?)?{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
+    ("P7s", re.compile(rf"^striking (?:the )?section (?P<labels>{SECTION_NUM})(?: \([^()]*(?:\([^()]*\)[^()]*)*\))? "
+                       rf"and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
     ("P7", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"
                       rf"(?P<of> of [\w ]+? {LABELS})? and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
-    ("P2", re.compile(rf"^striking {q('a')}{AT_END}{OCC} and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
+    ("P2", re.compile(rf"^striking {TERM}{q('a')}{AT_END}{OCC} and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                       rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash)){OCC.replace('occ', 'occ2').replace('nth', 'nth2')}"),
      "STRIKE_INSERT"),
     ("P2p", re.compile(rf"^striking {DESCR}(?: at the end(?: (?:thereof|of [\w ]+?(?: \([\w]+\))*))?| after {q('anchor')})?{OCC} "
                        rf"and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                        rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash))"), "STRIKE_INSERT"),
-    ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})(?P<of> of [\w ]+? {LABELS})?"
+    ("P10h", re.compile(rf"^(?:striking the (?:(?P<u>section|subsection|paragraph|subparagraph|clause|subclause) )?heading"
+                        rf" and inserting|amending the (?:(?P<u2>section|subsection|paragraph|subparagraph|clause|"
+                        rf"subclause) )?heading to read as follows:?) (?:the following:? ?)?{q('b')}"), "AMEND_HEADING"),
+    ("P7a", re.compile(rf"^amending (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})*)"
+                       rf"(?P<of> of [\w ]+? {LABELS})?"
                        rf"(?:,? as (?:so )?redesignated(?: by [^,]+)?,?)? to read as follows:?"), "REPLACE_UNIT"),
     ("P9u", re.compile(rf"^repealing (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
      "STRIKE_UNIT"),
     ("P7b", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"),
      "STRIKE_UNIT"),
-    ("P3", re.compile(rf"^striking {q('a')}{AT_END}{OCC}"), "STRIKE"),
+    ("P3", re.compile(rf"^striking {TERM}{q('a')}{AT_END}{OCC}"), "STRIKE"),
+    ("P10x", re.compile(r"^striking the (?:(?P<u>section|subsection|paragraph|subparagraph|clause|subclause) )?heading"
+                        r"(?! and)"), "AMEND_HEADING"),
     ("P3p", re.compile(rf"^striking {DESCR}(?: at the end(?: of [\w ()]+?)?)?{OCC}"), "STRIKE"),
     ("P3s", re.compile(r"^striking the (?P<sent>first|second|third|last|fourth) sentence"), "STRIKE"),
     ("P11s", re.compile(rf"^striking {ITEM}(?: and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})))?"),
@@ -391,9 +430,13 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P5i", re.compile(rf"^inserting at the end(?: (?:thereof|of [\w ]+?(?: {LABELS})?))?,? (?:{q('b')}|(?P<block>{FOLLOWING}))"),
      "ADD_END"),
     ("P6", re.compile(rf"^inserting (?P<where>after|before) (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})"
-                      rf"(?: of [\w ]+? {LABELS})?(?:,? as so redesignated(?: by [^,]+)?,?)? (?P<block>{FOLLOWING})"),
+                      rf"(?: of [\w ]+? {LABELS})?{AS_REDESIGNATED},? (?P<block>{FOLLOWING})"),
      "ADD_UNIT_"),
-    ("P4b", re.compile(rf"^inserting (?P<where>after|before) {q('a')}{OCC} (?P<block>{FOLLOWING})"), "INSERT_"),
+    ("P4b", re.compile(rf"^inserting (?P<where>after|before) {q('a')}{OCC},? (?P<block>{FOLLOWING})(?: ?{q('b')})?"),
+     "INSERT_"),
+    # "inserting the following before the period at the end: “…”", "inserting before the semicolon the following:"
+    ("P4pb", re.compile(rf"^inserting (?:the following:? )?(?P<where>after|before) {DESCR}(?P<atend2> at the end(?: of "
+                        rf"[\w ()]+?)?)?(?:,? (?P<block>{FOLLOWING}))?:?(?: ?{q('b')})?"), "INSERT_"),
     ("P4", re.compile(rf"^inserting {q('b')} (?P<where>after|before) {q('a')}{OCC}"), "INSERT_"),
     ("P4p", re.compile(rf"^inserting {q('b')} (?P<where>after|before) {DESCR}(?: at the end(?: of [\w ()]+?)?)?{OCC}"),
      "INSERT_"),
@@ -459,6 +502,15 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
             out |= {"op": op, "find": get("a"), "through": get("b") or gd.get("toend") or "end of unit",
                     "replace": get("c"),
                     "new_text": block if uses_block else None}
+        elif pid == "P7s":            # "Chapter 1009 ... is amended by striking section 100905 and inserting"
+            out |= {"op": op, "new_text": block, "section": gd["labels"]}
+        elif pid == "P10x":           # "by striking the subsection heading"
+            u = gd.get("u")
+            out |= {"op": op, "replace": "", "unit": f"{u} heading" if u else "heading", "flags": ["heading struck"]}
+        elif pid == "P10h":
+            u = gd.get("u") or gd.get("u2")
+            out |= {"op": op, "replace": get("b"), "unit": f"{u} heading" if u else "heading",
+                    "flags": ["heading replaced"]}
         elif pid in ("P7", "P7a"):
             out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}{gd.get('of') or ''}", "new_text": block}
         elif pid in ("P2", "P2p"):
@@ -491,7 +543,14 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
         elif pid == "P5i":
             out |= {"op": op, "new_text": get("b") if gd.get("b") is not None else block}
         elif pid == "P4b":
-            out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "find": get("a"), "new_text": block}
+            out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "find": get("a"),
+                    "new_text": get("b") if gd.get("b") is not None else block}
+        elif pid == "P4pb":
+            if gd.get("b") is None and not gd.get("block") and not block:
+                continue
+            out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "find": PUNCT[gd["punct"]],
+                    "new_text": get("b") if gd.get("b") is not None else block,
+                    "flags": [f"anchor is positional: {PUNCT[gd['punct']]}"]}
         elif pid in ("P4", "P4p", "P4e"):
             anchor = get("a") if pid == "P4" else (PUNCT[gd["punct"]] if pid == "P4p" else f"{gd['unit']} {gd['labels']}")
             out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "find": anchor, "new_text": get("b")}
@@ -505,11 +564,18 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
             out |= {"op": op, "unit": gd["units"].strip(" ,"), "redesignate": list(zip(src, dst))}
             if len(src) != len(dst):
                 out["flags"] = [f"redesignation counts differ: {len(src)} -> {len(dst)}"]
+        if "heading" in (gd.get("occ") or "") + (gd.get("occ2") or ""):    # "each place it appears in text or headings"
+            out["flags"] = out.get("flags", []) + ["each place, headings included"]
         out["needs_block"] = uses_block or pid in ("P7", "P7a", "P6", "P6s", "P4b")
         return out
     return None
 
 
+HEAD_WHERE = re.compile(rf"\b(?P<where>after|before) (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})"
+                        r"(?:\s*\(as (?:so )?redesignated[^()]*\))?,?\s*(?:by\s*)?$")
+BLANKET = re.compile(r"\b(?:[Ee]ach|[Aa]ny|[Aa]ll) (?P<what>(?:covered |applicable |other )?[\w ]{0,40}?(?:laws?|Acts?|"
+                     r"statutes?|provisions? of (?:Federal )?law))\s*,?\s*(?:is|are) (?:hereby )?amended\b")
+CONFORMING = re.compile(r"\s*\(and conforming the table of (?:sections|contents|chapters)[^()]*\)")
 TRAILING_OK = re.compile(r"^[\s,.;:\u2014]*(?:respectively|and|or)?[\s,.;:\u2014]*(?:and|or)?[\s,.;:\u2014]*$")
 TRAILING_LOC = re.compile(rf"^,?\s*(?:in|of) (?:the )?(?:{UNIT}|section) [\w–.-]*(?:{LABELS})?"
                           rf"(?:\s+of\s+(?:such|this|that)\s+\w+)?(?:,? as so redesignated)?")
@@ -591,6 +657,9 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
     for i, st in enumerate(starts):
         end = starts[i + 1].start() if i + 1 < len(starts) else len(lifted)
         clause = lifted[st.start():end]
+        if i == 0 and (w := HEAD_WHERE.search(head)) and clause.startswith("inserting the following"):
+            # "after subclause (III), by inserting the following:" -> "inserting after subclause (III) the following:"
+            clause = f"inserting {w['where']} {w['unit']} {w['labels']} " + clause[len("inserting "):]
         ictx = child_ctx.copy()
         parsed = parse_clause(clause, quotes, block)
         base = dict(id=f"{node.loc}#{ordinal_base + i}", bill_loc=node.loc, source_text=node.text, span=node.span,
@@ -599,7 +668,10 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
             out.append(Instruction(**base, target=ictx.target_out(), op="UNPARSED", flags=flags,
                                    confidence=0.0, reason=f"no grammar pattern matches: {PH_RE.sub('“…”', clause)[:160]}"))
             continue
-        rest = parsed.pop("rest", "")
+        rest = CONFORMING.sub("", parsed.pop("rest", ""))
+        if (sec := parsed.pop("section", None)) and ictx.target.kind != "unknown":
+            ictx.target = ictx.target.model_copy(deep=True)
+            ictx.target.section, ictx.path, ictx.qualifiers = sec, [], []
         pflags = flags + parsed.pop("flags", [])
         m = TRAILING_LOC.match(rest)
         if m:                                     # "by striking “x” in paragraph (2)"

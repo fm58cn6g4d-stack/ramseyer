@@ -143,3 +143,30 @@ def test_split_continues_as_siblings_at_their_level():
                     "(2) by striking “a report;” and inserting “a report; and\n“(B) a plan;”.")
     assert [r.detail.split(":")[0] for r in res] == ["split (children)", "split (siblings)"]
     assert "shall— (1) file— (A) a report; and (B) a plan; (2) keep a record;" in " ".join(text.split())
+
+
+def test_replacing_text_that_starts_with_punctuation_keeps_words_apart():
+    hay = "available for fishing. In particular, the boom shall be lowered."
+    a = hay.index(". In")
+    a2, b2, new = tidy(hay, a, len(hay), "and in accordance with the rules.", "replace")
+    assert (hay[:a2] + new + hay[b2:]).endswith("for fishing and in accordance with the rules.")
+
+
+def test_self_check_flags_enumerated_text_left_inline_and_unapplied_mentions():
+    from billmap.dryrun.verify import structure_problems, unapplied_mentions
+    work = Working(XML, "/us/usc/t99/s1", positive_law=True)
+    eng = Engine(work)
+    ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection (a) by "
+                     "inserting “ c. Gamma review.—The board may act.” after “program.”.\n").instructions
+    eng.run(ins[0], list(ins[0].target.path))
+    assert structure_problems(work) and "enumerated text" in structure_problems(work)[0]
+    other = parse_text("SEC. 3. MORE.\nSection 1 of the Placeholder Act (99 U.S.C. 1) is amended by "
+                       "striking the matter that relates to beta.\n").instructions
+    assert unapplied_mentions("/us/usc/t99/s1", other, set()) and not unapplied_mentions("/us/usc/t99/s1", other,
+                                                                                          {other[0].id})
+
+
+def test_label_order_reads_roman_and_letters():
+    from billmap.dryrun.verify import _in_order
+    assert _in_order(["i", "ii", "iii", "iv", "v"]) and _in_order(["h", "i", "j"]) and _in_order(["1", "2", "10"])
+    assert _in_order(["A", "B", "C"]) and not _in_order(["i", "iii", "ii"]) and not _in_order(["b", "a"])

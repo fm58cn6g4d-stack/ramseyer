@@ -354,6 +354,12 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
             new = old[:1] + new
         if new and old[-1:].isspace() and not new[-1:].isspace():
             new = new + old[-1:]
+        # Struck text that began or ended with punctuation leaves two words touching: "fishing" + ". In particular
+        # ..." replaced by "and in accordance" is "fishing and in accordance" (16 U.S.C. 973k, Pub. L. 119-60).
+        if new and a > 0 and hay[a - 1].isalnum() and new[0].isalnum():
+            new = " " + new
+        if new and b < len(hay) and hay[b].isalnum() and new[-1].isalnum():
+            new = new + " "
     left, right = hay[:a], hay[b:]
     if join == "after":
         old = hay[a:b]
@@ -578,6 +584,8 @@ class Engine:
             kinds = {"heading"}
         if find and re.match(r"^\(\w+\)", find):
             kinds.add("num")
+        if "each place, headings included" in ins.flags:
+            kinds.add("heading")
         ranges = [(s.start, s.start + len(getattr(s.node, s.attr) or "")) for s in segs if s.kind in kinds]
         merged: list[tuple[int, int]] = []
         for a, b in ranges:
@@ -778,16 +786,20 @@ class Engine:
                         t.text = self._tr(t.text)
         rest = copy.deepcopy(content)
         replace_span(Working.segments(rest), 0, b, "")
-        replace_span(segs, a, len(hay), lead)
+        a2, _, lead = tidy(hay, a, b, lead, "replace") if lead else (a, b, lead)
+        replace_span(segs, a2, len(hay), lead.rstrip())
         if mode == "push":
             host.remove(content)
         elif mode == "children":
             content.tag = NS + "chapeau"
         dst = last[0]
-        if len(dst):
-            dst[-1].tail = (dst[-1].tail or "") + (rest.text or "")
-        else:
-            dst.text = (dst.text or "") + (rest.text or "")
+        holder, attr = (dst[-1], "tail") if len(dst) else (dst, "text")
+        end, piece = (getattr(holder, attr) or ""), (rest.text or "")
+        if piece.strip() or len(rest):
+            # One space between the new unit's words and the rest of the old text, none before closing punctuation.
+            piece = piece.lstrip()
+            end = end.rstrip() + ("" if piece[:1] and piece[0] in CLOSE_PUNCT else " ")
+        setattr(holder, attr, end + piece)
         for c in list(rest):
             dst.append(c)
         if mode == "siblings":
@@ -824,9 +836,38 @@ class Engine:
         setattr(holder, attr, body + new + dash)
         return Result(ins.id, "CLEAN", "added at the end of the heading", after_span=new)
 
+    def _heading_replace(self, ins, scope):
+        """"striking the heading and inserting “…”" / "amending the section heading to read as follows: “…”": the
+        whole heading, set the way the unit's heading is set now (".—" kept or not; the title's heading case)."""
+        whole_section = (ins.unit or "").startswith("section")
+        unit = self.work.el if whole_section else scope
+        h = unit.find(NS + "heading") if unit is not None else None
+        if h is None or not ins.replace:
+            return Result(ins.id, "TARGET_MISSING", "the unit has no heading to replace")
+        new = self._tr(nested_to_double(ins.replace)).strip()
+        if local(unit) == "section":
+            text = " " + new.rstrip(".")
+        else:
+            old = text_of(h).strip()
+            text = " " + heading_form(new, local(unit), self.work.positive_law, old.endswith(".\u2014"),
+                                      self.work.case.get(local(unit)))
+        for c in list(h):
+            h.remove(c)
+        h.text = text
+        return Result(ins.id, "CLEAN", "heading replaced", after_span=text.strip())
+
     def _op_amend_heading(self, ins, scope, path):
         """A heading edit: the parser records the underlying op ("heading edit (INSERT_AFTER)"); the scope is
         limited to the heading by _allowed."""
+        if "heading replaced" in ins.flags:
+            return self._heading_replace(ins, scope)
+        if "heading struck" in ins.flags:
+            unit = self.work.el if (ins.unit or "").startswith("section") else scope
+            h = unit.find(NS + "heading") if unit is not None else None
+            if h is None:
+                return Result(ins.id, "TARGET_MISSING", "the unit has no heading to strike")
+            _remove_keep_tail(h)
+            return Result(ins.id, "CLEAN", "heading struck")
         m = next((re.search(r"heading edit \((\w+)\)", f) for f in ins.flags if "heading edit" in f), None)
         op = m.group(1).lower() if m else "strike_insert"
         if op == "add_end":

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 
 from billmap.data.index import Index, LookupError_
 from billmap.dryrun.engine import NS, Engine, Result, Working, build_units, worst
+from billmap.dryrun.verify import structure_problems, unapplied_mentions
 from billmap.oracle.harness import Prediction
 from billmap.parse.ir import Instruction
 from billmap.resolve.resolver import Resolution, Resolver
@@ -40,6 +41,15 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
         tr = Trace(ins, res)
         traces.append(tr)
         if res.outcome != "CODIFIED":
+            # A new section numbered in a positive-law title ("§ 2069.") is placed by its number even when the unit
+            # it is added to does not resolve ("Subtitle VII of chapter 20" for the Code's subchapter VII).
+            if ins.target.kind == "usc" and ins.target.title in resolver.positive and ins.new_text and \
+                    ins.op in ("ADD_END", "ADD_UNIT_AFTER", "ADD_UNIT_BEFORE"):
+                for u in build_units(ins.new_text, True)[0]:
+                    if u.tag == NS + "section":
+                        ident = f"/us/usc/t{ins.target.title}/s{u.find('{*}num').get('value')}"
+                        by_section.setdefault(ident, []).append((ins, ["NEW", "UNPLACED"], tr))
+                        tr.section = ident
             continue
         if res.section_id is not None:
             ident = ix._node(res.section_id).identifier
@@ -89,6 +99,9 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
             return cache[key]
         return lambda sec: lookup(sec, current_title[0])
 
+    # Instructions that reached the Code somewhere (or edit only a table of contents); the rest are unapplied.
+    applied = {tr.instruction.id for tr in traces if tr.section is not None or tr.instruction.op == "CONFORM_TOC"
+               or tr.resolution.outcome in ("CODIFIED", "NOTE")}
     current_title = [""]
     predictions, workings = [], {}
     for ident, items in by_section.items():
@@ -107,7 +120,7 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                 work.removed = True
                 tr.result = Result(ins.id, "WARN", "repealed with the unit that contains it; the Code sets out "
                                    "a repealed section as a stub or removes it")
-            elif path == ["NEW"]:
+            elif path[:1] == ["NEW"]:
                 units, _ = build_units(ins.new_text, work.positive_law)
                 sec = next(u for u in units if u.tag == NS + "section" and
                            f"/s{u.find('{*}num').get('value')}" == ident[ident.rfind('/s'):])
@@ -121,6 +134,9 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                         tr.result = Result(ins.id, "WARN", f"new section, one of {n_new} enacted by one instruction "
                                            "(a restatement): amendments elsewhere in the bill to the restated "
                                            "provisions are not carried into it")
+                    elif path[1:] == ["UNPLACED"]:
+                        tr.result = Result(ins.id, "WARN", f"new section added by its number; the unit it is added "
+                                           f"to did not resolve: {tr.resolution.reason or ins.target.cite_raw}")
                     else:
                         tr.result = Result(ins.id, "CLEAN", "new section added")
                 else:
@@ -139,6 +155,12 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
             if st not in ("CLEAN", "NOT_APPLICABLE") and stage is None:
                 stage = STAGE.get(st, "engine") if "needs review" not in tr.resolution.flags else "resolver"
         status = worst(statuses)
+        if status == "CLEAN":
+            problems = structure_problems(work) + unapplied_mentions(ident, instructions, applied, work)
+            if problems:
+                status, stage = "WARN", "verify"
+                traces.append(Trace(items[0][0], items[0][2].resolution, ident,
+                                    Result(items[0][0].id, "WARN", "self-check: " + "; ".join(problems))))
         predictions.append(Prediction(identifier=ident, status="CLEAN" if status == "NOT_APPLICABLE" else status,
                                       text=work.render(), stage=stage, deterministic=deterministic))
     return BillRun(predictions, traces, workings)
