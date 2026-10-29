@@ -645,3 +645,7 @@ The sequence check on added labels (F11) cost nothing on the tuning set but did 
   - wrong-section unit operations (above);
   - sections changed by several laws in a window (ungradable until laws are chained);
   - the parser is measured on enrolled XML only (red team F16: degraded and introduced-version text is next).
+
+## Order of work revised (2026-10-29)
+
+Espen approved the revised order in `records/handoff-2026-10-29.md`; `docs/00-build-plan.md` holds the milestone table. After M6c: M6d foundations (USLM 1.x and 2.x, the four failure categories including already executed, incorporated-set release-point windows), M6e oracle rebuild on dreamproit/uscode, M8a Act-text layer (Statute Compilations), M8 comparative print with two displays, then M7, M9 to M12, and M13 bill and amendment comparison. M6b stays open: the sealed 2023 set measured 2.07% substantive false-clean against the 1% target.

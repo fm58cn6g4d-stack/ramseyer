@@ -46,3 +46,21 @@ Run the American Passenger Rail Network Act and four other drafts. You review th
 - Tables and formulas inside statute text
 - The first place it appears, and other ordinal occurrences
 - Section numbers that changed between drafting and the release point
+
+## Oracle rebuild and draft-stage tests (added Oct 29, 2026)
+
+M6e moves measurement from one Congress to thirteen years of enacted law, and adds tests on draft-stage text, the closest thing to real use.
+
+**Oracle on the release-point history.** Use every law from 113-21 on, with exact before and after release points under incorporated-set windows (tab 1). Hold a sealed sample stratified by Congress, committee and title, measured once per round and never inspected case by case. Keep the GovInfo-edition sets as a cross-check. Release points from 2013 to 2015 have converter drift, so normalize text the same way for every year.
+
+**Draft versions of enacted laws.** Run the introduced and reported versions (GovInfo BILLS; version codes IH, RH, RS, EH, ES, EAS, ENR) through ramseyer as drafts. Grade each predicted Code change against what the enacted law did, wherever the provision was carried into law. Align provisions in order of confidence, recording the evidence for each pairing:
+
+1. identical instruction (same target, operation and quotes);
+2. same Code effect, different wording;
+3. same target, different effect (a substantive change);
+4. similar free-standing text;
+5. unmatched, reported as such.
+
+**Committee-report answer key.** Grade ramseyer on reported bills against their "changes in existing law" prints (tab 6) before M8 is built.
+
+**Classification-table caveat.** Only 50.5% of text changes in the release history match a classification row in their window, so off-target grading must allow sections that no window law is classified to.
