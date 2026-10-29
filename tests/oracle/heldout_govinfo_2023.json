@@ -1,0 +1,8652 @@
+{
+ "version": 1,
+ "built": "2026-10-29",
+ "selection": "Held out (GovInfo): public laws enacted after the 2022 U.S. Code edition's 'current through' date and on or before the 2023 edition's (per title, read from the editions), with the sections each changes alone in that window (classification rows, notes excluded). Text is GovInfo's per-section XHTML, converted to USLM (98.2% exact on the 119-134 release, scripts/xhtml_check.py).",
+ "release_points": [
+  {
+   "label": "usc-2022",
+   "date": "2022 edition",
+   "page_url": "https://www.govinfo.gov/app/collection/uscode/2022",
+   "titles": [
+    "2",
+    "5",
+    "7",
+    "10",
+    "15",
+    "16",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "25",
+    "28",
+    "32",
+    "33",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "42",
+    "46",
+    "47",
+    "48",
+    "50",
+    "52"
+   ],
+   "zip_urls": [
+    "https://api.govinfo.gov/packages/USCODE-2022-title2",
+    "https://api.govinfo.gov/packages/USCODE-2022-title5",
+    "https://api.govinfo.gov/packages/USCODE-2022-title7",
+    "https://api.govinfo.gov/packages/USCODE-2022-title10",
+    "https://api.govinfo.gov/packages/USCODE-2022-title15",
+    "https://api.govinfo.gov/packages/USCODE-2022-title16",
+    "https://api.govinfo.gov/packages/USCODE-2022-title18",
+    "https://api.govinfo.gov/packages/USCODE-2022-title19",
+    "https://api.govinfo.gov/packages/USCODE-2022-title20",
+    "https://api.govinfo.gov/packages/USCODE-2022-title21",
+    "https://api.govinfo.gov/packages/USCODE-2022-title22",
+    "https://api.govinfo.gov/packages/USCODE-2022-title25",
+    "https://api.govinfo.gov/packages/USCODE-2022-title28",
+    "https://api.govinfo.gov/packages/USCODE-2022-title32",
+    "https://api.govinfo.gov/packages/USCODE-2022-title33",
+    "https://api.govinfo.gov/packages/USCODE-2022-title36",
+    "https://api.govinfo.gov/packages/USCODE-2022-title37",
+    "https://api.govinfo.gov/packages/USCODE-2022-title38",
+    "https://api.govinfo.gov/packages/USCODE-2022-title39",
+    "https://api.govinfo.gov/packages/USCODE-2022-title40",
+    "https://api.govinfo.gov/packages/USCODE-2022-title42",
+    "https://api.govinfo.gov/packages/USCODE-2022-title46",
+    "https://api.govinfo.gov/packages/USCODE-2022-title47",
+    "https://api.govinfo.gov/packages/USCODE-2022-title48",
+    "https://api.govinfo.gov/packages/USCODE-2022-title50",
+    "https://api.govinfo.gov/packages/USCODE-2022-title52"
+   ]
+  },
+  {
+   "label": "usc-2023",
+   "date": "2023 edition",
+   "page_url": "https://www.govinfo.gov/app/collection/uscode/2023",
+   "titles": [
+    "2",
+    "5",
+    "7",
+    "10",
+    "15",
+    "16",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "25",
+    "28",
+    "32",
+    "33",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "42",
+    "46",
+    "47",
+    "48",
+    "50",
+    "52"
+   ],
+   "zip_urls": [
+    "https://api.govinfo.gov/packages/USCODE-2023-title2",
+    "https://api.govinfo.gov/packages/USCODE-2023-title5",
+    "https://api.govinfo.gov/packages/USCODE-2023-title7",
+    "https://api.govinfo.gov/packages/USCODE-2023-title10",
+    "https://api.govinfo.gov/packages/USCODE-2023-title15",
+    "https://api.govinfo.gov/packages/USCODE-2023-title16",
+    "https://api.govinfo.gov/packages/USCODE-2023-title18",
+    "https://api.govinfo.gov/packages/USCODE-2023-title19",
+    "https://api.govinfo.gov/packages/USCODE-2023-title20",
+    "https://api.govinfo.gov/packages/USCODE-2023-title21",
+    "https://api.govinfo.gov/packages/USCODE-2023-title22",
+    "https://api.govinfo.gov/packages/USCODE-2023-title25",
+    "https://api.govinfo.gov/packages/USCODE-2023-title28",
+    "https://api.govinfo.gov/packages/USCODE-2023-title32",
+    "https://api.govinfo.gov/packages/USCODE-2023-title33",
+    "https://api.govinfo.gov/packages/USCODE-2023-title36",
+    "https://api.govinfo.gov/packages/USCODE-2023-title37",
+    "https://api.govinfo.gov/packages/USCODE-2023-title38",
+    "https://api.govinfo.gov/packages/USCODE-2023-title39",
+    "https://api.govinfo.gov/packages/USCODE-2023-title40",
+    "https://api.govinfo.gov/packages/USCODE-2023-title42",
+    "https://api.govinfo.gov/packages/USCODE-2023-title46",
+    "https://api.govinfo.gov/packages/USCODE-2023-title47",
+    "https://api.govinfo.gov/packages/USCODE-2023-title48",
+    "https://api.govinfo.gov/packages/USCODE-2023-title50",
+    "https://api.govinfo.gov/packages/USCODE-2023-title52"
+   ]
+  }
+ ],
+ "laws": [
+  {
+   "pl": "118-5",
+   "name": "Fiscal Responsibility Act of 2023",
+   "bill": "118 hr 3746",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr3746/BILLS-118hr3746enr.xml",
+   "enrolled_sha256": "d44fcaae3126e62e4406ca3eab1808d9706fd945fde7825c5e544dbc3795d6e4",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "2",
+    "5",
+    "7",
+    "42"
+   ],
+   "rows": [
+    {
+     "title": "2",
+     "section": "901",
+     "description": "",
+     "law_section": "101(a), (b)"
+    },
+    {
+     "title": "2",
+     "section": "904",
+     "description": "",
+     "law_section": "101(c)"
+    },
+    {
+     "title": "2",
+     "section": "901",
+     "description": "",
+     "law_section": "102"
+    },
+    {
+     "title": "5",
+     "section": "801",
+     "description": "",
+     "law_section": "270"
+    },
+    {
+     "title": "42",
+     "section": "607",
+     "description": "",
+     "law_section": "301"
+    },
+    {
+     "title": "42",
+     "section": "611",
+     "description": "",
+     "law_section": "302"
+    },
+    {
+     "title": "42",
+     "section": "607",
+     "description": "",
+     "law_section": "303"
+    },
+    {
+     "title": "42",
+     "section": "611",
+     "description": "",
+     "law_section": "304"
+    },
+    {
+     "title": "7",
+     "section": "2015",
+     "description": "",
+     "law_section": "311(a)"
+    },
+    {
+     "title": "7",
+     "section": "2015",
+     "description": "",
+     "law_section": "312"
+    },
+    {
+     "title": "7",
+     "section": "2011",
+     "description": "",
+     "law_section": "313"
+    },
+    {
+     "title": "42",
+     "section": "4332",
+     "description": "",
+     "law_section": "321(a)"
+    },
+    {
+     "title": "42",
+     "section": "4336",
+     "description": "new",
+     "law_section": "321(b) \"106\""
+    },
+    {
+     "title": "42",
+     "section": "4336a",
+     "description": "new",
+     "law_section": "321(b) \"107\""
+    },
+    {
+     "title": "42",
+     "section": "4336b",
+     "description": "new",
+     "law_section": "321(b) \"108\""
+    },
+    {
+     "title": "42",
+     "section": "4336c",
+     "description": "new",
+     "law_section": "321(b) \"109\""
+    },
+    {
+     "title": "42",
+     "section": "4336d",
+     "description": "new",
+     "law_section": "321(b) \"110\""
+    },
+    {
+     "title": "42",
+     "section": "4336e",
+     "description": "new",
+     "law_section": "321(b) \"111\""
+    },
+    {
+     "title": "42",
+     "section": "4370m",
+     "description": "",
+     "law_section": "323"
+    },
+    {
+     "title": "2",
+     "section": "900",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "5",
+     "section": "551",
+     "description": "nt new",
+     "law_section": "261-270"
+    },
+    {
+     "title": "20",
+     "section": "1001",
+     "description": "nt new",
+     "law_section": "271"
+    },
+    {
+     "title": "42",
+     "section": "607",
+     "description": "nt new",
+     "law_section": "305"
+    },
+    {
+     "title": "7",
+     "section": "2015",
+     "description": "nt new",
+     "law_section": "311(b)"
+    },
+    {
+     "title": "7",
+     "section": "2015",
+     "description": "nt new",
+     "law_section": "314"
+    },
+    {
+     "title": "31",
+     "section": "3101",
+     "description": "nt new",
+     "law_section": "401"
+    }
+   ],
+   "reason": "19 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-9",
+   "name": "Providing Accountability Through Transparency Act of 2023",
+   "bill": "118 s 111",
+   "enrolled_url": "https://www.congress.gov/118/bills/s111/BILLS-118s111enr.xml",
+   "enrolled_sha256": "320835ce48b864155e145abdac8cdeb09e56a07275090365b1178ae69437d7ec",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "5"
+   ],
+   "rows": [
+    {
+     "title": "5",
+     "section": "553",
+     "description": "",
+     "law_section": "2"
+    },
+    {
+     "title": "5",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "1 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-14",
+   "name": "Securing the U.S. Organ Procurement and Transplantation Network Act",
+   "bill": "118 hr 2544",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr2544/BILLS-118hr2544enr.xml",
+   "enrolled_sha256": "64bac8e274c36ec49bb10501314fde64e86bdd8b80a6dc9cb30cb3ae45bc16f1",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "42"
+   ],
+   "rows": [
+    {
+     "title": "42",
+     "section": "274",
+     "description": "",
+     "law_section": "2"
+    },
+    {
+     "title": "42",
+     "section": "273",
+     "description": "",
+     "law_section": "3(1)"
+    },
+    {
+     "title": "42",
+     "section": "274b",
+     "description": "",
+     "law_section": "3(2)"
+    },
+    {
+     "title": "42",
+     "section": "274c",
+     "description": "",
+     "law_section": "3(3)"
+    },
+    {
+     "title": "42",
+     "section": "274d",
+     "description": "",
+     "law_section": "3(4)"
+    },
+    {
+     "title": "42",
+     "section": "201",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "5 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-15",
+   "name": "Continuing Appropriations Act, 2024 and Other Extensions Act",
+   "bill": "118 hr 5860",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr5860/BILLS-118hr5860enr.xml",
+   "enrolled_sha256": "b9638201f3cfff01711a79de84e612237903bbc6bd77da70bbcd794e84698788",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "21",
+    "25"
+   ],
+   "rows": [
+    {
+     "title": "25",
+     "section": "5373",
+     "description": "",
+     "law_section": "2102"
+    },
+    {
+     "title": "21",
+     "section": "379j-11",
+     "description": "",
+     "law_section": "2302"
+    },
+    {
+     "title": "21",
+     "section": "379j-12",
+     "description": "",
+     "law_section": "2303"
+    },
+    {
+     "title": "21",
+     "section": "379j-13",
+     "description": "",
+     "law_section": "2304"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "",
+     "law_section": "2312"
+    },
+    {
+     "title": "21",
+     "section": "379j-22",
+     "description": "",
+     "law_section": "2313"
+    },
+    {
+     "title": "48",
+     "section": "1921",
+     "description": "nt new",
+     "law_section": "2101(b)"
+    },
+    {
+     "title": "49",
+     "section": "41731",
+     "description": "nt",
+     "law_section": "2202(m)"
+    },
+    {
+     "title": "49",
+     "section": "47104",
+     "description": "nt",
+     "law_section": "2202(o)"
+    },
+    {
+     "title": "49",
+     "section": "47102",
+     "description": "nt",
+     "law_section": "2202(p)"
+    },
+    {
+     "title": "49",
+     "section": "44810",
+     "description": "nt",
+     "law_section": "2202(q)"
+    },
+    {
+     "title": "49",
+     "section": "42301",
+     "description": "nt prec",
+     "law_section": "2202(r)"
+    },
+    {
+     "title": "49",
+     "section": "42302",
+     "description": "nt",
+     "law_section": "2202(s)"
+    },
+    {
+     "title": "49",
+     "section": "41705",
+     "description": "nt",
+     "law_section": "2202(t)"
+    },
+    {
+     "title": "49",
+     "section": "40103",
+     "description": "nt",
+     "law_section": "2202(u)"
+    },
+    {
+     "title": "49",
+     "section": "47141",
+     "description": "nt",
+     "law_section": "2202(v)"
+    },
+    {
+     "title": "21",
+     "section": "301",
+     "description": "nt new",
+     "law_section": "2301(a)"
+    },
+    {
+     "title": "21",
+     "section": "379j-11",
+     "description": "nt new",
+     "law_section": "2301(b)"
+    },
+    {
+     "title": "21",
+     "section": "379j-11",
+     "description": "nt new",
+     "law_section": "2305"
+    },
+    {
+     "title": "21",
+     "section": "379j-11",
+     "description": "nt new",
+     "law_section": "2306"
+    },
+    {
+     "title": "21",
+     "section": "379j-11",
+     "description": "nt new",
+     "law_section": "2307(a)"
+    },
+    {
+     "title": "21",
+     "section": "379j-13",
+     "description": "nt new",
+     "law_section": "2307(b)"
+    },
+    {
+     "title": "21",
+     "section": "379j-12",
+     "description": "nt repealed",
+     "law_section": "2307(c)"
+    },
+    {
+     "title": "21",
+     "section": "379j-13",
+     "description": "nt repealed",
+     "law_section": "2307(c)"
+    },
+    {
+     "title": "21",
+     "section": "379j-12",
+     "description": "nt new",
+     "law_section": "2307(c)"
+    },
+    {
+     "title": "21",
+     "section": "301",
+     "description": "nt new",
+     "law_section": "2311(a)"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt new",
+     "law_section": "2311(b)"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt new",
+     "law_section": "2314"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt new",
+     "law_section": "2315"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt new",
+     "law_section": "2316(a)"
+    },
+    {
+     "title": "21",
+     "section": "379j-22",
+     "description": "nt new",
+     "law_section": "2316(b)"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt repealed",
+     "law_section": "2316(c)"
+    },
+    {
+     "title": "21",
+     "section": "379j-22",
+     "description": "nt repealed",
+     "law_section": "2316(c)"
+    },
+    {
+     "title": "21",
+     "section": "379j-21",
+     "description": "nt new",
+     "law_section": "2316(c)"
+    }
+   ],
+   "reason": "6 section(s) changed by this law alone in the window; 40 shared with another law dropped"
+  },
+  {
+   "pl": "118-17",
+   "name": "Protecting Hunting Heritage and Education Act",
+   "bill": "118 hr 5110",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr5110/BILLS-118hr5110enr.xml",
+   "enrolled_sha256": "1f42e6e5f01a0732fbeebe8720c0185c496b2252d387bb7618d35ce849fdfce3",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "20"
+   ],
+   "rows": [
+    {
+     "title": "20",
+     "section": "7906",
+     "description": "",
+     "law_section": "2"
+    },
+    {
+     "title": "20",
+     "section": "6301",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "1 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-18",
+   "name": "A bill to amend title 38, United States Code, to strengthen benefits for children of Vietnam veterans born with spina bifida, and for other purposes.",
+   "bill": "118 s 112",
+   "enrolled_url": "https://www.congress.gov/118/bills/s112/BILLS-118s112enr.xml",
+   "enrolled_sha256": "81e9ec33f5ec0b91c500ae6c029a894e4afad0846b6d273b69ed583ae60ca839",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "38"
+   ],
+   "rows": [
+    {
+     "title": "38",
+     "section": "1831",
+     "description": "",
+     "law_section": "1(a)"
+    },
+    {
+     "title": "38",
+     "section": "1835",
+     "description": "new",
+     "law_section": "1(b) \"1835\""
+    },
+    {
+     "title": "38",
+     "section": "1836",
+     "description": "new",
+     "law_section": "1(b) \"1836\""
+    },
+    {
+     "title": "38",
+     "section": "1837",
+     "description": "new",
+     "law_section": "1(b) \"1837\""
+    },
+    {
+     "title": "38",
+     "section": "1838",
+     "description": "new",
+     "law_section": "1(b) \"1838\""
+    },
+    {
+     "title": "38",
+     "section": "1801",
+     "description": "prec",
+     "law_section": "1(e)"
+    },
+    {
+     "title": "38",
+     "section": "1831",
+     "description": "nt new",
+     "law_section": "1(c)"
+    },
+    {
+     "title": "38",
+     "section": "1835",
+     "description": "nt new",
+     "law_section": "1(d)(1)"
+    },
+    {
+     "title": "38",
+     "section": "1836",
+     "description": "nt new",
+     "law_section": "1(d)(2)"
+    }
+   ],
+   "reason": "6 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-19",
+   "name": "A bill to amend title 38, United States Code, to extend and modify certain authorities and requirements relating to the Department of Veterans Affairs, and for other purposes.",
+   "bill": "118 s 2795",
+   "enrolled_url": "https://www.congress.gov/118/bills/s2795/BILLS-118s2795enr.xml",
+   "enrolled_sha256": "fa1a7b59a13e0686a3d860beb01406986f4456b120a95ecbfe6cc7a383be08f9",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "38"
+   ],
+   "rows": [
+    {
+     "title": "38",
+     "section": "5101",
+     "description": "nts",
+     "law_section": "1"
+    },
+    {
+     "title": "38",
+     "section": "3699",
+     "description": "",
+     "law_section": "2"
+    },
+    {
+     "title": "38",
+     "section": "8117",
+     "description": "",
+     "law_section": "3"
+    },
+    {
+     "title": "38",
+     "section": "3729",
+     "description": "",
+     "law_section": "4"
+    }
+   ],
+   "reason": "4 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-20",
+   "name": "Korean American VALOR Act",
+   "bill": "118 hr 366",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr366/BILLS-118hr366enr.xml",
+   "enrolled_sha256": "aa759735d581b674920d8598585cb940f988c048eb009e5cecc14bd1a968ce59",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "38"
+   ],
+   "rows": [
+    {
+     "title": "38",
+     "section": "109",
+     "description": "",
+     "law_section": "2"
+    },
+    {
+     "title": "38",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "1 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-21",
+   "name": "Wounded Warrior Access Act",
+   "bill": "118 hr 1226",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr1226/BILLS-118hr1226enr.xml",
+   "enrolled_sha256": "13706f52cebff43c3077466d85ad2863bef0081c795383fc694ab0887c540007",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "38"
+   ],
+   "rows": [
+    {
+     "title": "38",
+     "section": "5702",
+     "description": "",
+     "law_section": "2(a), (b)"
+    },
+    {
+     "title": "38",
+     "section": "5901",
+     "description": "",
+     "law_section": "3(a)"
+    },
+    {
+     "title": "38",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "1"
+    },
+    {
+     "title": "38",
+     "section": "5702",
+     "description": "nt new",
+     "law_section": "2(c)"
+    },
+    {
+     "title": "38",
+     "section": "5901",
+     "description": "nt new",
+     "law_section": "3(b)"
+    }
+   ],
+   "reason": "2 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-22",
+   "name": "Further Continuing Appropriations and Other Extensions Act, 2024",
+   "bill": "118 hr 6363",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr6363/BILLS-118hr6363enr.xml",
+   "enrolled_sha256": "5061a5f1aaf5cf1779bd5488d140b72ee4c98062039ee8bbef8083ef56a7a104",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "7",
+    "16",
+    "42"
+   ],
+   "rows": [
+    {
+     "title": "7",
+     "section": "9055",
+     "description": "",
+     "law_section": "102(c)(2)(A)"
+    },
+    {
+     "title": "7",
+     "section": "9059",
+     "description": "",
+     "law_section": "102(c)(2)(B)(i)"
+    },
+    {
+     "title": "7",
+     "section": "8772",
+     "description": "",
+     "law_section": "102(c)(2)(C)"
+    },
+    {
+     "title": "7",
+     "section": "9016",
+     "description": "",
+     "law_section": "102(c)(3)"
+    },
+    {
+     "title": "16",
+     "section": "3839bb-2",
+     "description": "",
+     "law_section": "102(d)(1)(A)"
+    },
+    {
+     "title": "16",
+     "section": "3839bb-5",
+     "description": "",
+     "law_section": "102(d)(1)(B)"
+    },
+    {
+     "title": "7",
+     "section": "1736f-1",
+     "description": "",
+     "law_section": "102(d)(2)"
+    },
+    {
+     "title": "7",
+     "section": "7507",
+     "description": "",
+     "law_section": "102(d)(3)"
+    },
+    {
+     "title": "7",
+     "section": "940c-2",
+     "description": "",
+     "law_section": "102(d)(4)"
+    },
+    {
+     "title": "7",
+     "section": "3222a",
+     "description": "",
+     "law_section": "102(d)(5)(A)"
+    },
+    {
+     "title": "7",
+     "section": "5925g",
+     "description": "",
+     "law_section": "102(d)(5)(B)"
+    },
+    {
+     "title": "7",
+     "section": "5939",
+     "description": "",
+     "law_section": "102(d)(5)(C)"
+    },
+    {
+     "title": "7",
+     "section": "8102",
+     "description": "",
+     "law_section": "102(d)(6)(A)"
+    },
+    {
+     "title": "7",
+     "section": "8105",
+     "description": "",
+     "law_section": "102(d)(6)(B)"
+    },
+    {
+     "title": "7",
+     "section": "8110",
+     "description": "",
+     "law_section": "102(d)(6)(C)"
+    },
+    {
+     "title": "7",
+     "section": "5925c",
+     "description": "",
+     "law_section": "102(d)(7)(A)"
+    },
+    {
+     "title": "7",
+     "section": "6522",
+     "description": "",
+     "law_section": "102(d)(7)(B)"
+    },
+    {
+     "title": "7",
+     "section": "6523",
+     "description": "",
+     "law_section": "102(d)(7)(C)"
+    },
+    {
+     "title": "7",
+     "section": "1627a",
+     "description": "",
+     "law_section": "102(d)(8)(E)"
+    },
+    {
+     "title": "42",
+     "section": "247d-7e",
+     "description": "",
+     "law_section": "203(b)"
+    },
+    {
+     "title": "42",
+     "section": "247d-7f",
+     "description": "",
+     "law_section": "203(c)"
+    },
+    {
+     "title": "42",
+     "section": "1395w-4",
+     "description": "",
+     "law_section": "501"
+    },
+    {
+     "title": "42",
+     "section": "1395m-1",
+     "description": "",
+     "law_section": "502"
+    },
+    {
+     "title": "18",
+     "section": "3551",
+     "description": "nt",
+     "law_section": "101(5)"
+    },
+    {
+     "title": "18",
+     "section": "3551",
+     "description": "nt ed chg",
+     "law_section": ""
+    },
+    {
+     "title": "7",
+     "section": "9001",
+     "description": "nt new",
+     "law_section": "102(a)-(c)(1)"
+    },
+    {
+     "title": "7",
+     "section": "9057",
+     "description": "nt new",
+     "law_section": "102(c)(2)(B)(ii)"
+    },
+    {
+     "title": "7",
+     "section": "9092",
+     "description": "nt new",
+     "law_section": "102(c)(4)"
+    },
+    {
+     "title": "7",
+     "section": "8351",
+     "description": "nt",
+     "law_section": "102(d)(1)(C)"
+    },
+    {
+     "title": "7",
+     "section": "2101",
+     "description": "nt",
+     "law_section": "102(d)(8)(A)"
+    },
+    {
+     "title": "7",
+     "section": "7101",
+     "description": "nt",
+     "law_section": "102(d)(8)(B)"
+    },
+    {
+     "title": "7",
+     "section": "7101",
+     "description": "nt",
+     "law_section": "102(d)(8)(C)"
+    },
+    {
+     "title": "7",
+     "section": "7632",
+     "description": "nt",
+     "law_section": "102(d)(8)(D)"
+    },
+    {
+     "title": "7",
+     "section": "9001",
+     "description": "nt new",
+     "law_section": "102(d)(9), (e)"
+    },
+    {
+     "title": "7",
+     "section": "9001",
+     "description": "nt new",
+     "law_section": "102(g)"
+    }
+   ],
+   "reason": "23 section(s) changed by this law alone in the window; 16 shared with another law dropped"
+  },
+  {
+   "pl": "118-23",
+   "name": "TRANQ Research Act of 2023",
+   "bill": "118 hr 1734",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr1734/BILLS-118hr1734enr.xml",
+   "enrolled_sha256": "4fa39ca2f74ac492c617cbf5abb3813ee5822e65d51ef76383c74ee6e12f4f0f",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "15"
+   ],
+   "rows": [
+    {
+     "title": "15",
+     "section": "278u",
+     "description": "new",
+     "law_section": "2"
+    },
+    {
+     "title": "15",
+     "section": "271",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "1 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-25",
+   "name": "Duck Stamp Modernization Act of 2023",
+   "bill": "118 s 788",
+   "enrolled_url": "https://www.congress.gov/118/bills/s788/BILLS-118s788enr.xml",
+   "enrolled_sha256": "117ad74566a24eafbe821e68ed47c6a395296f182abaab04eebb67d5ba39d801",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "16"
+   ],
+   "rows": [
+    {
+     "title": "16",
+     "section": "718r",
+     "description": "",
+     "law_section": "2(a)"
+    },
+    {
+     "title": "16",
+     "section": "718o",
+     "description": "",
+     "law_section": "2(b)"
+    },
+    {
+     "title": "16",
+     "section": "718s",
+     "description": "",
+     "law_section": "2(c)"
+    },
+    {
+     "title": "16",
+     "section": "718a",
+     "description": "",
+     "law_section": "2(d)"
+    },
+    {
+     "title": "16",
+     "section": "718o",
+     "description": "nt new",
+     "law_section": "1"
+    }
+   ],
+   "reason": "4 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-26",
+   "name": "A bill to amend the Federal Election Campaign Act of 1971 to extend the Administrative Fine Program for certain reporting violations.",
+   "bill": "118 s 2747",
+   "enrolled_url": "https://www.congress.gov/118/bills/s2747/BILLS-118s2747enr.xml",
+   "enrolled_sha256": "1271ed7854e134042279ca119e1fba493f8bb2d7fcdcd9d6eea15cd3cd774985",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "52"
+   ],
+   "rows": [
+    {
+     "title": "52",
+     "section": "30109",
+     "description": "",
+     "law_section": "1"
+    }
+   ],
+   "reason": "1 section(s) changed by this law alone in the window"
+  },
+  {
+   "pl": "118-31",
+   "name": "National Defense Authorization Act for Fiscal Year 2024",
+   "bill": "118 hr 2670",
+   "enrolled_url": "https://www.congress.gov/118/bills/hr2670/BILLS-118hr2670enr.xml",
+   "enrolled_sha256": "e598ea452dd9e1373fb1acc3e7160bca41a4938e0388ec63192f72314cf9769c",
+   "rp_before": "usc-2022",
+   "rp_after": "usc-2023",
+   "titles": [
+    "2",
+    "5",
+    "10",
+    "15",
+    "16",
+    "18",
+    "19",
+    "20",
+    "22",
+    "28",
+    "32",
+    "33",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "42",
+    "46",
+    "47",
+    "48",
+    "50"
+   ],
+   "rows": [
+    {
+     "title": "10",
+     "section": "8062",
+     "description": "",
+     "law_section": "121(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "9062",
+     "description": "",
+     "law_section": "131(a)"
+    },
+    {
+     "title": "10",
+     "section": "9062",
+     "description": "",
+     "law_section": "132"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "prec",
+     "law_section": "151"
+    },
+    {
+     "title": "10",
+     "section": "233a",
+     "description": "new",
+     "law_section": "151 \"233a\""
+    },
+    {
+     "title": "50",
+     "section": "98e-2",
+     "description": "new",
+     "law_section": "152"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "prec",
+     "law_section": "211"
+    },
+    {
+     "title": "10",
+     "section": "222e",
+     "description": "new",
+     "law_section": "211 \"222e\""
+    },
+    {
+     "title": "10",
+     "section": "980",
+     "description": "",
+     "law_section": "212"
+    },
+    {
+     "title": "10",
+     "section": "4092",
+     "description": "",
+     "law_section": "213"
+    },
+    {
+     "title": "10",
+     "section": "4124",
+     "description": "",
+     "law_section": "214"
+    },
+    {
+     "title": "10",
+     "section": "8011",
+     "description": "prec",
+     "law_section": "215"
+    },
+    {
+     "title": "10",
+     "section": "8029",
+     "description": "new",
+     "law_section": "215 \"8029\""
+    },
+    {
+     "title": "10",
+     "section": "131",
+     "description": "prec",
+     "law_section": "241(a)"
+    },
+    {
+     "title": "10",
+     "section": "148",
+     "description": "new",
+     "law_section": "241(a) \"148\""
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "prec",
+     "law_section": "311(a)"
+    },
+    {
+     "title": "10",
+     "section": "2684a",
+     "description": "nts",
+     "law_section": "311(a)"
+    },
+    {
+     "title": "10",
+     "section": "2693",
+     "description": "new",
+     "law_section": "311(a)"
+    },
+    {
+     "title": "10",
+     "section": "2693",
+     "description": "",
+     "law_section": "311(b)"
+    },
+    {
+     "title": "10",
+     "section": "2684a",
+     "description": "",
+     "law_section": "311(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "2694",
+     "description": "",
+     "law_section": "311(c)(2)"
+    },
+    {
+     "title": "10",
+     "section": "2700",
+     "description": "",
+     "law_section": "312(a)"
+    },
+    {
+     "title": "10",
+     "section": "2701",
+     "description": "",
+     "law_section": "312(b)-(d)"
+    },
+    {
+     "title": "10",
+     "section": "2703",
+     "description": "",
+     "law_section": "312(e)"
+    },
+    {
+     "title": "10",
+     "section": "2707",
+     "description": "",
+     "law_section": "312(f)(1)"
+    },
+    {
+     "title": "10",
+     "section": "2705",
+     "description": "",
+     "law_section": "313"
+    },
+    {
+     "title": "10",
+     "section": "2684a",
+     "description": "",
+     "law_section": "314"
+    },
+    {
+     "title": "10",
+     "section": "2714",
+     "description": "",
+     "law_section": "331"
+    },
+    {
+     "title": "10",
+     "section": "2716",
+     "description": "new",
+     "law_section": "332 \"2716\""
+    },
+    {
+     "title": "10",
+     "section": "2700",
+     "description": "prec",
+     "law_section": "332 \"2716\""
+    },
+    {
+     "title": "10",
+     "section": "2012",
+     "description": "",
+     "law_section": "341"
+    },
+    {
+     "title": "10",
+     "section": "2464",
+     "description": "",
+     "law_section": "342"
+    },
+    {
+     "title": "10",
+     "section": "2926",
+     "description": "",
+     "law_section": "343(1)(A)"
+    },
+    {
+     "title": "10",
+     "section": "2926",
+     "description": "",
+     "law_section": "343(2), (3)"
+    },
+    {
+     "title": "10",
+     "section": "183a",
+     "description": "",
+     "law_section": "361, 362"
+    },
+    {
+     "title": "10",
+     "section": "184",
+     "description": "tr to 10/185",
+     "law_section": "363(1)"
+    },
+    {
+     "title": "10",
+     "section": "185",
+     "description": "tr fr 10/184",
+     "law_section": "363(1)"
+    },
+    {
+     "title": "10",
+     "section": "171",
+     "description": "prec",
+     "law_section": "363(1)"
+    },
+    {
+     "title": "10",
+     "section": "185",
+     "description": "",
+     "law_section": "363(2)"
+    },
+    {
+     "title": "10",
+     "section": "115",
+     "description": "",
+     "law_section": "402"
+    },
+    {
+     "title": "10",
+     "section": "526",
+     "description": "repealed",
+     "law_section": "501(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "521",
+     "description": "prec",
+     "law_section": "501(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "526a",
+     "description": "tr to 10/526",
+     "law_section": "501(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "526",
+     "description": "tr fr 10/526a",
+     "law_section": "501(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "521",
+     "description": "prec",
+     "law_section": "501(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "521",
+     "description": "prec",
+     "law_section": "501(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "521",
+     "description": "prec",
+     "law_section": "501(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "526",
+     "description": "",
+     "law_section": "501(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "526",
+     "description": "",
+     "law_section": "501(b)"
+    },
+    {
+     "title": "10",
+     "section": "578",
+     "description": "",
+     "law_section": "503(a)"
+    },
+    {
+     "title": "10",
+     "section": "624",
+     "description": "",
+     "law_section": "503(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "14308",
+     "description": "",
+     "law_section": "503(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "602",
+     "description": "new",
+     "law_section": "504(a) \"602\""
+    },
+    {
+     "title": "10",
+     "section": "601",
+     "description": "prec",
+     "law_section": "504(b)"
+    },
+    {
+     "title": "10",
+     "section": "605",
+     "description": "",
+     "law_section": "505"
+    },
+    {
+     "title": "10",
+     "section": "616",
+     "description": "",
+     "law_section": "506"
+    },
+    {
+     "title": "10",
+     "section": "628a",
+     "description": "",
+     "law_section": "507(a)"
+    },
+    {
+     "title": "10",
+     "section": "14502a",
+     "description": "",
+     "law_section": "507(b)"
+    },
+    {
+     "title": "10",
+     "section": "632",
+     "description": "",
+     "law_section": "508(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "627",
+     "description": "prec",
+     "law_section": "508(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "8372",
+     "description": "",
+     "law_section": "508(b)"
+    },
+    {
+     "title": "10",
+     "section": "651",
+     "description": "",
+     "law_section": "509(a)"
+    },
+    {
+     "title": "10",
+     "section": "651",
+     "description": "prec",
+     "law_section": "509(b)"
+    },
+    {
+     "title": "10",
+     "section": "654",
+     "description": "new",
+     "law_section": "509(b) \"654\""
+    },
+    {
+     "title": "10",
+     "section": "1305",
+     "description": "",
+     "law_section": "509A"
+    },
+    {
+     "title": "10",
+     "section": "9011",
+     "description": "prec",
+     "law_section": "509B"
+    },
+    {
+     "title": "10",
+     "section": "9023a",
+     "description": "new",
+     "law_section": "509B \"9023a\""
+    },
+    {
+     "title": "10",
+     "section": "10305",
+     "description": "",
+     "law_section": "511"
+    },
+    {
+     "title": "10",
+     "section": "10505",
+     "description": "",
+     "law_section": "512"
+    },
+    {
+     "title": "10",
+     "section": "12304b",
+     "description": "",
+     "law_section": "513"
+    },
+    {
+     "title": "10",
+     "section": "10001",
+     "description": "prec",
+     "law_section": "514(a)"
+    },
+    {
+     "title": "10",
+     "section": "15101",
+     "description": "prec new",
+     "law_section": "514(a) \"CHAPTER 1413\""
+    },
+    {
+     "title": "10",
+     "section": "15101",
+     "description": "new",
+     "law_section": "514(a) \"15101\""
+    },
+    {
+     "title": "10",
+     "section": "15102",
+     "description": "new",
+     "law_section": "514(a) \"15102\""
+    },
+    {
+     "title": "10",
+     "section": "15103",
+     "description": "new",
+     "law_section": "514(a) \"15103\""
+    },
+    {
+     "title": "10",
+     "section": "15104",
+     "description": "new",
+     "law_section": "514(a) \"15104\""
+    },
+    {
+     "title": "10",
+     "section": "15105",
+     "description": "new",
+     "law_section": "514(a) \"15105\""
+    },
+    {
+     "title": "10",
+     "section": "15106",
+     "description": "new",
+     "law_section": "514(a) \"15106\""
+    },
+    {
+     "title": "10",
+     "section": "15107",
+     "description": "new",
+     "law_section": "514(a) \"15107\""
+    },
+    {
+     "title": "10",
+     "section": "15108",
+     "description": "new",
+     "law_section": "514(a) \"15108\""
+    },
+    {
+     "title": "10",
+     "section": "15109",
+     "description": "new",
+     "law_section": "514(a) \"15109\""
+    },
+    {
+     "title": "10",
+     "section": "15110",
+     "description": "new",
+     "law_section": "514(a) \"15110\""
+    },
+    {
+     "title": "10",
+     "section": "14001",
+     "description": "prec",
+     "law_section": "514(b)"
+    },
+    {
+     "title": "32",
+     "section": "510",
+     "description": "new",
+     "law_section": "515(a) \"510\""
+    },
+    {
+     "title": "32",
+     "section": "501",
+     "description": "prec",
+     "law_section": "515(b)"
+    },
+    {
+     "title": "10",
+     "section": "688a",
+     "description": "",
+     "law_section": "521(a)"
+    },
+    {
+     "title": "10",
+     "section": "671",
+     "description": "prec",
+     "law_section": "521(b)"
+    },
+    {
+     "title": "10",
+     "section": "971",
+     "description": "prec",
+     "law_section": "522"
+    },
+    {
+     "title": "10",
+     "section": "986",
+     "description": "new",
+     "law_section": "522 \"986\""
+    },
+    {
+     "title": "10",
+     "section": "989",
+     "description": "new",
+     "law_section": "523(a) \"989\""
+    },
+    {
+     "title": "10",
+     "section": "971",
+     "description": "prec",
+     "law_section": "523(b)"
+    },
+    {
+     "title": "37",
+     "section": "908",
+     "description": "",
+     "law_section": "523(c)"
+    },
+    {
+     "title": "10",
+     "section": "992",
+     "description": "",
+     "law_section": "524(a)"
+    },
+    {
+     "title": "37",
+     "section": "908",
+     "description": "",
+     "law_section": "525"
+    },
+    {
+     "title": "10",
+     "section": "714",
+     "description": "",
+     "law_section": "529A"
+    },
+    {
+     "title": "10",
+     "section": "918",
+     "description": "",
+     "law_section": "531(a)"
+    },
+    {
+     "title": "10",
+     "section": "816",
+     "description": "",
+     "law_section": "531(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "825",
+     "description": "",
+     "law_section": "531(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "824a",
+     "description": "",
+     "law_section": "531(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "928b",
+     "description": "",
+     "law_section": "531(d)(1)"
+    },
+    {
+     "title": "10",
+     "section": "930",
+     "description": "",
+     "law_section": "531(d)(2)"
+    },
+    {
+     "title": "10",
+     "section": "946",
+     "description": "",
+     "law_section": "532"
+    },
+    {
+     "title": "28",
+     "section": "1259",
+     "description": "",
+     "law_section": "533(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "867a",
+     "description": "",
+     "law_section": "533(a)(2)(A)"
+    },
+    {
+     "title": "28",
+     "section": "2101",
+     "description": "",
+     "law_section": "533(a)(2)(B)"
+    },
+    {
+     "title": "10",
+     "section": "503",
+     "description": "",
+     "law_section": "541"
+    },
+    {
+     "title": "10",
+     "section": "520",
+     "description": "",
+     "law_section": "542"
+    },
+    {
+     "title": "10",
+     "section": "983",
+     "description": "",
+     "law_section": "543"
+    },
+    {
+     "title": "10",
+     "section": "2130a",
+     "description": "",
+     "law_section": "544"
+    },
+    {
+     "title": "10",
+     "section": "2031",
+     "description": "",
+     "law_section": "551-553(a)"
+    },
+    {
+     "title": "10",
+     "section": "2031",
+     "description": "",
+     "law_section": "554, 555(a)"
+    },
+    {
+     "title": "10",
+     "section": "2031",
+     "description": "",
+     "law_section": "556"
+    },
+    {
+     "title": "10",
+     "section": "7442",
+     "description": "",
+     "law_section": "561(a)"
+    },
+    {
+     "title": "10",
+     "section": "8454",
+     "description": "",
+     "law_section": "561(b)"
+    },
+    {
+     "title": "10",
+     "section": "9442",
+     "description": "",
+     "law_section": "561(c)"
+    },
+    {
+     "title": "10",
+     "section": "7442",
+     "description": "",
+     "law_section": "562(a)"
+    },
+    {
+     "title": "10",
+     "section": "8454",
+     "description": "",
+     "law_section": "562(b)"
+    },
+    {
+     "title": "10",
+     "section": "9442",
+     "description": "",
+     "law_section": "562(c)"
+    },
+    {
+     "title": "10",
+     "section": "1142",
+     "description": "",
+     "law_section": "571"
+    },
+    {
+     "title": "10",
+     "section": "1143",
+     "description": "",
+     "law_section": "572(a)"
+    },
+    {
+     "title": "10",
+     "section": "1154",
+     "description": "",
+     "law_section": "573, 574"
+    },
+    {
+     "title": "10",
+     "section": "1781",
+     "description": "",
+     "law_section": "581"
+    },
+    {
+     "title": "10",
+     "section": "1791",
+     "description": "",
+     "law_section": "582"
+    },
+    {
+     "title": "20",
+     "section": "7703d",
+     "description": "",
+     "law_section": "583(a)"
+    },
+    {
+     "title": "10",
+     "section": "2161",
+     "description": "prec",
+     "law_section": "589(a)"
+    },
+    {
+     "title": "10",
+     "section": "2164a",
+     "description": "new",
+     "law_section": "589(a) \"2164a\""
+    },
+    {
+     "title": "10",
+     "section": "481",
+     "description": "",
+     "law_section": "591"
+    },
+    {
+     "title": "10",
+     "section": "711",
+     "description": "new",
+     "law_section": "601(a)(1) \"711\""
+    },
+    {
+     "title": "10",
+     "section": "701",
+     "description": "prec",
+     "law_section": "601(a)(2)"
+    },
+    {
+     "title": "37",
+     "section": "206",
+     "description": "",
+     "law_section": "601(b)"
+    },
+    {
+     "title": "10",
+     "section": "12732",
+     "description": "",
+     "law_section": "601(c)"
+    },
+    {
+     "title": "37",
+     "section": "206a",
+     "description": "new",
+     "law_section": "602(a) \"206a\""
+    },
+    {
+     "title": "37",
+     "section": "201",
+     "description": "prec",
+     "law_section": "602(b)"
+    },
+    {
+     "title": "37",
+     "section": "503",
+     "description": "",
+     "law_section": "603"
+    },
+    {
+     "title": "37",
+     "section": "356",
+     "description": "",
+     "law_section": "611(a)"
+    },
+    {
+     "title": "37",
+     "section": "301",
+     "description": "prec",
+     "law_section": "611(b)"
+    },
+    {
+     "title": "37",
+     "section": "357",
+     "description": "",
+     "law_section": "612(a), (b)(1)"
+    },
+    {
+     "title": "37",
+     "section": "301",
+     "description": "prec",
+     "law_section": "612(b)(2)"
+    },
+    {
+     "title": "37",
+     "section": "910",
+     "description": "",
+     "law_section": "613(a)"
+    },
+    {
+     "title": "10",
+     "section": "2130a",
+     "description": "",
+     "law_section": "613(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "16302",
+     "description": "",
+     "law_section": "613(b)(2)"
+    },
+    {
+     "title": "37",
+     "section": "333",
+     "description": "",
+     "law_section": "613(c)"
+    },
+    {
+     "title": "37",
+     "section": "331",
+     "description": "",
+     "law_section": "613(d)(1)"
+    },
+    {
+     "title": "37",
+     "section": "332",
+     "description": "",
+     "law_section": "613(d)(2)"
+    },
+    {
+     "title": "37",
+     "section": "334",
+     "description": "",
+     "law_section": "613(d)(3)"
+    },
+    {
+     "title": "37",
+     "section": "335",
+     "description": "",
+     "law_section": "613(d)(4)"
+    },
+    {
+     "title": "37",
+     "section": "336",
+     "description": "",
+     "law_section": "613(d)(5)"
+    },
+    {
+     "title": "37",
+     "section": "351",
+     "description": "",
+     "law_section": "613(d)(6)"
+    },
+    {
+     "title": "37",
+     "section": "352",
+     "description": "",
+     "law_section": "613(d)(7)"
+    },
+    {
+     "title": "37",
+     "section": "353",
+     "description": "",
+     "law_section": "613(d)(8)"
+    },
+    {
+     "title": "37",
+     "section": "355",
+     "description": "",
+     "law_section": "613(d)(9)"
+    },
+    {
+     "title": "37",
+     "section": "403",
+     "description": "",
+     "law_section": "613(e)"
+    },
+    {
+     "title": "37",
+     "section": "402b",
+     "description": "",
+     "law_section": "621(a)"
+    },
+    {
+     "title": "37",
+     "section": "403",
+     "description": "",
+     "law_section": "622-624"
+    },
+    {
+     "title": "37",
+     "section": "403b",
+     "description": "",
+     "law_section": "625"
+    },
+    {
+     "title": "37",
+     "section": "427",
+     "description": "",
+     "law_section": "626(a)"
+    },
+    {
+     "title": "10",
+     "section": "1059",
+     "description": "",
+     "law_section": "631"
+    },
+    {
+     "title": "10",
+     "section": "1030",
+     "description": "prec",
+     "law_section": "632(1)"
+    },
+    {
+     "title": "10",
+     "section": "1059",
+     "description": "",
+     "law_section": "632(1)"
+    },
+    {
+     "title": "10",
+     "section": "1059",
+     "description": "",
+     "law_section": "632(2)-(4)"
+    },
+    {
+     "title": "10",
+     "section": "1062",
+     "description": "",
+     "law_section": "633(a)"
+    },
+    {
+     "title": "10",
+     "section": "1061",
+     "description": "prec",
+     "law_section": "633(c)"
+    },
+    {
+     "title": "10",
+     "section": "1062",
+     "description": "",
+     "law_section": "633(c)"
+    },
+    {
+     "title": "10",
+     "section": "1784a",
+     "description": "",
+     "law_section": "634"
+    },
+    {
+     "title": "37",
+     "section": "453",
+     "description": "",
+     "law_section": "635"
+    },
+    {
+     "title": "10",
+     "section": "1075",
+     "description": "",
+     "law_section": "701(a)"
+    },
+    {
+     "title": "10",
+     "section": "1075a",
+     "description": "",
+     "law_section": "701(b)"
+    },
+    {
+     "title": "10",
+     "section": "1076d",
+     "description": "",
+     "law_section": "702(a)"
+    },
+    {
+     "title": "10",
+     "section": "1077",
+     "description": "",
+     "law_section": "703, 704"
+    },
+    {
+     "title": "10",
+     "section": "1090b",
+     "description": "",
+     "law_section": "705"
+    },
+    {
+     "title": "10",
+     "section": "1073c",
+     "description": "",
+     "law_section": "711(a)"
+    },
+    {
+     "title": "10",
+     "section": "2121",
+     "description": "",
+     "law_section": "712"
+    },
+    {
+     "title": "10",
+     "section": "2733a",
+     "description": "",
+     "law_section": "713"
+    },
+    {
+     "title": "10",
+     "section": "3456",
+     "description": "",
+     "law_section": "801"
+    },
+    {
+     "title": "10",
+     "section": "3705",
+     "description": "",
+     "law_section": "802"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "prec",
+     "law_section": "803"
+    },
+    {
+     "title": "10",
+     "section": "4662",
+     "description": "new",
+     "law_section": "803 \"4662\""
+    },
+    {
+     "title": "10",
+     "section": "3501",
+     "description": "",
+     "law_section": "820"
+    },
+    {
+     "title": "10",
+     "section": "4022",
+     "description": "",
+     "law_section": "821, 822(a)"
+    },
+    {
+     "title": "50",
+     "section": "1431",
+     "description": "",
+     "law_section": "824"
+    },
+    {
+     "title": "46",
+     "section": "50309",
+     "description": "new",
+     "law_section": "825(b)(1) \"50309\""
+    },
+    {
+     "title": "46",
+     "section": "50301",
+     "description": "prec",
+     "law_section": "825(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "3601",
+     "description": "",
+     "law_section": "831"
+    },
+    {
+     "title": "10",
+     "section": "4862",
+     "description": "",
+     "law_section": "832(a)"
+    },
+    {
+     "title": "10",
+     "section": "4863",
+     "description": "",
+     "law_section": "833(a)"
+    },
+    {
+     "title": "10",
+     "section": "4872",
+     "description": "",
+     "law_section": "834"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "",
+     "law_section": "851"
+    },
+    {
+     "title": "10",
+     "section": "4902",
+     "description": "",
+     "law_section": "852"
+    },
+    {
+     "title": "10",
+     "section": "4951",
+     "description": "",
+     "law_section": "853(a)"
+    },
+    {
+     "title": "10",
+     "section": "4954",
+     "description": "",
+     "law_section": "853(b)"
+    },
+    {
+     "title": "10",
+     "section": "4958",
+     "description": "",
+     "law_section": "853(c)"
+    },
+    {
+     "title": "10",
+     "section": "4061",
+     "description": "",
+     "law_section": "860"
+    },
+    {
+     "title": "15",
+     "section": "637",
+     "description": "",
+     "law_section": "862(a)"
+    },
+    {
+     "title": "15",
+     "section": "644",
+     "description": "",
+     "law_section": "863"
+    },
+    {
+     "title": "10",
+     "section": "133a",
+     "description": "",
+     "law_section": "901(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "133b",
+     "description": "",
+     "law_section": "901(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "137a",
+     "description": "",
+     "law_section": "901(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "138",
+     "description": "",
+     "law_section": "901(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "192",
+     "description": "",
+     "law_section": "901(b)"
+    },
+    {
+     "title": "10",
+     "section": "240b",
+     "description": "",
+     "law_section": "901(c)"
+    },
+    {
+     "title": "10",
+     "section": "240d",
+     "description": "",
+     "law_section": "901(d)"
+    },
+    {
+     "title": "10",
+     "section": "130e",
+     "description": "",
+     "law_section": "901(e)(1)"
+    },
+    {
+     "title": "10",
+     "section": "2254a",
+     "description": "",
+     "law_section": "901(e)(2)"
+    },
+    {
+     "title": "40",
+     "section": "11319",
+     "description": "",
+     "law_section": "901(f)"
+    },
+    {
+     "title": "10",
+     "section": "139a",
+     "description": "",
+     "law_section": "902(a)"
+    },
+    {
+     "title": "10",
+     "section": "131",
+     "description": "prec",
+     "law_section": "903(a)"
+    },
+    {
+     "title": "10",
+     "section": "149",
+     "description": "new",
+     "law_section": "903(a) \"149\""
+    },
+    {
+     "title": "10",
+     "section": "129a",
+     "description": "",
+     "law_section": "911"
+    },
+    {
+     "title": "10",
+     "section": "2165",
+     "description": "",
+     "law_section": "912"
+    },
+    {
+     "title": "10",
+     "section": "4061",
+     "description": "prec",
+     "law_section": "913(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "4127",
+     "description": "new",
+     "law_section": "913(a)(1) \"4127\""
+    },
+    {
+     "title": "10",
+     "section": "4021",
+     "description": "",
+     "law_section": "913(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "4022",
+     "description": "",
+     "law_section": "913(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "1766",
+     "description": "",
+     "law_section": "913(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "8011",
+     "description": "prec",
+     "law_section": "914"
+    },
+    {
+     "title": "10",
+     "section": "8024",
+     "description": "repealed",
+     "law_section": "914"
+    },
+    {
+     "title": "10",
+     "section": "8545",
+     "description": "",
+     "law_section": "915"
+    },
+    {
+     "title": "10",
+     "section": "10305",
+     "description": "",
+     "law_section": "916"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "prec",
+     "law_section": "1002"
+    },
+    {
+     "title": "10",
+     "section": "222e",
+     "description": "new",
+     "law_section": "1002 \"222e\""
+    },
+    {
+     "title": "10",
+     "section": "222a",
+     "description": "",
+     "law_section": "1003"
+    },
+    {
+     "title": "10",
+     "section": "284",
+     "description": "",
+     "law_section": "1010, 1011"
+    },
+    {
+     "title": "32",
+     "section": "112",
+     "description": "",
+     "law_section": "1012"
+    },
+    {
+     "title": "10",
+     "section": "231",
+     "description": "",
+     "law_section": "1015"
+    },
+    {
+     "title": "10",
+     "section": "2218a",
+     "description": "",
+     "law_section": "1016"
+    },
+    {
+     "title": "10",
+     "section": "2201",
+     "description": "prec",
+     "law_section": "1017"
+    },
+    {
+     "title": "10",
+     "section": "2219",
+     "description": "new",
+     "law_section": "1017 \"2219\""
+    },
+    {
+     "title": "10",
+     "section": "8662",
+     "description": "",
+     "law_section": "1018"
+    },
+    {
+     "title": "10",
+     "section": "8695",
+     "description": "",
+     "law_section": "1019"
+    },
+    {
+     "title": "10",
+     "section": "153",
+     "description": "",
+     "law_section": "1041(c)"
+    },
+    {
+     "title": "10",
+     "section": "401",
+     "description": "prec",
+     "law_section": "1042(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "408",
+     "description": "",
+     "law_section": "1042(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "408",
+     "description": "",
+     "law_section": "1042(a)(2)-(5)"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "",
+     "law_section": "1043"
+    },
+    {
+     "title": "50",
+     "section": "1522",
+     "description": "",
+     "law_section": "1047"
+    },
+    {
+     "title": "10",
+     "section": "2926",
+     "description": "",
+     "law_section": "1053"
+    },
+    {
+     "title": "20",
+     "section": "1087e",
+     "description": "",
+     "law_section": "1054(a)"
+    },
+    {
+     "title": "10",
+     "section": "381",
+     "description": "",
+     "law_section": "1061(a)"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "",
+     "law_section": "1061(b)"
+    },
+    {
+     "title": "10",
+     "section": "4814",
+     "description": "",
+     "law_section": "1061(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "prec",
+     "law_section": "1061(c)(2)"
+    },
+    {
+     "title": "50",
+     "section": "1528",
+     "description": "",
+     "law_section": "1061(f)"
+    },
+    {
+     "title": "10",
+     "section": "240a",
+     "description": "",
+     "law_section": "1061(g)"
+    },
+    {
+     "title": "10",
+     "section": "240b",
+     "description": "",
+     "law_section": "1061(h)"
+    },
+    {
+     "title": "50",
+     "section": "4552",
+     "description": "",
+     "law_section": "1080(a)"
+    },
+    {
+     "title": "50",
+     "section": "4535",
+     "description": "new",
+     "law_section": "1080(b) \"305\""
+    },
+    {
+     "title": "10",
+     "section": "4091",
+     "description": "",
+     "law_section": "1103"
+    },
+    {
+     "title": "5",
+     "section": "9905",
+     "description": "",
+     "law_section": "1104"
+    },
+    {
+     "title": "5",
+     "section": "419",
+     "description": "",
+     "law_section": "1106"
+    },
+    {
+     "title": "5",
+     "section": "5531",
+     "description": "",
+     "law_section": "1108"
+    },
+    {
+     "title": "5",
+     "section": "6305",
+     "description": "",
+     "law_section": "1110"
+    },
+    {
+     "title": "5",
+     "section": "3330d",
+     "description": "",
+     "law_section": "1112(a)"
+    },
+    {
+     "title": "5",
+     "section": "6381",
+     "description": "",
+     "law_section": "1114(a)"
+    },
+    {
+     "title": "10",
+     "section": "9371",
+     "description": "",
+     "law_section": "1117(a)"
+    },
+    {
+     "title": "10",
+     "section": "9371",
+     "description": "prec",
+     "law_section": "1117(b)"
+    },
+    {
+     "title": "5",
+     "section": "3330d",
+     "description": "",
+     "law_section": "1119(a)"
+    },
+    {
+     "title": "5",
+     "section": "3301",
+     "description": "prec",
+     "law_section": "1119(b)"
+    },
+    {
+     "title": "5",
+     "section": "9902",
+     "description": "",
+     "law_section": "1120"
+    },
+    {
+     "title": "10",
+     "section": "127d",
+     "description": "new",
+     "law_section": "1201(a) \"127d\""
+    },
+    {
+     "title": "10",
+     "section": "121",
+     "description": "prec",
+     "law_section": "1201(b)"
+    },
+    {
+     "title": "10",
+     "section": "166a",
+     "description": "",
+     "law_section": "1202(a)"
+    },
+    {
+     "title": "10",
+     "section": "301",
+     "description": "",
+     "law_section": "1203(a)"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "",
+     "law_section": "1203(b), (c)"
+    },
+    {
+     "title": "10",
+     "section": "384",
+     "description": "",
+     "law_section": "1204(a)"
+    },
+    {
+     "title": "10",
+     "section": "127f",
+     "description": "",
+     "law_section": "1221(a)"
+    },
+    {
+     "title": "10",
+     "section": "121",
+     "description": "prec",
+     "law_section": "1221(b)"
+    },
+    {
+     "title": "50",
+     "section": "1543a",
+     "description": "new",
+     "law_section": "1230"
+    },
+    {
+     "title": "10",
+     "section": "8634",
+     "description": "",
+     "law_section": "1248"
+    },
+    {
+     "title": "22",
+     "section": "1928f",
+     "description": "new",
+     "law_section": "1250A"
+    },
+    {
+     "title": "5",
+     "section": "9905",
+     "description": "",
+     "law_section": "1250B(i)"
+    },
+    {
+     "title": "22",
+     "section": "3351",
+     "description": "",
+     "law_section": "1308(a)"
+    },
+    {
+     "title": "22",
+     "section": "3357b",
+     "description": "new",
+     "law_section": "1309(a)"
+    },
+    {
+     "title": "22",
+     "section": "10401",
+     "description": "new",
+     "law_section": "1321"
+    },
+    {
+     "title": "22",
+     "section": "10411",
+     "description": "new",
+     "law_section": "1331"
+    },
+    {
+     "title": "22",
+     "section": "10412",
+     "description": "new",
+     "law_section": "1332"
+    },
+    {
+     "title": "22",
+     "section": "10413",
+     "description": "new",
+     "law_section": "1333"
+    },
+    {
+     "title": "22",
+     "section": "10421",
+     "description": "new",
+     "law_section": "1341"
+    },
+    {
+     "title": "22",
+     "section": "10422",
+     "description": "new",
+     "law_section": "1342"
+    },
+    {
+     "title": "22",
+     "section": "2778",
+     "description": "",
+     "law_section": "1343(a)"
+    },
+    {
+     "title": "22",
+     "section": "10423",
+     "description": "new",
+     "law_section": "1344"
+    },
+    {
+     "title": "22",
+     "section": "2778",
+     "description": "",
+     "law_section": "1345(a)"
+    },
+    {
+     "title": "22",
+     "section": "10431",
+     "description": "new",
+     "law_section": "1352"
+    },
+    {
+     "title": "10",
+     "section": "8680",
+     "description": "",
+     "law_section": "1352(g)"
+    },
+    {
+     "title": "22",
+     "section": "10432",
+     "description": "new",
+     "law_section": "1353"
+    },
+    {
+     "title": "22",
+     "section": "10433",
+     "description": "new",
+     "law_section": "1354"
+    },
+    {
+     "title": "50",
+     "section": "98a",
+     "description": "",
+     "law_section": "1411(a)"
+    },
+    {
+     "title": "50",
+     "section": "98e",
+     "description": "",
+     "law_section": "1411(b)"
+    },
+    {
+     "title": "50",
+     "section": "98h-1",
+     "description": "",
+     "law_section": "1411(c)"
+    },
+    {
+     "title": "50",
+     "section": "98h-2",
+     "description": "",
+     "law_section": "1411(d)"
+    },
+    {
+     "title": "50",
+     "section": "98h-6",
+     "description": "gen amd",
+     "law_section": "1411(e)(1)"
+    },
+    {
+     "title": "50",
+     "section": "98d",
+     "description": "",
+     "law_section": "1411(e)(2)(A)"
+    },
+    {
+     "title": "50",
+     "section": "98g",
+     "description": "",
+     "law_section": "1411(e)(2)(B)"
+    },
+    {
+     "title": "50",
+     "section": "98h-3",
+     "description": "",
+     "law_section": "1411(e)(2)(C)"
+    },
+    {
+     "title": "10",
+     "section": "398",
+     "description": "tr to 10/398a",
+     "law_section": "1501(1)"
+    },
+    {
+     "title": "10",
+     "section": "398a",
+     "description": "tr fr 10/398",
+     "law_section": "1501(1)"
+    },
+    {
+     "title": "10",
+     "section": "391",
+     "description": "prec",
+     "law_section": "1501(1)"
+    },
+    {
+     "title": "10",
+     "section": "398a",
+     "description": "",
+     "law_section": "1501(2)"
+    },
+    {
+     "title": "10",
+     "section": "391",
+     "description": "prec",
+     "law_section": "1502(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "391b",
+     "description": "new",
+     "law_section": "1502(a)(1) \"391b\""
+    },
+    {
+     "title": "10",
+     "section": "2191",
+     "description": "prec",
+     "law_section": "1531(a)"
+    },
+    {
+     "title": "10",
+     "section": "2192c",
+     "description": "new",
+     "law_section": "1531(a) \"2192c\""
+    },
+    {
+     "title": "10",
+     "section": "12304",
+     "description": "",
+     "law_section": "1532"
+    },
+    {
+     "title": "10",
+     "section": "172",
+     "description": "",
+     "law_section": "1601(a)"
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "prec",
+     "law_section": "1602"
+    },
+    {
+     "title": "10",
+     "section": "2275b",
+     "description": "new",
+     "law_section": "1602 \"2275b\""
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "prec",
+     "law_section": "1603"
+    },
+    {
+     "title": "10",
+     "section": "2276a",
+     "description": "new",
+     "law_section": "1603 \"2276a\""
+    },
+    {
+     "title": "10",
+     "section": "9016",
+     "description": "",
+     "law_section": "1604"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "prec",
+     "law_section": "1631"
+    },
+    {
+     "title": "10",
+     "section": "239e",
+     "description": "new",
+     "law_section": "1631 \"239e\""
+    },
+    {
+     "title": "10",
+     "section": "495",
+     "description": "",
+     "law_section": "1632"
+    },
+    {
+     "title": "10",
+     "section": "492a",
+     "description": "",
+     "law_section": "1633"
+    },
+    {
+     "title": "10",
+     "section": "205",
+     "description": "",
+     "law_section": "1661"
+    },
+    {
+     "title": "10",
+     "section": "130i",
+     "description": "",
+     "law_section": "1681"
+    },
+    {
+     "title": "10",
+     "section": "500",
+     "description": "prec new",
+     "law_section": "1682(a) \"CHAPTER 25\""
+    },
+    {
+     "title": "10",
+     "section": "500",
+     "description": "new",
+     "law_section": "1682(a) \"500\""
+    },
+    {
+     "title": "10",
+     "section": "501",
+     "description": "new",
+     "law_section": "1682(a) \"501\""
+    },
+    {
+     "title": "10",
+     "section": "502",
+     "description": "new",
+     "law_section": "1682(a) \"502\""
+    },
+    {
+     "title": "10",
+     "section": "503",
+     "description": "new",
+     "law_section": "1682(a) \"503\""
+    },
+    {
+     "title": "10",
+     "section": "504",
+     "description": "new",
+     "law_section": "1682(a) \"504\""
+    },
+    {
+     "title": "10",
+     "section": "505",
+     "description": "new",
+     "law_section": "1682(a) \"505\""
+    },
+    {
+     "title": "10",
+     "section": "506",
+     "description": "new",
+     "law_section": "1682(a) \"506\""
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "prec",
+     "law_section": "1682(b)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "prec",
+     "law_section": "1682(b)"
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "prec new",
+     "law_section": "1711 \"Subtitle F\""
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "prec",
+     "law_section": "1711 \"Subtitle F\""
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "prec",
+     "law_section": "1711 \"PART I\""
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "prec new",
+     "law_section": "1711 \"PART I\""
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "prec new",
+     "law_section": "1711 \"CHAPTER 2001\""
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "new",
+     "law_section": "1711 \"20001\""
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "prec",
+     "law_section": "1711"
+    },
+    {
+     "title": "10",
+     "section": "9081",
+     "description": "",
+     "law_section": "1712(a)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "",
+     "law_section": "1713"
+    },
+    {
+     "title": "10",
+     "section": "20002",
+     "description": "new",
+     "law_section": "1714 \"20002\""
+    },
+    {
+     "title": "10",
+     "section": "20003",
+     "description": "new",
+     "law_section": "1714 \"20003\""
+    },
+    {
+     "title": "10",
+     "section": "20101",
+     "description": "prec new",
+     "law_section": "1715 \"CHAPTER 2003\""
+    },
+    {
+     "title": "10",
+     "section": "20101",
+     "description": "new",
+     "law_section": "1715 \"20101\""
+    },
+    {
+     "title": "10",
+     "section": "20102",
+     "description": "new",
+     "law_section": "1715 \"20102\""
+    },
+    {
+     "title": "10",
+     "section": "20103",
+     "description": "new",
+     "law_section": "1715 \"20103\""
+    },
+    {
+     "title": "10",
+     "section": "20104",
+     "description": "new",
+     "law_section": "1715 \"20104\""
+    },
+    {
+     "title": "10",
+     "section": "20105",
+     "description": "new",
+     "law_section": "1715 \"20105\""
+    },
+    {
+     "title": "10",
+     "section": "20106",
+     "description": "new",
+     "law_section": "1715 \"20106\""
+    },
+    {
+     "title": "10",
+     "section": "20107",
+     "description": "new",
+     "law_section": "1715 \"20107\""
+    },
+    {
+     "title": "10",
+     "section": "20108",
+     "description": "new",
+     "law_section": "1715 \"20108\""
+    },
+    {
+     "title": "10",
+     "section": "20109",
+     "description": "new",
+     "law_section": "1715 \"20109\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec",
+     "law_section": "1716(a)"
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec new",
+     "law_section": "1716(a) \"CHAPTER 2005\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec new",
+     "law_section": "1716(a) \"Subchapter I\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "new",
+     "law_section": "1716(a) \"20201\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec",
+     "law_section": "1716(a) \"20201\""
+    },
+    {
+     "title": "10",
+     "section": "20202",
+     "description": "new",
+     "law_section": "1716(a) \"20202\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec",
+     "law_section": "1716(a) \"20202\""
+    },
+    {
+     "title": "10",
+     "section": "20203",
+     "description": "new",
+     "law_section": "1716(a) \"20203\""
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec",
+     "law_section": "1716(a) \"20203\""
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "",
+     "law_section": "1716(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "531",
+     "description": "",
+     "law_section": "1716(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "532",
+     "description": "",
+     "law_section": "1716(b)(3)"
+    },
+    {
+     "title": "10",
+     "section": "533",
+     "description": "",
+     "law_section": "1716(b)(4)"
+    },
+    {
+     "title": "10",
+     "section": "20201",
+     "description": "prec",
+     "law_section": "1716(c)"
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c)"
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c)"
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec",
+     "law_section": "1716(c)"
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec",
+     "law_section": "1716(c)"
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec new",
+     "law_section": "1716(c) \"Subchapter II\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "new",
+     "law_section": "1716(c) \"20211\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20211\""
+    },
+    {
+     "title": "10",
+     "section": "20212",
+     "description": "new",
+     "law_section": "1716(c) \"20212\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20212\""
+    },
+    {
+     "title": "10",
+     "section": "20213",
+     "description": "new",
+     "law_section": "1716(c) \"20213\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20213\""
+    },
+    {
+     "title": "10",
+     "section": "20214",
+     "description": "new",
+     "law_section": "1716(c) \"20214\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20214\""
+    },
+    {
+     "title": "10",
+     "section": "20215",
+     "description": "new",
+     "law_section": "1716(c) \"20215\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20215\""
+    },
+    {
+     "title": "10",
+     "section": "20216",
+     "description": "new",
+     "law_section": "1716(c) \"20216\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20216\""
+    },
+    {
+     "title": "10",
+     "section": "20217",
+     "description": "new",
+     "law_section": "1716(c) \"20217\""
+    },
+    {
+     "title": "10",
+     "section": "20211",
+     "description": "prec",
+     "law_section": "1716(c) \"20217\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec new",
+     "law_section": "1716(c) \"Subchapter III\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "new",
+     "law_section": "1716(c) \"20231\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20231\""
+    },
+    {
+     "title": "10",
+     "section": "20232",
+     "description": "new",
+     "law_section": "1716(c) \"20232\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20232\""
+    },
+    {
+     "title": "10",
+     "section": "20233",
+     "description": "new",
+     "law_section": "1716(c) \"20233\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20233\""
+    },
+    {
+     "title": "10",
+     "section": "20234",
+     "description": "new",
+     "law_section": "1716(c) \"20234\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20234\""
+    },
+    {
+     "title": "10",
+     "section": "20235",
+     "description": "new",
+     "law_section": "1716(c) \"20235\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20235\""
+    },
+    {
+     "title": "10",
+     "section": "20236",
+     "description": "new",
+     "law_section": "1716(c) \"20236\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20236\""
+    },
+    {
+     "title": "10",
+     "section": "20237",
+     "description": "new",
+     "law_section": "1716(c) \"20237\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20237\""
+    },
+    {
+     "title": "10",
+     "section": "20238",
+     "description": "new",
+     "law_section": "1716(c) \"20238\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20238\""
+    },
+    {
+     "title": "10",
+     "section": "20239",
+     "description": "new",
+     "law_section": "1716(c) \"20239\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20239\""
+    },
+    {
+     "title": "10",
+     "section": "20240",
+     "description": "new",
+     "law_section": "1716(c) \"20240\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20240\""
+    },
+    {
+     "title": "10",
+     "section": "20241",
+     "description": "new",
+     "law_section": "1716(c) \"20241\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20241\""
+    },
+    {
+     "title": "10",
+     "section": "20242",
+     "description": "new",
+     "law_section": "1716(c) \"20242\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20242\""
+    },
+    {
+     "title": "10",
+     "section": "20243",
+     "description": "new",
+     "law_section": "1716(c) \"20243\""
+    },
+    {
+     "title": "10",
+     "section": "20231",
+     "description": "prec",
+     "law_section": "1716(c) \"20243\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec new",
+     "law_section": "1716(c) \"Subchapter IV\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "new",
+     "law_section": "1716(c) \"20251\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec",
+     "law_section": "1716(c) \"20251\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "new",
+     "law_section": "1716(c) \"20251\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec",
+     "law_section": "1716(c) \"20251\""
+    },
+    {
+     "title": "10",
+     "section": "20252a",
+     "description": "new",
+     "law_section": "1716(c) \"20252a\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec",
+     "law_section": "1716(c) \"20252a\""
+    },
+    {
+     "title": "10",
+     "section": "20253",
+     "description": "new",
+     "law_section": "1716(c) \"20253\""
+    },
+    {
+     "title": "10",
+     "section": "20251",
+     "description": "prec",
+     "law_section": "1716(c) \"20253\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec new",
+     "law_section": "1716(c) \"Subchapter V\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "new",
+     "law_section": "1716(c) \"20261\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec",
+     "law_section": "1716(c) \"20261\""
+    },
+    {
+     "title": "10",
+     "section": "20262",
+     "description": "new",
+     "law_section": "1716(c) \"20262\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec",
+     "law_section": "1716(c) \"20262\""
+    },
+    {
+     "title": "10",
+     "section": "20263",
+     "description": "new",
+     "law_section": "1716(c) \"20263\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec",
+     "law_section": "1716(c) \"20263\""
+    },
+    {
+     "title": "10",
+     "section": "20264",
+     "description": "new",
+     "law_section": "1716(c) \"20264\""
+    },
+    {
+     "title": "10",
+     "section": "20261",
+     "description": "prec",
+     "law_section": "1716(c) \"20264\""
+    },
+    {
+     "title": "10",
+     "section": "605",
+     "description": "",
+     "law_section": "1716(d)"
+    },
+    {
+     "title": "10",
+     "section": "20301",
+     "description": "prec new",
+     "law_section": "1717(a) \"CHAPTER 2007\""
+    },
+    {
+     "title": "10",
+     "section": "20301",
+     "description": "new",
+     "law_section": "1717(a) \"20301\""
+    },
+    {
+     "title": "10",
+     "section": "20302",
+     "description": "new",
+     "law_section": "1717(a) \"20302\""
+    },
+    {
+     "title": "10",
+     "section": "20303",
+     "description": "new",
+     "law_section": "1717(a) \"20303\""
+    },
+    {
+     "title": "10",
+     "section": "503",
+     "description": "",
+     "law_section": "1717(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "505",
+     "description": "",
+     "law_section": "1717(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "506",
+     "description": "",
+     "law_section": "1717(b)(3)"
+    },
+    {
+     "title": "10",
+     "section": "508",
+     "description": "",
+     "law_section": "1717(b)(4)"
+    },
+    {
+     "title": "10",
+     "section": "510",
+     "description": "",
+     "law_section": "1717(b)(5)"
+    },
+    {
+     "title": "10",
+     "section": "511",
+     "description": "",
+     "law_section": "1717(b)(6)"
+    },
+    {
+     "title": "10",
+     "section": "513",
+     "description": "",
+     "law_section": "1717(b)(7)"
+    },
+    {
+     "title": "10",
+     "section": "516",
+     "description": "",
+     "law_section": "1717(b)(8)"
+    },
+    {
+     "title": "10",
+     "section": "20401",
+     "description": "prec new",
+     "law_section": "1718(a) \"CHAPTER 2009\""
+    },
+    {
+     "title": "10",
+     "section": "20401",
+     "description": "new",
+     "law_section": "1718(a) \"20401\""
+    },
+    {
+     "title": "10",
+     "section": "20402",
+     "description": "new",
+     "law_section": "1718(a) \"20402\""
+    },
+    {
+     "title": "10",
+     "section": "20403",
+     "description": "new",
+     "law_section": "1718(a) \"20403\""
+    },
+    {
+     "title": "10",
+     "section": "20404",
+     "description": "new",
+     "law_section": "1718(a) \"20404\""
+    },
+    {
+     "title": "10",
+     "section": "20405",
+     "description": "new",
+     "law_section": "1718(a) \"20405\""
+    },
+    {
+     "title": "10",
+     "section": "647",
+     "description": "",
+     "law_section": "1718(b)"
+    },
+    {
+     "title": "10",
+     "section": "20501",
+     "description": "prec new",
+     "law_section": "1719 \"CHAPTER 2011\""
+    },
+    {
+     "title": "10",
+     "section": "20501",
+     "description": "new",
+     "law_section": "1719 \"20501\""
+    },
+    {
+     "title": "10",
+     "section": "20502",
+     "description": "new",
+     "law_section": "1719 \"20502\""
+    },
+    {
+     "title": "10",
+     "section": "20503",
+     "description": "new",
+     "law_section": "1719 \"20503\""
+    },
+    {
+     "title": "10",
+     "section": "20504",
+     "description": "new",
+     "law_section": "1719 \"20504\""
+    },
+    {
+     "title": "10",
+     "section": "20505",
+     "description": "new",
+     "law_section": "1719 \"20505\""
+    },
+    {
+     "title": "10",
+     "section": "20506",
+     "description": "new",
+     "law_section": "1719 \"20506\""
+    },
+    {
+     "title": "10",
+     "section": "20601",
+     "description": "prec new",
+     "law_section": "1719A(a) \"CHAPTER 2013\""
+    },
+    {
+     "title": "10",
+     "section": "20601",
+     "description": "new",
+     "law_section": "1719A(a) \"20601\""
+    },
+    {
+     "title": "10",
+     "section": "20602",
+     "description": "new",
+     "law_section": "1719A(a) \"20602\""
+    },
+    {
+     "title": "10",
+     "section": "20603",
+     "description": "new",
+     "law_section": "1719A(a) \"20603\""
+    },
+    {
+     "title": "10",
+     "section": "20604",
+     "description": "new",
+     "law_section": "1719A(a) \"20604\""
+    },
+    {
+     "title": "10",
+     "section": "20605",
+     "description": "new",
+     "law_section": "1719A(a) \"20605\""
+    },
+    {
+     "title": "10",
+     "section": "688",
+     "description": "",
+     "law_section": "1719A(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "9341",
+     "description": "",
+     "law_section": "1719A(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "9344",
+     "description": "",
+     "law_section": "1719A(b)(3)"
+    },
+    {
+     "title": "10",
+     "section": "9346",
+     "description": "",
+     "law_section": "1719A(b)(4)"
+    },
+    {
+     "title": "10",
+     "section": "9132",
+     "description": "",
+     "law_section": "1721(a)(1)(A)"
+    },
+    {
+     "title": "10",
+     "section": "9131",
+     "description": "prec",
+     "law_section": "1721(a)(1)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9132",
+     "description": "",
+     "law_section": "1721(a)(1)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9138",
+     "description": "",
+     "law_section": "1721(a)(2)(A)"
+    },
+    {
+     "title": "10",
+     "section": "9131",
+     "description": "prec",
+     "law_section": "1721(a)(2)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9138",
+     "description": "",
+     "law_section": "1721(a)(2)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9160",
+     "description": "",
+     "law_section": "1721(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "9252",
+     "description": "",
+     "law_section": "1721(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "9151",
+     "description": "prec",
+     "law_section": "1721(a)(5)(A)"
+    },
+    {
+     "title": "10",
+     "section": "9011",
+     "description": "prec",
+     "law_section": "1721(a)(5)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9110",
+     "description": "prec",
+     "law_section": "1721(a)(5)(B)"
+    },
+    {
+     "title": "10",
+     "section": "9401",
+     "description": "",
+     "law_section": "1721(b)"
+    },
+    {
+     "title": "10",
+     "section": "9436",
+     "description": "",
+     "law_section": "1721(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "9442",
+     "description": "",
+     "law_section": "1721(c)(2)"
+    },
+    {
+     "title": "10",
+     "section": "9448",
+     "description": "",
+     "law_section": "1721(c)(3)"
+    },
+    {
+     "title": "10",
+     "section": "9452",
+     "description": "",
+     "law_section": "1721(c)(4)"
+    },
+    {
+     "title": "10",
+     "section": "9453",
+     "description": "",
+     "law_section": "1721(c)(5)"
+    },
+    {
+     "title": "10",
+     "section": "9481",
+     "description": "",
+     "law_section": "1721(d)(1)"
+    },
+    {
+     "title": "10",
+     "section": "9482",
+     "description": "",
+     "law_section": "1721(d)(2)"
+    },
+    {
+     "title": "10",
+     "section": "115a",
+     "description": "",
+     "law_section": "1722(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "123a",
+     "description": "",
+     "law_section": "1722(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "164",
+     "description": "",
+     "law_section": "1722(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "482",
+     "description": "",
+     "law_section": "1722(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "613a",
+     "description": "",
+     "law_section": "1722(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "615",
+     "description": "",
+     "law_section": "1722(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "619",
+     "description": "",
+     "law_section": "1722(b)(3)"
+    },
+    {
+     "title": "10",
+     "section": "625",
+     "description": "",
+     "law_section": "1722(b)(4)"
+    },
+    {
+     "title": "10",
+     "section": "628a",
+     "description": "",
+     "law_section": "1722(b)(5)"
+    },
+    {
+     "title": "10",
+     "section": "633",
+     "description": "",
+     "law_section": "1722(b)(6)(A)"
+    },
+    {
+     "title": "10",
+     "section": "634",
+     "description": "",
+     "law_section": "1722(b)(6)(B)"
+    },
+    {
+     "title": "10",
+     "section": "635",
+     "description": "",
+     "law_section": "1722(b)(6)(C)"
+    },
+    {
+     "title": "10",
+     "section": "636",
+     "description": "",
+     "law_section": "1722(b)(6)(D)"
+    },
+    {
+     "title": "10",
+     "section": "627",
+     "description": "prec",
+     "law_section": "1722(b)(6)(E)(i)"
+    },
+    {
+     "title": "10",
+     "section": "633",
+     "description": "",
+     "law_section": "1722(b)(6)(E)(i)"
+    },
+    {
+     "title": "10",
+     "section": "627",
+     "description": "prec",
+     "law_section": "1722(b)(6)(E)(ii)"
+    },
+    {
+     "title": "10",
+     "section": "634",
+     "description": "",
+     "law_section": "1722(b)(6)(E)(ii)"
+    },
+    {
+     "title": "10",
+     "section": "627",
+     "description": "prec",
+     "law_section": "1722(b)(6)(E)(iii)"
+    },
+    {
+     "title": "10",
+     "section": "635",
+     "description": "",
+     "law_section": "1722(b)(6)(E)(iii)"
+    },
+    {
+     "title": "10",
+     "section": "627",
+     "description": "prec",
+     "law_section": "1722(b)(6)(E)(iv)"
+    },
+    {
+     "title": "10",
+     "section": "636",
+     "description": "",
+     "law_section": "1722(b)(6)(E)(iv)"
+    },
+    {
+     "title": "10",
+     "section": "661",
+     "description": "",
+     "law_section": "1722(c)"
+    },
+    {
+     "title": "10",
+     "section": "701",
+     "description": "",
+     "law_section": "1722(d)(1)"
+    },
+    {
+     "title": "10",
+     "section": "707a",
+     "description": "",
+     "law_section": "1722(d)(2)"
+    },
+    {
+     "title": "10",
+     "section": "710",
+     "description": "",
+     "law_section": "1722(d)(3)"
+    },
+    {
+     "title": "10",
+     "section": "777",
+     "description": "",
+     "law_section": "1722(e)"
+    },
+    {
+     "title": "10",
+     "section": "802",
+     "description": "",
+     "law_section": "1722(f)(1)"
+    },
+    {
+     "title": "10",
+     "section": "803",
+     "description": "",
+     "law_section": "1722(f)(2)"
+    },
+    {
+     "title": "10",
+     "section": "937",
+     "description": "",
+     "law_section": "1722(f)(3)"
+    },
+    {
+     "title": "10",
+     "section": "973",
+     "description": "",
+     "law_section": "1722(f)"
+    },
+    {
+     "title": "10",
+     "section": "1063",
+     "description": "",
+     "law_section": "1722(h)"
+    },
+    {
+     "title": "10",
+     "section": "1141",
+     "description": "",
+     "law_section": "1722(i)(1)"
+    },
+    {
+     "title": "10",
+     "section": "1174",
+     "description": "",
+     "law_section": "1722(i)(2)"
+    },
+    {
+     "title": "10",
+     "section": "1558",
+     "description": "",
+     "law_section": "1722(j)(1)"
+    },
+    {
+     "title": "10",
+     "section": "1555",
+     "description": "",
+     "law_section": "1722(j)(2)(A)"
+    },
+    {
+     "title": "10",
+     "section": "1557",
+     "description": "",
+     "law_section": "1722(j)(2)(A)"
+    },
+    {
+     "title": "10",
+     "section": "1556",
+     "description": "",
+     "law_section": "1722(j)(2)(B)"
+    },
+    {
+     "title": "10",
+     "section": "1559",
+     "description": "",
+     "law_section": "1722(j)(2)(C)"
+    },
+    {
+     "title": "10",
+     "section": "1781a",
+     "description": "",
+     "law_section": "1722(k)(1)"
+    },
+    {
+     "title": "10",
+     "section": "1781b",
+     "description": "",
+     "law_section": "1722(k)(2)"
+    },
+    {
+     "title": "10",
+     "section": "2007",
+     "description": "",
+     "law_section": "1722(l)(1)"
+    },
+    {
+     "title": "10",
+     "section": "2107",
+     "description": "",
+     "law_section": "1722(l)(2)"
+    },
+    {
+     "title": "10",
+     "section": "2111",
+     "description": "",
+     "law_section": "1722(l)(3)"
+    },
+    {
+     "title": "38",
+     "section": "101",
+     "description": "",
+     "law_section": "1723(a)(1)"
+    },
+    {
+     "title": "38",
+     "section": "1965",
+     "description": "",
+     "law_section": "1723(a)(2)"
+    },
+    {
+     "title": "38",
+     "section": "2402",
+     "description": "",
+     "law_section": "1723(b)"
+    },
+    {
+     "title": "38",
+     "section": "3011",
+     "description": "",
+     "law_section": "1723(c)(1)"
+    },
+    {
+     "title": "38",
+     "section": "3311",
+     "description": "",
+     "law_section": "1723(c)(2)"
+    },
+    {
+     "title": "10",
+     "section": "9085",
+     "description": "",
+     "law_section": "1735(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "9151",
+     "description": "",
+     "law_section": "1741(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "741",
+     "description": "",
+     "law_section": "1741(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "",
+     "law_section": "1741(a)(3)"
+    },
+    {
+     "title": "10",
+     "section": "601",
+     "description": "",
+     "law_section": "1741(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "1370",
+     "description": "",
+     "law_section": "1741(a)(5)"
+    },
+    {
+     "title": "10",
+     "section": "1563",
+     "description": "",
+     "law_section": "1741(a)(6)"
+    },
+    {
+     "title": "10",
+     "section": "1563a",
+     "description": "",
+     "law_section": "1741(a)(6)"
+    },
+    {
+     "title": "10",
+     "section": "9020",
+     "description": "",
+     "law_section": "1741(a)(7)"
+    },
+    {
+     "title": "10",
+     "section": "690",
+     "description": "",
+     "law_section": "1741(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "772",
+     "description": "",
+     "law_section": "1741(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "976",
+     "description": "",
+     "law_section": "1741(b)(3)"
+    },
+    {
+     "title": "10",
+     "section": "981",
+     "description": "",
+     "law_section": "1741(b)(4)"
+    },
+    {
+     "title": "10",
+     "section": "1491",
+     "description": "",
+     "law_section": "1741(b)(5)"
+    },
+    {
+     "title": "10",
+     "section": "9419",
+     "description": "",
+     "law_section": "1741(b)(6)"
+    },
+    {
+     "title": "10",
+     "section": "9082",
+     "description": "",
+     "law_section": "1741(b)(7)"
+    },
+    {
+     "title": "19",
+     "section": "2293",
+     "description": "",
+     "law_section": "1742(a)"
+    },
+    {
+     "title": "28",
+     "section": "631",
+     "description": "",
+     "law_section": "1742(b)"
+    },
+    {
+     "title": "50",
+     "section": "3911",
+     "description": "",
+     "law_section": "1742(c)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3917",
+     "description": "",
+     "law_section": "1742(c)(2)"
+    },
+    {
+     "title": "50",
+     "section": "3919",
+     "description": "",
+     "law_section": "1742(c)(3)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "prec",
+     "law_section": "1801(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "172",
+     "description": "",
+     "law_section": "1801(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "prec",
+     "law_section": "1801(a)(3)(A)"
+    },
+    {
+     "title": "10",
+     "section": "231",
+     "description": "",
+     "law_section": "1801(a)(3)(A)"
+    },
+    {
+     "title": "10",
+     "section": "231",
+     "description": "",
+     "law_section": "1801(a)(3)(B)"
+    },
+    {
+     "title": "10",
+     "section": "386",
+     "description": "",
+     "law_section": "1801(a)(4)"
+    },
+    {
+     "title": "10",
+     "section": "392a",
+     "description": "",
+     "law_section": "1801(a)(5)"
+    },
+    {
+     "title": "10",
+     "section": "398",
+     "description": "tr to 10/398a",
+     "law_section": "1801(a)(6)"
+    },
+    {
+     "title": "10",
+     "section": "398a",
+     "description": "tr fr 10/398",
+     "law_section": "1801(a)(6)"
+    },
+    {
+     "title": "10",
+     "section": "391",
+     "description": "prec",
+     "law_section": "1801(a)(6)"
+    },
+    {
+     "title": "10",
+     "section": "398a",
+     "description": "",
+     "law_section": "1801(a)(7)"
+    },
+    {
+     "title": "10",
+     "section": "491",
+     "description": "",
+     "law_section": "1801(a)(8)"
+    },
+    {
+     "title": "10",
+     "section": "526a",
+     "description": "",
+     "law_section": "1801(a)(9)"
+    },
+    {
+     "title": "10",
+     "section": "701",
+     "description": "",
+     "law_section": "1801(a)(10)"
+    },
+    {
+     "title": "10",
+     "section": "1074h",
+     "description": "",
+     "law_section": "1801(a)(11)"
+    },
+    {
+     "title": "10",
+     "section": "1076a",
+     "description": "",
+     "law_section": "1801(a)(12)"
+    },
+    {
+     "title": "10",
+     "section": "1090a",
+     "description": "",
+     "law_section": "1801(a)(13)"
+    },
+    {
+     "title": "10",
+     "section": "1090b",
+     "description": "",
+     "law_section": "1801(a)(14)"
+    },
+    {
+     "title": "10",
+     "section": "1134a",
+     "description": "",
+     "law_section": "1801(a)(15)"
+    },
+    {
+     "title": "10",
+     "section": "1370a",
+     "description": "",
+     "law_section": "1801(a)(16)"
+    },
+    {
+     "title": "10",
+     "section": "1789",
+     "description": "",
+     "law_section": "1801(a)(17)"
+    },
+    {
+     "title": "10",
+     "section": "2200g",
+     "description": "",
+     "law_section": "1801(a)(18)"
+    },
+    {
+     "title": "10",
+     "section": "2228",
+     "description": "",
+     "law_section": "1801(a)(19)"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "prec",
+     "law_section": "1801(a)(20)"
+    },
+    {
+     "title": "10",
+     "section": "2275",
+     "description": "",
+     "law_section": "1801(a)(21)"
+    },
+    {
+     "title": "10",
+     "section": "2700",
+     "description": "",
+     "law_section": "1801(a)(22)"
+    },
+    {
+     "title": "10",
+     "section": "2864",
+     "description": "",
+     "law_section": "1801(a)(23)"
+    },
+    {
+     "title": "10",
+     "section": "2878",
+     "description": "",
+     "law_section": "1801(a)(24)"
+    },
+    {
+     "title": "10",
+     "section": "3101",
+     "description": "prec",
+     "law_section": "1801(a)(25)"
+    },
+    {
+     "title": "10",
+     "section": "3304",
+     "description": "",
+     "law_section": "1801(a)(26)"
+    },
+    {
+     "title": "10",
+     "section": "3323",
+     "description": "",
+     "law_section": "1801(a)(27)"
+    },
+    {
+     "title": "10",
+     "section": "3601",
+     "description": "",
+     "law_section": "1801(a)(28)"
+    },
+    {
+     "title": "10",
+     "section": "3702",
+     "description": "",
+     "law_section": "1801(a)(29)"
+    },
+    {
+     "title": "10",
+     "section": "4014",
+     "description": "",
+     "law_section": "1801(a)(30)"
+    },
+    {
+     "title": "10",
+     "section": "4024",
+     "description": "",
+     "law_section": "1801(a)(31)"
+    },
+    {
+     "title": "10",
+     "section": "4061",
+     "description": "prec",
+     "law_section": "1801(a)(32)"
+    },
+    {
+     "title": "10",
+     "section": "4094",
+     "description": "repealed",
+     "law_section": "1801(a)(32)"
+    },
+    {
+     "title": "10",
+     "section": "4092",
+     "description": "",
+     "law_section": "1801(a)(33)"
+    },
+    {
+     "title": "10",
+     "section": "4273",
+     "description": "",
+     "law_section": "1801(a)(34)"
+    },
+    {
+     "title": "10",
+     "section": "4351",
+     "description": "",
+     "law_section": "1801(a)(35)"
+    },
+    {
+     "title": "10",
+     "section": "4820",
+     "description": "",
+     "law_section": "1801(a)(36)"
+    },
+    {
+     "title": "10",
+     "section": "4902",
+     "description": "",
+     "law_section": "1801(a)(37)"
+    },
+    {
+     "title": "10",
+     "section": "8062",
+     "description": "",
+     "law_section": "1801(a)(38)"
+    },
+    {
+     "title": "10",
+     "section": "8696",
+     "description": "tr to 10/8697",
+     "law_section": "1801(a)(39)"
+    },
+    {
+     "title": "10",
+     "section": "8697",
+     "description": "tr fr 10/8696",
+     "law_section": "1801(a)(39)"
+    },
+    {
+     "title": "10",
+     "section": "8661",
+     "description": "prec",
+     "law_section": "1801(a)(39)"
+    },
+    {
+     "title": "10",
+     "section": "431",
+     "description": "",
+     "law_section": "1802"
+    },
+    {
+     "title": "36",
+     "section": "146",
+     "description": "tr to 36/147",
+     "law_section": "1804(a)(1)(A)(i)"
+    },
+    {
+     "title": "36",
+     "section": "147",
+     "description": "tr fr 36/146",
+     "law_section": "1804(a)(1)(A)(i)"
+    },
+    {
+     "title": "36",
+     "section": "148",
+     "description": "new",
+     "law_section": "1804(a)(1)(A)(ii) \"148\""
+    },
+    {
+     "title": "36",
+     "section": "101",
+     "description": "prec",
+     "law_section": "1804(a)(1)(B)"
+    },
+    {
+     "title": "36",
+     "section": "904",
+     "description": "new",
+     "law_section": "1804(a)(2)(A) \"904\""
+    },
+    {
+     "title": "36",
+     "section": "901",
+     "description": "prec",
+     "law_section": "1804(a)(2)(B)"
+    },
+    {
+     "title": "38",
+     "section": "320",
+     "description": "",
+     "law_section": "1805"
+    },
+    {
+     "title": "39",
+     "section": "406",
+     "description": "",
+     "law_section": "1806(a)"
+    },
+    {
+     "title": "48",
+     "section": "1806",
+     "description": "",
+     "law_section": "1807"
+    },
+    {
+     "title": "42",
+     "section": "300mm-5",
+     "description": "",
+     "law_section": "1851(a)(1)"
+    },
+    {
+     "title": "42",
+     "section": "300mm-21",
+     "description": "",
+     "law_section": "1851(a)(2)"
+    },
+    {
+     "title": "42",
+     "section": "300mm-63",
+     "description": "new",
+     "law_section": "1851(b) \"3353\""
+    },
+    {
+     "title": "42",
+     "section": "300mm-64",
+     "description": "new",
+     "law_section": "1851(b) \"3354\""
+    },
+    {
+     "title": "42",
+     "section": "300mm-21",
+     "description": "",
+     "law_section": "1851(c)(1)"
+    },
+    {
+     "title": "42",
+     "section": "300mm-31",
+     "description": "",
+     "law_section": "1851(c)(2)"
+    },
+    {
+     "title": "42",
+     "section": "300mm-41",
+     "description": "",
+     "law_section": "1851(c)(3)"
+    },
+    {
+     "title": "42",
+     "section": "300mm-61",
+     "description": "",
+     "law_section": "1851(c)(4)"
+    },
+    {
+     "title": "2",
+     "section": "901a",
+     "description": "",
+     "law_section": "1852"
+    },
+    {
+     "title": "10",
+     "section": "2391",
+     "description": "",
+     "law_section": "2801"
+    },
+    {
+     "title": "10",
+     "section": "2805",
+     "description": "",
+     "law_section": "2802(a)-(c)"
+    },
+    {
+     "title": "10",
+     "section": "2805",
+     "description": "",
+     "law_section": "2803"
+    },
+    {
+     "title": "10",
+     "section": "2815",
+     "description": "",
+     "law_section": "2804"
+    },
+    {
+     "title": "10",
+     "section": "2801",
+     "description": "prec",
+     "law_section": "2805"
+    },
+    {
+     "title": "10",
+     "section": "2817",
+     "description": "new",
+     "law_section": "2805 \"2817\""
+    },
+    {
+     "title": "10",
+     "section": "2914",
+     "description": "",
+     "law_section": "2809"
+    },
+    {
+     "title": "10",
+     "section": "2688",
+     "description": "",
+     "law_section": "2811(a)"
+    },
+    {
+     "title": "10",
+     "section": "1781a",
+     "description": "",
+     "law_section": "2821(a)"
+    },
+    {
+     "title": "10",
+     "section": "2878",
+     "description": "",
+     "law_section": "2822(a)"
+    },
+    {
+     "title": "10",
+     "section": "2890",
+     "description": "",
+     "law_section": "2822(b)"
+    },
+    {
+     "title": "10",
+     "section": "2890",
+     "description": "",
+     "law_section": "2823"
+    },
+    {
+     "title": "10",
+     "section": "2856",
+     "description": "",
+     "law_section": "2831(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "prec",
+     "law_section": "2831(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "prec",
+     "law_section": "2832(a)"
+    },
+    {
+     "title": "10",
+     "section": "2856b",
+     "description": "new",
+     "law_section": "2832(a) \"2856b\""
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "prec",
+     "law_section": "2833(b)"
+    },
+    {
+     "title": "10",
+     "section": "2856a",
+     "description": "new",
+     "law_section": "2833(b) \"2856a\""
+    },
+    {
+     "title": "10",
+     "section": "2856b",
+     "description": "",
+     "law_section": "2834"
+    },
+    {
+     "title": "10",
+     "section": "2890",
+     "description": "",
+     "law_section": "2839(e)"
+    },
+    {
+     "title": "10",
+     "section": "7540",
+     "description": "",
+     "law_section": "2881(a)"
+    },
+    {
+     "title": "10",
+     "section": "8612",
+     "description": "",
+     "law_section": "2881(b)"
+    },
+    {
+     "title": "10",
+     "section": "9540",
+     "description": "",
+     "law_section": "2881(c)"
+    },
+    {
+     "title": "10",
+     "section": "8604",
+     "description": "prec",
+     "law_section": "2882(a)"
+    },
+    {
+     "title": "10",
+     "section": "8618",
+     "description": "new",
+     "law_section": "2882(a) \"8618\""
+    },
+    {
+     "title": "16",
+     "section": "460gggg",
+     "description": "",
+     "law_section": "2883(a)"
+    },
+    {
+     "title": "50",
+     "section": "2402",
+     "description": "",
+     "law_section": "3111(1)"
+    },
+    {
+     "title": "50",
+     "section": "2422",
+     "description": "",
+     "law_section": "3111(2)"
+    },
+    {
+     "title": "50",
+     "section": "2404",
+     "description": "",
+     "law_section": "3112(a)"
+    },
+    {
+     "title": "50",
+     "section": "2402",
+     "description": "",
+     "law_section": "3112(b)"
+    },
+    {
+     "title": "50",
+     "section": "2412",
+     "description": "new",
+     "law_section": "3113 \"3222\""
+    },
+    {
+     "title": "50",
+     "section": "2441",
+     "description": "",
+     "law_section": "3114"
+    },
+    {
+     "title": "42",
+     "section": "2122",
+     "description": "",
+     "law_section": "3115"
+    },
+    {
+     "title": "50",
+     "section": "2538a",
+     "description": "",
+     "law_section": "3116, 3117"
+    },
+    {
+     "title": "50",
+     "section": "2569",
+     "description": "",
+     "law_section": "3118(a), (b)"
+    },
+    {
+     "title": "50",
+     "section": "2575",
+     "description": "",
+     "law_section": "3118(c)"
+    },
+    {
+     "title": "50",
+     "section": "2787",
+     "description": "",
+     "law_section": "3119"
+    },
+    {
+     "title": "50",
+     "section": "2741",
+     "description": "",
+     "law_section": "3120"
+    },
+    {
+     "title": "50",
+     "section": "2756",
+     "description": "",
+     "law_section": "3121"
+    },
+    {
+     "title": "50",
+     "section": "2796",
+     "description": "new",
+     "law_section": "3122(a) \"4815\""
+    },
+    {
+     "title": "42",
+     "section": "16282",
+     "description": "new",
+     "law_section": "3131"
+    },
+    {
+     "title": "42",
+     "section": "19351",
+     "description": "",
+     "law_section": "3131(p)(1)"
+    },
+    {
+     "title": "42",
+     "section": "16274",
+     "description": "",
+     "law_section": "3131(p)(2)"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3511, 3512"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3513(b)"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3514(a)(1)(A)(i), (ii)"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3514(a)(1)(A)(iii)"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3514(a)(1)(B)"
+    },
+    {
+     "title": "46",
+     "section": "54301",
+     "description": "",
+     "law_section": "3514(a)(2)"
+    },
+    {
+     "title": "46",
+     "section": "56101",
+     "description": "",
+     "law_section": "3514(b)(2), (3)"
+    },
+    {
+     "title": "46",
+     "section": "50301",
+     "description": "prec",
+     "law_section": "3514(c)"
+    },
+    {
+     "title": "46",
+     "section": "50301",
+     "description": "",
+     "law_section": "3514(d)"
+    },
+    {
+     "title": "46",
+     "section": "50308",
+     "description": "",
+     "law_section": "3514(e)"
+    },
+    {
+     "title": "46",
+     "section": "50101",
+     "description": "prec",
+     "law_section": "3514(f)"
+    },
+    {
+     "title": "46",
+     "section": "53701",
+     "description": "prec",
+     "law_section": "3514(g)"
+    },
+    {
+     "title": "46",
+     "section": "54101",
+     "description": "prec",
+     "law_section": "3514(h)"
+    },
+    {
+     "title": "33",
+     "section": "1958",
+     "description": "",
+     "law_section": "3514(i)"
+    },
+    {
+     "title": "46",
+     "section": "57111",
+     "description": "tr to 46/57110",
+     "law_section": "3514(j)(1)(A)"
+    },
+    {
+     "title": "46",
+     "section": "57110",
+     "description": "tr fr 46/57111",
+     "law_section": "3514(j)(1)(A)"
+    },
+    {
+     "title": "46",
+     "section": "57111",
+     "description": "new",
+     "law_section": "3514(j)(1)(B) \"57111\""
+    },
+    {
+     "title": "46",
+     "section": "57100",
+     "description": "",
+     "law_section": "3514(j)(2)"
+    },
+    {
+     "title": "46",
+     "section": "57101",
+     "description": "",
+     "law_section": "3514(j)(3)"
+    },
+    {
+     "title": "46",
+     "section": "57102",
+     "description": "",
+     "law_section": "3514(j)(4)"
+    },
+    {
+     "title": "46",
+     "section": "57103",
+     "description": "",
+     "law_section": "3514(j)(5)"
+    },
+    {
+     "title": "46",
+     "section": "57100",
+     "description": "prec",
+     "law_section": "3514(j)(6)"
+    },
+    {
+     "title": "33",
+     "section": "1501",
+     "description": "",
+     "law_section": "3514(k)(1)"
+    },
+    {
+     "title": "33",
+     "section": "1502",
+     "description": "",
+     "law_section": "3514(k)(2)"
+    },
+    {
+     "title": "33",
+     "section": "1503",
+     "description": "",
+     "law_section": "3514(k)(3)"
+    },
+    {
+     "title": "33",
+     "section": "1504",
+     "description": "",
+     "law_section": "3514(k)(4)"
+    },
+    {
+     "title": "33",
+     "section": "1505",
+     "description": "",
+     "law_section": "3514(k)(5)"
+    },
+    {
+     "title": "33",
+     "section": "1508",
+     "description": "",
+     "law_section": "3514(k)(6)"
+    },
+    {
+     "title": "46",
+     "section": "55301",
+     "description": "new",
+     "law_section": "3521(a)(1) \"55301\""
+    },
+    {
+     "title": "46",
+     "section": "55301",
+     "description": "prec",
+     "law_section": "3521(a)(2)"
+    },
+    {
+     "title": "46",
+     "section": "55305",
+     "description": "",
+     "law_section": "3531(a)"
+    },
+    {
+     "title": "46",
+     "section": "51706",
+     "description": "",
+     "law_section": "3534(k)"
+    },
+    {
+     "title": "46",
+     "section": "53706",
+     "description": "",
+     "law_section": "3536(a)"
+    },
+    {
+     "title": "38",
+     "section": "8104",
+     "description": "",
+     "law_section": "5001"
+    },
+    {
+     "title": "18",
+     "section": "201",
+     "description": "",
+     "law_section": "5101"
+    },
+    {
+     "title": "18",
+     "section": "2423",
+     "description": "",
+     "law_section": "5102(c), (d)"
+    },
+    {
+     "title": "18",
+     "section": "2427",
+     "description": "",
+     "law_section": "5102(e)"
+    },
+    {
+     "title": "36",
+     "section": "150401",
+     "description": "prec new",
+     "law_section": "5103(a) \"CHAPTER 1504\""
+    },
+    {
+     "title": "36",
+     "section": "150401",
+     "description": "new",
+     "law_section": "5103(a) \"150401\""
+    },
+    {
+     "title": "36",
+     "section": "150402",
+     "description": "new",
+     "law_section": "5103(a) \"150402\""
+    },
+    {
+     "title": "36",
+     "section": "150403",
+     "description": "new",
+     "law_section": "5103(a) \"150403\""
+    },
+    {
+     "title": "36",
+     "section": "150404",
+     "description": "new",
+     "law_section": "5103(a) \"150404\""
+    },
+    {
+     "title": "36",
+     "section": "150405",
+     "description": "new",
+     "law_section": "5103(a) \"150405\""
+    },
+    {
+     "title": "36",
+     "section": "150406",
+     "description": "new",
+     "law_section": "5103(a) \"150406\""
+    },
+    {
+     "title": "36",
+     "section": "150407",
+     "description": "new",
+     "law_section": "5103(a) \"150407\""
+    },
+    {
+     "title": "36",
+     "section": "150408",
+     "description": "new",
+     "law_section": "5103(a) \"150408\""
+    },
+    {
+     "title": "36",
+     "section": "150409",
+     "description": "new",
+     "law_section": "5103(a) \"150409\""
+    },
+    {
+     "title": "36",
+     "section": "150410",
+     "description": "new",
+     "law_section": "5103(a) \"150410\""
+    },
+    {
+     "title": "36",
+     "section": "150411",
+     "description": "new",
+     "law_section": "5103(a) \"150411\""
+    },
+    {
+     "title": "36",
+     "section": "150412",
+     "description": "new",
+     "law_section": "5103(a) \"150412\""
+    },
+    {
+     "title": "36",
+     "section": "150413",
+     "description": "new",
+     "law_section": "5103(a) \"150413\""
+    },
+    {
+     "title": "36",
+     "section": "150414",
+     "description": "new",
+     "law_section": "5103(a) \"150414\""
+    },
+    {
+     "title": "36",
+     "section": "150415",
+     "description": "new",
+     "law_section": "5103(a) \"150415\""
+    },
+    {
+     "title": "36",
+     "section": "101",
+     "description": "prec",
+     "law_section": "5103(b)"
+    },
+    {
+     "title": "5",
+     "section": "5550",
+     "description": "",
+     "law_section": "5201"
+    },
+    {
+     "title": "22",
+     "section": "10501",
+     "description": "new",
+     "law_section": "5402"
+    },
+    {
+     "title": "22",
+     "section": "10502",
+     "description": "new",
+     "law_section": "5403"
+    },
+    {
+     "title": "22",
+     "section": "10503",
+     "description": "new",
+     "law_section": "5404"
+    },
+    {
+     "title": "22",
+     "section": "10504",
+     "description": "new",
+     "law_section": "5405"
+    },
+    {
+     "title": "22",
+     "section": "10505",
+     "description": "new",
+     "law_section": "5406"
+    },
+    {
+     "title": "48",
+     "section": "1974",
+     "description": "new",
+     "law_section": "5412"
+    },
+    {
+     "title": "33",
+     "section": "535d",
+     "description": "new",
+     "law_section": "5414 \"6\""
+    },
+    {
+     "title": "42",
+     "section": "7384l",
+     "description": "",
+     "law_section": "5501(b)"
+    },
+    {
+     "title": "42",
+     "section": "7385s-16",
+     "description": "",
+     "law_section": "5501(c)"
+    },
+    {
+     "title": "22",
+     "section": "277d-10",
+     "description": "",
+     "law_section": "5602(a)"
+    },
+    {
+     "title": "46",
+     "section": "70108",
+     "description": "",
+     "law_section": "5603"
+    },
+    {
+     "title": "2",
+     "section": "1801a",
+     "description": "new",
+     "law_section": "5702"
+    },
+    {
+     "title": "2",
+     "section": "1801",
+     "description": "repealed",
+     "law_section": "5702(d)(1)"
+    },
+    {
+     "title": "2",
+     "section": "1811",
+     "description": "",
+     "law_section": "5702(d)(2)"
+    },
+    {
+     "title": "2",
+     "section": "1805",
+     "description": "",
+     "law_section": "5703"
+    },
+    {
+     "title": "2",
+     "section": "1805a",
+     "description": "new",
+     "law_section": "5704"
+    },
+    {
+     "title": "2",
+     "section": "1804",
+     "description": "repealed",
+     "law_section": "5704(d)"
+    },
+    {
+     "title": "22",
+     "section": "213a",
+     "description": "new",
+     "law_section": "6109"
+    },
+    {
+     "title": "22",
+     "section": "214",
+     "description": "",
+     "law_section": "6114(b)"
+    },
+    {
+     "title": "22",
+     "section": "2734h",
+     "description": "new",
+     "law_section": "6115"
+    },
+    {
+     "title": "22",
+     "section": "2734c",
+     "description": "",
+     "law_section": "6115(f)"
+    },
+    {
+     "title": "22",
+     "section": "4030",
+     "description": "new",
+     "law_section": "6116"
+    },
+    {
+     "title": "22",
+     "section": "2719",
+     "description": "",
+     "law_section": "6117(a)"
+    },
+    {
+     "title": "22",
+     "section": "4003",
+     "description": "",
+     "law_section": "6201"
+    },
+    {
+     "title": "22",
+     "section": "2738",
+     "description": "new",
+     "law_section": "6205"
+    },
+    {
+     "title": "22",
+     "section": "3944",
+     "description": "",
+     "law_section": "6207"
+    },
+    {
+     "title": "22",
+     "section": "2739",
+     "description": "new",
+     "law_section": "6208"
+    },
+    {
+     "title": "22",
+     "section": "3927b",
+     "description": "new",
+     "law_section": "6209"
+    },
+    {
+     "title": "22",
+     "section": "2736f",
+     "description": "new",
+     "law_section": "6211"
+    },
+    {
+     "title": "22",
+     "section": "4088",
+     "description": "new",
+     "law_section": "6221(a) \"908\""
+    },
+    {
+     "title": "22",
+     "section": "2703a",
+     "description": "new",
+     "law_section": "6223"
+    },
+    {
+     "title": "22",
+     "section": "4081a",
+     "description": "new",
+     "law_section": "6224(a)"
+    },
+    {
+     "title": "22",
+     "section": "2670",
+     "description": "",
+     "law_section": "6225"
+    },
+    {
+     "title": "22",
+     "section": "3968a",
+     "description": "",
+     "law_section": "6226(a)"
+    },
+    {
+     "title": "22",
+     "section": "2701a",
+     "description": "new",
+     "law_section": "6231"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "",
+     "law_section": "6303"
+    },
+    {
+     "title": "22",
+     "section": "2684b",
+     "description": "new",
+     "law_section": "6304"
+    },
+    {
+     "title": "22",
+     "section": "10307",
+     "description": "new",
+     "law_section": "6306"
+    },
+    {
+     "title": "22",
+     "section": "2349cc",
+     "description": "new",
+     "law_section": "6307 \"591\""
+    },
+    {
+     "title": "22",
+     "section": "2349cc-1",
+     "description": "new",
+     "law_section": "6307 \"592\""
+    },
+    {
+     "title": "22",
+     "section": "2349cc-2",
+     "description": "new",
+     "law_section": "6307 \"593\""
+    },
+    {
+     "title": "22",
+     "section": "2349cc-3",
+     "description": "new",
+     "law_section": "6307 \"594\""
+    },
+    {
+     "title": "22",
+     "section": "10308",
+     "description": "new",
+     "law_section": "6308"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "",
+     "law_section": "6405(b)"
+    },
+    {
+     "title": "22",
+     "section": "2735a",
+     "description": "new",
+     "law_section": "6407 \"64\""
+    },
+    {
+     "title": "22",
+     "section": "1741",
+     "description": "",
+     "law_section": "6409"
+    },
+    {
+     "title": "22",
+     "section": "6207",
+     "description": "",
+     "law_section": "6602"
+    },
+    {
+     "title": "22",
+     "section": "2465",
+     "description": "new",
+     "law_section": "6604(a) \"115\""
+    },
+    {
+     "title": "22",
+     "section": "2460",
+     "description": "",
+     "law_section": "6604(b)"
+    },
+    {
+     "title": "22",
+     "section": "276c-7",
+     "description": "new",
+     "law_section": "6701"
+    },
+    {
+     "title": "22",
+     "section": "4028",
+     "description": "",
+     "law_section": "6702(a)"
+    },
+    {
+     "title": "22",
+     "section": "2151n",
+     "description": "",
+     "law_section": "6707(a)(2)"
+    },
+    {
+     "title": "47",
+     "section": "906",
+     "description": "",
+     "law_section": "6707(b)(1)(A)"
+    },
+    {
+     "title": "15",
+     "section": "4655",
+     "description": "",
+     "law_section": "6707(b)(1)(B)"
+    },
+    {
+     "title": "22",
+     "section": "8221",
+     "description": "",
+     "law_section": "6707(b)(3)"
+    },
+    {
+     "title": "50",
+     "section": "3383",
+     "description": "",
+     "law_section": "7303"
+    },
+    {
+     "title": "50",
+     "section": "3073a",
+     "description": "",
+     "law_section": "7304"
+    },
+    {
+     "title": "50",
+     "section": "3383",
+     "description": "",
+     "law_section": "7305(a), (b)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3381",
+     "description": "",
+     "law_section": "7305(b)(2)"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "",
+     "law_section": "7307(a)"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "",
+     "law_section": "7308, 7309"
+    },
+    {
+     "title": "50",
+     "section": "3032",
+     "description": "",
+     "law_section": "7310(a)"
+    },
+    {
+     "title": "50",
+     "section": "3034b",
+     "description": "",
+     "law_section": "7310(b)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3049a",
+     "description": "",
+     "law_section": "7311(a)"
+    },
+    {
+     "title": "50",
+     "section": "3113",
+     "description": "",
+     "law_section": "7312"
+    },
+    {
+     "title": "50",
+     "section": "3115",
+     "description": "new",
+     "law_section": "7313 \"516\""
+    },
+    {
+     "title": "50",
+     "section": "3244",
+     "description": "new",
+     "law_section": "7314(a) \"1114\""
+    },
+    {
+     "title": "50",
+     "section": "3235a",
+     "description": "new",
+     "law_section": "7315 \"1105A\""
+    },
+    {
+     "title": "20",
+     "section": "1015d",
+     "description": "",
+     "law_section": "7316(a)"
+    },
+    {
+     "title": "50",
+     "section": "3384",
+     "description": "new",
+     "law_section": "7318"
+    },
+    {
+     "title": "50",
+     "section": "3060",
+     "description": "",
+     "law_section": "7319"
+    },
+    {
+     "title": "5",
+     "section": "11001",
+     "description": "",
+     "law_section": "7327(b)"
+    },
+    {
+     "title": "50",
+     "section": "3227a",
+     "description": "",
+     "law_section": "7327(c)"
+    },
+    {
+     "title": "50",
+     "section": "3368",
+     "description": "",
+     "law_section": "7327(d)"
+    },
+    {
+     "title": "50",
+     "section": "3515",
+     "description": "",
+     "law_section": "7331"
+    },
+    {
+     "title": "50",
+     "section": "3503",
+     "description": "",
+     "law_section": "7332"
+    },
+    {
+     "title": "50",
+     "section": "3385",
+     "description": "new",
+     "law_section": "7334"
+    },
+    {
+     "title": "50",
+     "section": "3531",
+     "description": "new",
+     "law_section": "7339(b) \"30\""
+    },
+    {
+     "title": "50",
+     "section": "3532",
+     "description": "new",
+     "law_section": "7339(c) \"31\""
+    },
+    {
+     "title": "50",
+     "section": "3533",
+     "description": "new",
+     "law_section": "7339(d) \"32\""
+    },
+    {
+     "title": "50",
+     "section": "3373",
+     "description": "",
+     "law_section": "7341"
+    },
+    {
+     "title": "50",
+     "section": "3620",
+     "description": "new",
+     "law_section": "7351 \"22\""
+    },
+    {
+     "title": "50",
+     "section": "3334q",
+     "description": "new",
+     "law_section": "7501"
+    },
+    {
+     "title": "50",
+     "section": "3034c",
+     "description": "new",
+     "law_section": "7502(a) \"103L\""
+    },
+    {
+     "title": "50",
+     "section": "3062",
+     "description": "new",
+     "law_section": "7503(a) \"122\""
+    },
+    {
+     "title": "50",
+     "section": "3334r",
+     "description": "new",
+     "law_section": "7504"
+    },
+    {
+     "title": "50",
+     "section": "3352g",
+     "description": "new",
+     "law_section": "7505"
+    },
+    {
+     "title": "50",
+     "section": "3334s",
+     "description": "new",
+     "law_section": "7507"
+    },
+    {
+     "title": "50",
+     "section": "3334t",
+     "description": "new",
+     "law_section": "7508"
+    },
+    {
+     "title": "50",
+     "section": "3334m",
+     "description": "",
+     "law_section": "7513(a)"
+    },
+    {
+     "title": "50",
+     "section": "3350a",
+     "description": "new",
+     "law_section": "7602"
+    },
+    {
+     "title": "50",
+     "section": "3344a",
+     "description": "new",
+     "law_section": "7603"
+    },
+    {
+     "title": "50",
+     "section": "3355a",
+     "description": "",
+     "law_section": "7604"
+    },
+    {
+     "title": "50",
+     "section": "3352h",
+     "description": "new",
+     "law_section": "7702"
+    },
+    {
+     "title": "50",
+     "section": "3341",
+     "description": "",
+     "law_section": "7702(a)(3)"
+    },
+    {
+     "title": "50",
+     "section": "3341",
+     "description": "",
+     "law_section": "7703(c)"
+    },
+    {
+     "title": "50",
+     "section": "3519b",
+     "description": "",
+     "law_section": "7801, 7802(a)"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "",
+     "law_section": "7901(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3093",
+     "description": "",
+     "law_section": "7901(a)(2)"
+    },
+    {
+     "title": "50",
+     "section": "3164",
+     "description": "",
+     "law_section": "7901(a)(3)"
+    },
+    {
+     "title": "50",
+     "section": "3232a",
+     "description": "",
+     "law_section": "7901(a)(4)"
+    },
+    {
+     "title": "50",
+     "section": "3334l",
+     "description": "",
+     "law_section": "7901(b)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1902",
+     "description": "",
+     "law_section": "7901(c)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1903",
+     "description": "",
+     "law_section": "7901(c)(2)"
+    },
+    {
+     "title": "50",
+     "section": "1908",
+     "description": "",
+     "law_section": "7901(c)(3)"
+    },
+    {
+     "title": "50",
+     "section": "2021",
+     "description": "",
+     "law_section": "7901(d)(1)"
+    },
+    {
+     "title": "50",
+     "section": "2093",
+     "description": "",
+     "law_section": "7901(d)(2)"
+    },
+    {
+     "title": "50",
+     "section": "2111",
+     "description": "",
+     "law_section": "7901(d)(3)"
+    },
+    {
+     "title": "50",
+     "section": "2154",
+     "description": "",
+     "law_section": "7901(d)(4)"
+    },
+    {
+     "title": "50",
+     "section": "3341",
+     "description": "",
+     "law_section": "7901(e)"
+    },
+    {
+     "title": "50",
+     "section": "3361",
+     "description": "",
+     "law_section": "7901(f)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3363",
+     "description": "",
+     "law_section": "7901(f)(2)"
+    },
+    {
+     "title": "50",
+     "section": "3505",
+     "description": "",
+     "law_section": "7901(g)(1)"
+    },
+    {
+     "title": "50",
+     "section": "3507",
+     "description": "",
+     "law_section": "7901(g)(2)"
+    },
+    {
+     "title": "50",
+     "section": "3512",
+     "description": "",
+     "law_section": "7901(g)(3)"
+    },
+    {
+     "title": "50",
+     "section": "3517",
+     "description": "",
+     "law_section": "7901(g)(4)"
+    },
+    {
+     "title": "50",
+     "section": "3519",
+     "description": "",
+     "law_section": "7901(g)(5)"
+    },
+    {
+     "title": "50",
+     "section": "3519a",
+     "description": "",
+     "law_section": "7901(h)"
+    },
+    {
+     "title": "50",
+     "section": "3614",
+     "description": "",
+     "law_section": "7901(i)"
+    },
+    {
+     "title": "50",
+     "section": "3381",
+     "description": "",
+     "law_section": "7901(j)"
+    },
+    {
+     "title": "50",
+     "section": "1881",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881a",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881b",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881c",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881d",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881e",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881f",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "50",
+     "section": "1881g",
+     "description": "",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "nt [tbl]",
+     "law_section": "3"
+    },
+    {
+     "title": "10",
+     "section": "7013",
+     "description": "nt new",
+     "law_section": "112"
+    },
+    {
+     "title": "10",
+     "section": "8062",
+     "description": "nt new",
+     "law_section": "121(a)(2)"
+    },
+    {
+     "title": "10",
+     "section": "9062",
+     "description": "nt new",
+     "law_section": "131(c)"
+    },
+    {
+     "title": "10",
+     "section": "3201",
+     "description": "nt prec new",
+     "law_section": "153"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "nt prec new",
+     "law_section": "154"
+    },
+    {
+     "title": "10",
+     "section": "4841",
+     "description": "nt",
+     "law_section": "216"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt",
+     "law_section": "219"
+    },
+    {
+     "title": "10",
+     "section": "1599g",
+     "description": "nt new",
+     "law_section": "220"
+    },
+    {
+     "title": "10",
+     "section": "4141",
+     "description": "nt prec new",
+     "law_section": "221"
+    },
+    {
+     "title": "10",
+     "section": "4841",
+     "description": "nt new",
+     "law_section": "223"
+    },
+    {
+     "title": "10",
+     "section": "4141",
+     "description": "nt prec new",
+     "law_section": "227(f), (g)"
+    },
+    {
+     "title": "10",
+     "section": "4571",
+     "description": "nt new",
+     "law_section": "228"
+    },
+    {
+     "title": "10",
+     "section": "3601",
+     "description": "nt new",
+     "law_section": "229"
+    },
+    {
+     "title": "10",
+     "section": "9531",
+     "description": "nt prec new",
+     "law_section": "230"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "231"
+    },
+    {
+     "title": "10",
+     "section": "7532",
+     "description": "nt prec new",
+     "law_section": "232"
+    },
+    {
+     "title": "10",
+     "section": "4172",
+     "description": "nt new",
+     "law_section": "242"
+    },
+    {
+     "title": "10",
+     "section": "4172",
+     "description": "nt new",
+     "law_section": "243"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "nt prec new",
+     "law_section": "244"
+    },
+    {
+     "title": "10",
+     "section": "3201",
+     "description": "nt prec new",
+     "law_section": "245"
+    },
+    {
+     "title": "10",
+     "section": "2715",
+     "description": "nt",
+     "law_section": "312(f)(2)"
+    },
+    {
+     "title": "10",
+     "section": "2911",
+     "description": "nt",
+     "law_section": "315"
+    },
+    {
+     "title": "10",
+     "section": "2911",
+     "description": "nt",
+     "law_section": "316(a)"
+    },
+    {
+     "title": "10",
+     "section": "2911",
+     "description": "nt new",
+     "law_section": "316(b)"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "nt prec new",
+     "law_section": "318"
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt prec new",
+     "law_section": "319"
+    },
+    {
+     "title": "10",
+     "section": "2922",
+     "description": "nt prec new",
+     "law_section": "320"
+    },
+    {
+     "title": "10",
+     "section": "2701",
+     "description": "nt new",
+     "law_section": "321(b)"
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt prec",
+     "law_section": "334(a)"
+    },
+    {
+     "title": "10",
+     "section": "2701",
+     "description": "nt",
+     "law_section": "335"
+    },
+    {
+     "title": "10",
+     "section": "2926",
+     "description": "nt new",
+     "law_section": "343(1)(B)"
+    },
+    {
+     "title": "10",
+     "section": "8013",
+     "description": "nt",
+     "law_section": "344(a)"
+    },
+    {
+     "title": "10",
+     "section": "2476",
+     "description": "nt",
+     "law_section": "345"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "346"
+    },
+    {
+     "title": "10",
+     "section": "2229",
+     "description": "nt new",
+     "law_section": "349"
+    },
+    {
+     "title": "10",
+     "section": "8013",
+     "description": "nt new",
+     "law_section": "350(a)"
+    },
+    {
+     "title": "10",
+     "section": "7721",
+     "description": "nt new",
+     "law_section": "366"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "nt new",
+     "law_section": "367"
+    },
+    {
+     "title": "10",
+     "section": "526a",
+     "description": "nt repealed",
+     "law_section": "501(c)"
+    },
+    {
+     "title": "2",
+     "section": "4121",
+     "description": "nt prec new",
+     "law_section": "502"
+    },
+    {
+     "title": "32",
+     "section": "501",
+     "description": "nt repealed",
+     "law_section": "515(c)"
+    },
+    {
+     "title": "10",
+     "section": "661",
+     "description": "nt new",
+     "law_section": "516"
+    },
+    {
+     "title": "10",
+     "section": "1161",
+     "description": "nt prec new",
+     "law_section": "526"
+    },
+    {
+     "title": "10",
+     "section": "1553",
+     "description": "nt new",
+     "law_section": "527"
+    },
+    {
+     "title": "10",
+     "section": "1161",
+     "description": "nt prec new",
+     "law_section": "528"
+    },
+    {
+     "title": "10",
+     "section": "1201",
+     "description": "nt prec new",
+     "law_section": "529"
+    },
+    {
+     "title": "10",
+     "section": "501",
+     "description": "nt prec new",
+     "law_section": "529C"
+    },
+    {
+     "title": "10",
+     "section": "801",
+     "description": "nt",
+     "law_section": "531(c)(2)"
+    },
+    {
+     "title": "10",
+     "section": "816",
+     "description": "nt new",
+     "law_section": "531(e)"
+    },
+    {
+     "title": "10",
+     "section": "867a",
+     "description": "nt new",
+     "law_section": "533(b)"
+    },
+    {
+     "title": "10",
+     "section": "1561",
+     "description": "nt prec",
+     "law_section": "534"
+    },
+    {
+     "title": "10",
+     "section": "501",
+     "description": "nt prec new",
+     "law_section": "545"
+    },
+    {
+     "title": "10",
+     "section": "520",
+     "description": "nt new",
+     "law_section": "546"
+    },
+    {
+     "title": "10",
+     "section": "501",
+     "description": "nt prec new",
+     "law_section": "547"
+    },
+    {
+     "title": "10",
+     "section": "503",
+     "description": "nt new",
+     "law_section": "548"
+    },
+    {
+     "title": "10",
+     "section": "2031",
+     "description": "nt new",
+     "law_section": "553(b)"
+    },
+    {
+     "title": "10",
+     "section": "7442",
+     "description": "nt new",
+     "law_section": "561(d)"
+    },
+    {
+     "title": "10",
+     "section": "7446",
+     "description": "nt new",
+     "law_section": "563"
+    },
+    {
+     "title": "10",
+     "section": "7448",
+     "description": "nt new",
+     "law_section": "564(b), (c)"
+    },
+    {
+     "title": "10",
+     "section": "2001",
+     "description": "nt prec",
+     "law_section": "575"
+    },
+    {
+     "title": "10",
+     "section": "7013",
+     "description": "nt new",
+     "law_section": "577"
+    },
+    {
+     "title": "10",
+     "section": "1791",
+     "description": "nt prec new",
+     "law_section": "585"
+    },
+    {
+     "title": "10",
+     "section": "1792",
+     "description": "nt",
+     "law_section": "586"
+    },
+    {
+     "title": "10",
+     "section": "7271",
+     "description": "nt",
+     "law_section": "593"
+    },
+    {
+     "title": "10",
+     "section": "8013",
+     "description": "nt new",
+     "law_section": "594"
+    },
+    {
+     "title": "10",
+     "section": "12732",
+     "description": "nt",
+     "law_section": "601(d)"
+    },
+    {
+     "title": "10",
+     "section": "711",
+     "description": "nt new",
+     "law_section": "601(e)"
+    },
+    {
+     "title": "37",
+     "section": "357",
+     "description": "nt",
+     "law_section": "612(c)"
+    },
+    {
+     "title": "37",
+     "section": "301",
+     "description": "nt new",
+     "law_section": "614"
+    },
+    {
+     "title": "37",
+     "section": "352",
+     "description": "nt new",
+     "law_section": "615"
+    },
+    {
+     "title": "37",
+     "section": "402b",
+     "description": "nt new",
+     "law_section": "621(b)"
+    },
+    {
+     "title": "37",
+     "section": "1008",
+     "description": "nt new",
+     "law_section": "626(b)"
+    },
+    {
+     "title": "37",
+     "section": "403b",
+     "description": "nt",
+     "law_section": "627"
+    },
+    {
+     "title": "37",
+     "section": "416",
+     "description": "nt",
+     "law_section": "628"
+    },
+    {
+     "title": "10",
+     "section": "1062",
+     "description": "nt new",
+     "law_section": "633(b)"
+    },
+    {
+     "title": "10",
+     "section": "1076d",
+     "description": "nt new",
+     "law_section": "702(b)"
+    },
+    {
+     "title": "10",
+     "section": "1090",
+     "description": "nt new",
+     "law_section": "706"
+    },
+    {
+     "title": "10",
+     "section": "1073a",
+     "description": "nt new",
+     "law_section": "707"
+    },
+    {
+     "title": "10",
+     "section": "1073c",
+     "description": "nt",
+     "law_section": "714(c)"
+    },
+    {
+     "title": "10",
+     "section": "1073",
+     "description": "nt new",
+     "law_section": "715"
+    },
+    {
+     "title": "10",
+     "section": "1071",
+     "description": "nt",
+     "law_section": "721"
+    },
+    {
+     "title": "10",
+     "section": "1074",
+     "description": "nt new",
+     "law_section": "723"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "nt prec new",
+     "law_section": "804"
+    },
+    {
+     "title": "10",
+     "section": "4651",
+     "description": "nt prec new",
+     "law_section": "805"
+    },
+    {
+     "title": "10",
+     "section": "1701",
+     "description": "nt new",
+     "law_section": "806"
+    },
+    {
+     "title": "10",
+     "section": "132",
+     "description": "nt new",
+     "law_section": "807"
+    },
+    {
+     "title": "10",
+     "section": "3791",
+     "description": "nt new",
+     "law_section": "808"
+    },
+    {
+     "title": "10",
+     "section": "3301",
+     "description": "nt prec new",
+     "law_section": "809"
+    },
+    {
+     "title": "10",
+     "section": "4067",
+     "description": "nt new",
+     "law_section": "810"
+    },
+    {
+     "title": "10",
+     "section": "3101",
+     "description": "nt prec new",
+     "law_section": "811"
+    },
+    {
+     "title": "10",
+     "section": "4501",
+     "description": "nt prec new",
+     "law_section": "812"
+    },
+    {
+     "title": "10",
+     "section": "3458",
+     "description": "nt new",
+     "law_section": "813"
+    },
+    {
+     "title": "10",
+     "section": "4022",
+     "description": "nt new",
+     "law_section": "822(b)"
+    },
+    {
+     "title": "10",
+     "section": "4871",
+     "description": "nt prec",
+     "law_section": "823(a)-(c)"
+    },
+    {
+     "title": "10",
+     "section": "4871",
+     "description": "nt prec new",
+     "law_section": "823(d)"
+    },
+    {
+     "title": "46",
+     "section": "50309",
+     "description": "nt new",
+     "law_section": "825"
+    },
+    {
+     "title": "10",
+     "section": "4601",
+     "description": "nt prec new",
+     "law_section": "826"
+    },
+    {
+     "title": "10",
+     "section": "4601",
+     "description": "nt prec new",
+     "law_section": "827"
+    },
+    {
+     "title": "10",
+     "section": "4862",
+     "description": "nt new",
+     "law_section": "832(b)"
+    },
+    {
+     "title": "10",
+     "section": "4863",
+     "description": "nt new",
+     "law_section": "833(b)"
+    },
+    {
+     "title": "10",
+     "section": "4201",
+     "description": "nt prec new",
+     "law_section": "835"
+    },
+    {
+     "title": "10",
+     "section": "3701",
+     "description": "nt prec",
+     "law_section": "841"
+    },
+    {
+     "title": "10",
+     "section": "2341",
+     "description": "nt new",
+     "law_section": "842"
+    },
+    {
+     "title": "10",
+     "section": "3601",
+     "description": "nt new",
+     "law_section": "843"
+    },
+    {
+     "title": "10",
+     "section": "4872",
+     "description": "nt",
+     "law_section": "854"
+    },
+    {
+     "title": "10",
+     "section": "4292",
+     "description": "nt prec",
+     "law_section": "855"
+    },
+    {
+     "title": "10",
+     "section": "3241",
+     "description": "nt prec new",
+     "law_section": "856"
+    },
+    {
+     "title": "15",
+     "section": "18a",
+     "description": "nt new",
+     "law_section": "857"
+    },
+    {
+     "title": "15",
+     "section": "637",
+     "description": "nt new",
+     "law_section": "862(b)"
+    },
+    {
+     "title": "15",
+     "section": "644",
+     "description": "nt new",
+     "law_section": "864"
+    },
+    {
+     "title": "10",
+     "section": "3301",
+     "description": "nt new",
+     "law_section": "865"
+    },
+    {
+     "title": "10",
+     "section": "191",
+     "description": "nt",
+     "law_section": "871"
+    },
+    {
+     "title": "10",
+     "section": "3204",
+     "description": "nt",
+     "law_section": "872"
+    },
+    {
+     "title": "10",
+     "section": "301",
+     "description": "nt new",
+     "law_section": "873"
+    },
+    {
+     "title": "10",
+     "section": "3804",
+     "description": "nt new",
+     "law_section": "874"
+    },
+    {
+     "title": "10",
+     "section": "2481",
+     "description": "nt",
+     "law_section": "901(g)"
+    },
+    {
+     "title": "10",
+     "section": "139a",
+     "description": "nt new",
+     "law_section": "902(b)-(d)"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "nt new",
+     "law_section": "903(b)"
+    },
+    {
+     "title": "10",
+     "section": "131",
+     "description": "nt new",
+     "law_section": "904"
+    },
+    {
+     "title": "10",
+     "section": "138",
+     "description": "nt new",
+     "law_section": "905"
+    },
+    {
+     "title": "10",
+     "section": "1766",
+     "description": "nt new",
+     "law_section": "913(b)(1)"
+    },
+    {
+     "title": "10",
+     "section": "1766",
+     "description": "nt new",
+     "law_section": "913(b)(2)"
+    },
+    {
+     "title": "10",
+     "section": "111",
+     "description": "nt",
+     "law_section": "917"
+    },
+    {
+     "title": "10",
+     "section": "301",
+     "description": "nt new",
+     "law_section": "918"
+    },
+    {
+     "title": "10",
+     "section": "111",
+     "description": "nt new",
+     "law_section": "919"
+    },
+    {
+     "title": "10",
+     "section": "240b",
+     "description": "nt new",
+     "law_section": "920"
+    },
+    {
+     "title": "10",
+     "section": "2222",
+     "description": "nt new",
+     "law_section": "921"
+    },
+    {
+     "title": "10",
+     "section": "240d",
+     "description": "nt new",
+     "law_section": "1004"
+    },
+    {
+     "title": "10",
+     "section": "240a",
+     "description": "nt new",
+     "law_section": "1005"
+    },
+    {
+     "title": "10",
+     "section": "284",
+     "description": "nt new",
+     "law_section": "1013(b)"
+    },
+    {
+     "title": "10",
+     "section": "8661",
+     "description": "nt",
+     "law_section": "1020"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "nt",
+     "law_section": "1044(a)"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "nt",
+     "law_section": "1045"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt",
+     "law_section": "1046"
+    },
+    {
+     "title": "10",
+     "section": "1561",
+     "description": "nt prec new",
+     "law_section": "1049"
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt new",
+     "law_section": "1052"
+    },
+    {
+     "title": "20",
+     "section": "1087e",
+     "description": "nt new",
+     "law_section": "1054(b)"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "nt",
+     "law_section": "1061(c)(3)"
+    },
+    {
+     "title": "10",
+     "section": "394",
+     "description": "nt",
+     "law_section": "1061(d)"
+    },
+    {
+     "title": "10",
+     "section": "240b",
+     "description": "nt",
+     "law_section": "1061(i)"
+    },
+    {
+     "title": "10",
+     "section": "271",
+     "description": "nt",
+     "law_section": "1062"
+    },
+    {
+     "title": "10",
+     "section": "1501",
+     "description": "nt new",
+     "law_section": "1063(b)"
+    },
+    {
+     "title": "10",
+     "section": "993",
+     "description": "nt new",
+     "law_section": "1075"
+    },
+    {
+     "title": "10",
+     "section": "111",
+     "description": "nt",
+     "law_section": "1081"
+    },
+    {
+     "title": "10",
+     "section": "2642",
+     "description": "nt",
+     "law_section": "1082(b)"
+    },
+    {
+     "title": "10",
+     "section": "2642",
+     "description": "nt ed chg",
+     "law_section": ""
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt new",
+     "law_section": "1084"
+    },
+    {
+     "title": "32",
+     "section": "901",
+     "description": "nt new",
+     "law_section": "1086"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt new",
+     "law_section": "1087"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt new",
+     "law_section": "1088"
+    },
+    {
+     "title": "50",
+     "section": "1527",
+     "description": "nt new",
+     "law_section": "1089"
+    },
+    {
+     "title": "15",
+     "section": "313",
+     "description": "nt new",
+     "law_section": "1090"
+    },
+    {
+     "title": "10",
+     "section": "1580",
+     "description": "nt prec new",
+     "law_section": "1101"
+    },
+    {
+     "title": "10",
+     "section": "8101",
+     "description": "nt prec new",
+     "law_section": "1102"
+    },
+    {
+     "title": "10",
+     "section": "1580",
+     "description": "nt prec",
+     "law_section": "1107"
+    },
+    {
+     "title": "10",
+     "section": "1580",
+     "description": "nt prec",
+     "law_section": "1113"
+    },
+    {
+     "title": "29",
+     "section": "2611",
+     "description": "nt new",
+     "law_section": "1114(b)"
+    },
+    {
+     "title": "38",
+     "section": "7425",
+     "description": "nt new",
+     "law_section": "1114(c)"
+    },
+    {
+     "title": "5",
+     "section": "3133",
+     "description": "nt",
+     "law_section": "1115"
+    },
+    {
+     "title": "10",
+     "section": "1580",
+     "description": "nt prec",
+     "law_section": "1116"
+    },
+    {
+     "title": "5",
+     "section": "3393",
+     "description": "nt",
+     "law_section": "1118"
+    },
+    {
+     "title": "5",
+     "section": "3330d",
+     "description": "nt new",
+     "law_section": "1119(c)"
+    },
+    {
+     "title": "5",
+     "section": "3330d",
+     "description": "nt new",
+     "law_section": "1119(d)"
+    },
+    {
+     "title": "10",
+     "section": "2342",
+     "description": "nt",
+     "law_section": "1206"
+    },
+    {
+     "title": "22",
+     "section": "2151",
+     "description": "nt",
+     "law_section": "1207"
+    },
+    {
+     "title": "10",
+     "section": "332",
+     "description": "nt",
+     "law_section": "1208"
+    },
+    {
+     "title": "10",
+     "section": "2731",
+     "description": "nt",
+     "law_section": "1209"
+    },
+    {
+     "title": "10",
+     "section": "346",
+     "description": "nt new",
+     "law_section": "1210"
+    },
+    {
+     "title": "10",
+     "section": "2350a",
+     "description": "nt",
+     "law_section": "1222"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt",
+     "law_section": "1223(a)"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt",
+     "law_section": "1224(a)"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "1224(b)"
+    },
+    {
+     "title": "10",
+     "section": "311",
+     "description": "nt",
+     "law_section": "1226"
+    },
+    {
+     "title": "10",
+     "section": "2001",
+     "description": "nt prec new",
+     "law_section": "1229"
+    },
+    {
+     "title": "22",
+     "section": "2656",
+     "description": "nt new",
+     "law_section": "1231"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "nt",
+     "law_section": "1249"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt new",
+     "law_section": "1250"
+    },
+    {
+     "title": "5",
+     "section": "419",
+     "description": "nt new",
+     "law_section": "1250B(a)-(h)"
+    },
+    {
+     "title": "22",
+     "section": "8606",
+     "description": "nt",
+     "law_section": "1252"
+    },
+    {
+     "title": "22",
+     "section": "8606",
+     "description": "nt",
+     "law_section": "1253"
+    },
+    {
+     "title": "22",
+     "section": "8606",
+     "description": "nt",
+     "law_section": "1254"
+    },
+    {
+     "title": "22",
+     "section": "2321h",
+     "description": "nt",
+     "law_section": "1255(a)(2)"
+    },
+    {
+     "title": "22",
+     "section": "2321h",
+     "description": "nt",
+     "law_section": "1255(d)(2)"
+    },
+    {
+     "title": "22",
+     "section": "2321h",
+     "description": "nt new",
+     "law_section": "1257"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt",
+     "law_section": "1265"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt new",
+     "law_section": "1266"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "nt new",
+     "law_section": "1267"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt",
+     "law_section": "1268"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "nt new",
+     "law_section": "1271"
+    },
+    {
+     "title": "10",
+     "section": "2241",
+     "description": "nt ed chg",
+     "law_section": ""
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt",
+     "law_section": "1302"
+    },
+    {
+     "title": "10",
+     "section": "311",
+     "description": "nt",
+     "law_section": "1303"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "nt new",
+     "law_section": "1304"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "nt new",
+     "law_section": "1305"
+    },
+    {
+     "title": "22",
+     "section": "3351",
+     "description": "nt new",
+     "law_section": "1307"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "nt",
+     "law_section": "1315(a)-(g)(1)"
+    },
+    {
+     "title": "10",
+     "section": "333",
+     "description": "nt new",
+     "law_section": "1316"
+    },
+    {
+     "title": "22",
+     "section": "2778",
+     "description": "nt new",
+     "law_section": "1343(b)"
+    },
+    {
+     "title": "22",
+     "section": "2778",
+     "description": "nt new",
+     "law_section": "1345(b)"
+    },
+    {
+     "title": "22",
+     "section": "10401",
+     "description": "nt new",
+     "law_section": "1351"
+    },
+    {
+     "title": "50",
+     "section": "98d",
+     "description": "nt [tbl]",
+     "law_section": "1412"
+    },
+    {
+     "title": "10",
+     "section": "4811",
+     "description": "nt new",
+     "law_section": "1414"
+    },
+    {
+     "title": "24",
+     "section": "411",
+     "description": "nt new",
+     "law_section": "1421"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt",
+     "law_section": "1502(a)(2)(A)"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt",
+     "law_section": "1502(a)(2)(B)"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt repealed",
+     "law_section": "1502(a)(2)(C)"
+    },
+    {
+     "title": "10",
+     "section": "221",
+     "description": "nt repealed",
+     "law_section": "1502(a)(2)(D)"
+    },
+    {
+     "title": "10",
+     "section": "394",
+     "description": "nt",
+     "law_section": "1502(a)(2)(E)"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt",
+     "law_section": "1502(a)(2)(F)"
+    },
+    {
+     "title": "10",
+     "section": "394",
+     "description": "nt new",
+     "law_section": "1505"
+    },
+    {
+     "title": "10",
+     "section": "167b",
+     "description": "nt new",
+     "law_section": "1506"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1507"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt",
+     "law_section": "1511"
+    },
+    {
+     "title": "10",
+     "section": "499",
+     "description": "nt new",
+     "law_section": "1512"
+    },
+    {
+     "title": "10",
+     "section": "3241",
+     "description": "nt prec new",
+     "law_section": "1513"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1514"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1515"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1516"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1517"
+    },
+    {
+     "title": "22",
+     "section": "3351",
+     "description": "nt new",
+     "law_section": "1518"
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt prec new",
+     "law_section": "1519"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "1521(a)"
+    },
+    {
+     "title": "10",
+     "section": "4061",
+     "description": "nt prec",
+     "law_section": "1521(b)"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt",
+     "law_section": "1522"
+    },
+    {
+     "title": "10",
+     "section": "394",
+     "description": "nt new",
+     "law_section": "1523"
+    },
+    {
+     "title": "10",
+     "section": "2001",
+     "description": "nt prec new",
+     "law_section": "1524"
+    },
+    {
+     "title": "10",
+     "section": "2222",
+     "description": "nt new",
+     "law_section": "1525"
+    },
+    {
+     "title": "10",
+     "section": "4571",
+     "description": "nt new",
+     "law_section": "1526"
+    },
+    {
+     "title": "10",
+     "section": "2223",
+     "description": "nt new",
+     "law_section": "1527"
+    },
+    {
+     "title": "10",
+     "section": "2192c",
+     "description": "nt new",
+     "law_section": "1531(b)"
+    },
+    {
+     "title": "10",
+     "section": "2200",
+     "description": "nt",
+     "law_section": "1531(c)(1)"
+    },
+    {
+     "title": "10",
+     "section": "391",
+     "description": "nt",
+     "law_section": "1531(c)(3)"
+    },
+    {
+     "title": "10",
+     "section": "1599f",
+     "description": "nt",
+     "law_section": "1531(c)(4)"
+    },
+    {
+     "title": "10",
+     "section": "2191",
+     "description": "nt prec",
+     "law_section": "1531(c)(5)"
+    },
+    {
+     "title": "10",
+     "section": "2200",
+     "description": "nt",
+     "law_section": "1531(c)(6)"
+    },
+    {
+     "title": "10",
+     "section": "2200",
+     "description": "nt",
+     "law_section": "1533, 1534"
+    },
+    {
+     "title": "10",
+     "section": "167b",
+     "description": "nt new",
+     "law_section": "1535"
+    },
+    {
+     "title": "10",
+     "section": "7371",
+     "description": "nt prec new",
+     "law_section": "1536"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1537"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt",
+     "law_section": "1541"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "1542"
+    },
+    {
+     "title": "10",
+     "section": "4025",
+     "description": "nt new",
+     "law_section": "1543"
+    },
+    {
+     "title": "10",
+     "section": "4001",
+     "description": "nt new",
+     "law_section": "1544"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1552"
+    },
+    {
+     "title": "10",
+     "section": "503",
+     "description": "nt new",
+     "law_section": "1555"
+    },
+    {
+     "title": "51",
+     "section": "20301",
+     "description": "nt new",
+     "law_section": "1601(b)-(d)"
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "nt",
+     "law_section": "1605"
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "nt ed chg",
+     "law_section": ""
+    },
+    {
+     "title": "10",
+     "section": "9081",
+     "description": "nt new",
+     "law_section": "1606"
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "nt new",
+     "law_section": "1608"
+    },
+    {
+     "title": "10",
+     "section": "2274",
+     "description": "nt new",
+     "law_section": "1609"
+    },
+    {
+     "title": "10",
+     "section": "2276",
+     "description": "nt new",
+     "law_section": "1610"
+    },
+    {
+     "title": "10",
+     "section": "421",
+     "description": "nt prec new",
+     "law_section": "1621"
+    },
+    {
+     "title": "10",
+     "section": "495",
+     "description": "nt",
+     "law_section": "1638"
+    },
+    {
+     "title": "10",
+     "section": "9531",
+     "description": "nt prec new",
+     "law_section": "1639"
+    },
+    {
+     "title": "10",
+     "section": "4421",
+     "description": "nt prec new",
+     "law_section": "1645"
+    },
+    {
+     "title": "10",
+     "section": "495",
+     "description": "nt new",
+     "law_section": "1648"
+    },
+    {
+     "title": "10",
+     "section": "491",
+     "description": "nt new",
+     "law_section": "1649"
+    },
+    {
+     "title": "10",
+     "section": "4205",
+     "description": "nt gen amd",
+     "law_section": "1663"
+    },
+    {
+     "title": "10",
+     "section": "205",
+     "description": "nt new",
+     "law_section": "1667"
+    },
+    {
+     "title": "10",
+     "section": "113",
+     "description": "nt repealed",
+     "law_section": "1682(c)"
+    },
+    {
+     "title": "10",
+     "section": "2271",
+     "description": "nt new",
+     "law_section": "1684"
+    },
+    {
+     "title": "10",
+     "section": "2224",
+     "description": "nt new",
+     "law_section": "1686"
+    },
+    {
+     "title": "50",
+     "section": "3373",
+     "description": "nt new",
+     "law_section": "1687(b), (c)"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "1701"
+    },
+    {
+     "title": "10",
+     "section": "9081",
+     "description": "nt new",
+     "law_section": "1712(b)"
+    },
+    {
+     "title": "10",
+     "section": "20001",
+     "description": "nt new",
+     "law_section": "1731-1737"
+    },
+    {
+     "title": "10",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "1801(b)"
+    },
+    {
+     "title": "10",
+     "section": "2911",
+     "description": "nt",
+     "law_section": "1803"
+    },
+    {
+     "title": "10",
+     "section": "331",
+     "description": "nt new",
+     "law_section": "1808"
+    },
+    {
+     "title": "41",
+     "section": "3901",
+     "description": "nt prec new",
+     "law_section": "1821-1833"
+    },
+    {
+     "title": "44",
+     "section": "2107",
+     "description": "nt new",
+     "law_section": "1841-1843"
+    },
+    {
+     "title": "10",
+     "section": "2805",
+     "description": "nt repealed",
+     "law_section": "2802(e)"
+    },
+    {
+     "title": "10",
+     "section": "2862",
+     "description": "nt new",
+     "law_section": "2806"
+    },
+    {
+     "title": "10",
+     "section": "2802",
+     "description": "nt new",
+     "law_section": "2808"
+    },
+    {
+     "title": "10",
+     "section": "2805",
+     "description": "nt new",
+     "law_section": "2810"
+    },
+    {
+     "title": "10",
+     "section": "2920",
+     "description": "nt new",
+     "law_section": "2811(b)"
+    },
+    {
+     "title": "10",
+     "section": "111",
+     "description": "nt",
+     "law_section": "2821(c)"
+    },
+    {
+     "title": "10",
+     "section": "2871",
+     "description": "nt",
+     "law_section": "2822(c)"
+    },
+    {
+     "title": "10",
+     "section": "2821",
+     "description": "nt new",
+     "law_section": "2824"
+    },
+    {
+     "title": "10",
+     "section": "2890",
+     "description": "nt new",
+     "law_section": "2825"
+    },
+    {
+     "title": "10",
+     "section": "2856",
+     "description": "nt new",
+     "law_section": "2831(b), (c)"
+    },
+    {
+     "title": "10",
+     "section": "2856b",
+     "description": "nt new",
+     "law_section": "2832(b)"
+    },
+    {
+     "title": "10",
+     "section": "2856a",
+     "description": "nt new",
+     "law_section": "2833(a)"
+    },
+    {
+     "title": "10",
+     "section": "2856a",
+     "description": "nt new",
+     "law_section": "2833(d)"
+    },
+    {
+     "title": "10",
+     "section": "2856a",
+     "description": "nt new",
+     "law_section": "2833(f)"
+    },
+    {
+     "title": "10",
+     "section": "2821",
+     "description": "nt new",
+     "law_section": "2835"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "nt prec new",
+     "law_section": "2836"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "nt prec new",
+     "law_section": "2837"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "nt prec new",
+     "law_section": "2838"
+    },
+    {
+     "title": "10",
+     "section": "2871",
+     "description": "nt",
+     "law_section": "2839(d)"
+    },
+    {
+     "title": "10",
+     "section": "2556",
+     "description": "nt",
+     "law_section": "2840"
+    },
+    {
+     "title": "10",
+     "section": "2851",
+     "description": "nt prec new",
+     "law_section": "2841"
+    },
+    {
+     "title": "10",
+     "section": "2661",
+     "description": "nt prec new",
+     "law_section": "2851"
+    },
+    {
+     "title": "10",
+     "section": "2801",
+     "description": "nt new",
+     "law_section": "2853"
+    },
+    {
+     "title": "10",
+     "section": "2802",
+     "description": "nt new",
+     "law_section": "2857"
+    },
+    {
+     "title": "10",
+     "section": "2802",
+     "description": "nt",
+     "law_section": "2871"
+    },
+    {
+     "title": "10",
+     "section": "9771",
+     "description": "nt prec",
+     "law_section": "2872"
+    },
+    {
+     "title": "10",
+     "section": "2821",
+     "description": "nt new",
+     "law_section": "2873"
+    },
+    {
+     "title": "40",
+     "section": "8903",
+     "description": "nt [tbl]",
+     "law_section": "2884"
+    },
+    {
+     "title": "10",
+     "section": "2001",
+     "description": "nt prec new",
+     "law_section": "2886"
+    },
+    {
+     "title": "10",
+     "section": "2684a",
+     "description": "nt new",
+     "law_section": "2887"
+    },
+    {
+     "title": "10",
+     "section": "2576a",
+     "description": "nt new",
+     "law_section": "2890"
+    },
+    {
+     "title": "50",
+     "section": "2453",
+     "description": "nt new",
+     "law_section": "3128"
+    },
+    {
+     "title": "50",
+     "section": "2452",
+     "description": "nt new",
+     "law_section": "3132"
+    },
+    {
+     "title": "50",
+     "section": "2538c",
+     "description": "nt new",
+     "law_section": "3133"
+    },
+    {
+     "title": "46",
+     "section": "50302",
+     "description": "nt",
+     "law_section": "3514(a)(1)(A)(i), (ii)"
+    },
+    {
+     "title": "46",
+     "section": "50302",
+     "description": "nt",
+     "law_section": "3514(a)(1)(B)"
+    },
+    {
+     "title": "46",
+     "section": "50302",
+     "description": "nt repealed",
+     "law_section": "3514(a)(1)(C)"
+    },
+    {
+     "title": "46",
+     "section": "56101",
+     "description": "nt",
+     "law_section": "3514(b)(1)"
+    },
+    {
+     "title": "46",
+     "section": "56101",
+     "description": "nt",
+     "law_section": "3514(b)(2), (3)"
+    },
+    {
+     "title": "46",
+     "section": "55601",
+     "description": "nt new",
+     "law_section": "3521(d)"
+    },
+    {
+     "title": "46",
+     "section": "3306",
+     "description": "nt new",
+     "law_section": "3531(b)"
+    },
+    {
+     "title": "46",
+     "section": "57100",
+     "description": "nt",
+     "law_section": "3532"
+    },
+    {
+     "title": "46",
+     "section": "51301",
+     "description": "nt new",
+     "law_section": "3533(a)"
+    },
+    {
+     "title": "46",
+     "section": "7307",
+     "description": "nt new",
+     "law_section": "3534(j)"
+    },
+    {
+     "title": "46",
+     "section": "57100",
+     "description": "nt new",
+     "law_section": "3535"
+    },
+    {
+     "title": "46",
+     "section": "50114",
+     "description": "nt new",
+     "law_section": "3537"
+    },
+    {
+     "title": "38",
+     "section": "2404",
+     "description": "nt repealed",
+     "law_section": "5002(a)"
+    },
+    {
+     "title": "38",
+     "section": "1101",
+     "description": "nt new",
+     "law_section": "5003"
+    },
+    {
+     "title": "18",
+     "section": "1",
+     "description": "nt new",
+     "law_section": "5102(a)"
+    },
+    {
+     "title": "18",
+     "section": "2423",
+     "description": "nt new",
+     "law_section": "5102(b)"
+    },
+    {
+     "title": "8",
+     "section": "1153",
+     "description": "nt new",
+     "law_section": "5104(a), (b)"
+    },
+    {
+     "title": "8",
+     "section": "1151",
+     "description": "nt",
+     "law_section": "5104(c)"
+    },
+    {
+     "title": "8",
+     "section": "1153",
+     "description": "nt new",
+     "law_section": "5104(d)"
+    },
+    {
+     "title": "44",
+     "section": "101",
+     "description": "nt new",
+     "law_section": "5301"
+    },
+    {
+     "title": "44",
+     "section": "3601",
+     "description": "nt new",
+     "law_section": "5302(a)"
+    },
+    {
+     "title": "44",
+     "section": "3601",
+     "description": "nt",
+     "law_section": "5302(b), (c)"
+    },
+    {
+     "title": "44",
+     "section": "3601",
+     "description": "nt new",
+     "law_section": "5302(d)"
+    },
+    {
+     "title": "22",
+     "section": "10501",
+     "description": "nt new",
+     "law_section": "5401"
+    },
+    {
+     "title": "22",
+     "section": "2656",
+     "description": "nt new",
+     "law_section": "5411"
+    },
+    {
+     "title": "22",
+     "section": "6901",
+     "description": "nt new",
+     "law_section": "5413"
+    },
+    {
+     "title": "42",
+     "section": "7384",
+     "description": "nt new",
+     "law_section": "5501(a)"
+    },
+    {
+     "title": "22",
+     "section": "277d-10",
+     "description": "nt new",
+     "law_section": "5602(b)-(d)"
+    },
+    {
+     "title": "22",
+     "section": "277d-10",
+     "description": "nt new",
+     "law_section": "5602(e)"
+    },
+    {
+     "title": "2",
+     "section": "1801",
+     "description": "nt new",
+     "law_section": "5701"
+    },
+    {
+     "title": "22",
+     "section": "2651",
+     "description": "nt new",
+     "law_section": "6002"
+    },
+    {
+     "title": "22",
+     "section": "211a",
+     "description": "nt new",
+     "law_section": "6101"
+    },
+    {
+     "title": "22",
+     "section": "211a",
+     "description": "nt new",
+     "law_section": "6103"
+    },
+    {
+     "title": "22",
+     "section": "213",
+     "description": "nt new",
+     "law_section": "6106"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6107(b)"
+    },
+    {
+     "title": "22",
+     "section": "213",
+     "description": "nt new",
+     "law_section": "6108"
+    },
+    {
+     "title": "22",
+     "section": "217a",
+     "description": "nt new",
+     "law_section": "6110"
+    },
+    {
+     "title": "22",
+     "section": "213",
+     "description": "nt new",
+     "law_section": "6111"
+    },
+    {
+     "title": "22",
+     "section": "214",
+     "description": "nt new",
+     "law_section": "6112"
+    },
+    {
+     "title": "22",
+     "section": "213",
+     "description": "nt new",
+     "law_section": "6113"
+    },
+    {
+     "title": "22",
+     "section": "211a",
+     "description": "nt new",
+     "law_section": "6114(a)"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6202(c)"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6203(a)"
+    },
+    {
+     "title": "22",
+     "section": "3943",
+     "description": "nt",
+     "law_section": "6204(a)"
+    },
+    {
+     "title": "22",
+     "section": "3943",
+     "description": "nt ed chg",
+     "law_section": ""
+    },
+    {
+     "title": "22",
+     "section": "2736a",
+     "description": "nt new",
+     "law_section": "6213"
+    },
+    {
+     "title": "22",
+     "section": "4084",
+     "description": "nt new",
+     "law_section": "6222(a)"
+    },
+    {
+     "title": "22",
+     "section": "3982",
+     "description": "nt new",
+     "law_section": "6227"
+    },
+    {
+     "title": "5",
+     "section": "5547",
+     "description": "nt new",
+     "law_section": "6232"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6302"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6309"
+    },
+    {
+     "title": "22",
+     "section": "2665",
+     "description": "nt new",
+     "law_section": "6401"
+    },
+    {
+     "title": "22",
+     "section": "4865",
+     "description": "nt new",
+     "law_section": "6404"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6405(a)"
+    },
+    {
+     "title": "22",
+     "section": "5811",
+     "description": "nt new",
+     "law_section": "6406"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6410"
+    },
+    {
+     "title": "22",
+     "section": "9901",
+     "description": "nt new",
+     "law_section": "6503"
+    },
+    {
+     "title": "22",
+     "section": "9901",
+     "description": "nt new",
+     "law_section": "6504"
+    },
+    {
+     "title": "22",
+     "section": "2732",
+     "description": "nt new",
+     "law_section": "6601"
+    },
+    {
+     "title": "22",
+     "section": "2465",
+     "description": "nt new",
+     "law_section": "6604(c)"
+    },
+    {
+     "title": "22",
+     "section": "4028",
+     "description": "nt new",
+     "law_section": "6702(b)"
+    },
+    {
+     "title": "22",
+     "section": "2656",
+     "description": "nt new",
+     "law_section": "6705"
+    },
+    {
+     "title": "22",
+     "section": "2151n",
+     "description": "nt new",
+     "law_section": "6707(a)(1)"
+    },
+    {
+     "title": "19",
+     "section": "2434",
+     "description": "nt",
+     "law_section": "6707(b)(2)"
+    },
+    {
+     "title": "22",
+     "section": "2151n",
+     "description": "nt repealed",
+     "law_section": "6707(b)(4)"
+    },
+    {
+     "title": "22",
+     "section": "8201",
+     "description": "nt new",
+     "law_section": "6709"
+    },
+    {
+     "title": "22",
+     "section": "2651a",
+     "description": "nt new",
+     "law_section": "6710"
+    },
+    {
+     "title": "50",
+     "section": "3003",
+     "description": "nt new",
+     "law_section": "7002"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "nt new",
+     "law_section": "7302"
+    },
+    {
+     "title": "50",
+     "section": "3025",
+     "description": "nt new",
+     "law_section": "7307(b)"
+    },
+    {
+     "title": "50",
+     "section": "3034b",
+     "description": "nt new",
+     "law_section": "7310(b)(2)"
+    },
+    {
+     "title": "20",
+     "section": "1015d",
+     "description": "nt new",
+     "law_section": "7316(b)"
+    },
+    {
+     "title": "28",
+     "section": "532",
+     "description": "nt repealed",
+     "law_section": "7318(b)"
+    },
+    {
+     "title": "50",
+     "section": "3096",
+     "description": "nt new",
+     "law_section": "7320"
+    },
+    {
+     "title": "50",
+     "section": "3367",
+     "description": "nt new",
+     "law_section": "7321(d), (e)"
+    },
+    {
+     "title": "50",
+     "section": "3161",
+     "description": "nt new",
+     "law_section": "7322"
+    },
+    {
+     "title": "6",
+     "section": "121",
+     "description": "nt new",
+     "law_section": "7324"
+    },
+    {
+     "title": "50",
+     "section": "3033",
+     "description": "nt",
+     "law_section": "7327(a)"
+    },
+    {
+     "title": "50",
+     "section": "3531",
+     "description": "nt new",
+     "law_section": "7339(a)"
+    },
+    {
+     "title": "50",
+     "section": "3531",
+     "description": "nt new",
+     "law_section": "7339(e)"
+    },
+    {
+     "title": "44",
+     "section": "3557",
+     "description": "nt",
+     "law_section": "7352"
+    },
+    {
+     "title": "10",
+     "section": "111",
+     "description": "nt new",
+     "law_section": "7353"
+    },
+    {
+     "title": "50",
+     "section": "3025",
+     "description": "nt new",
+     "law_section": "7401"
+    },
+    {
+     "title": "22",
+     "section": "8701",
+     "description": "nt new",
+     "law_section": "7413"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "nt",
+     "law_section": "7502(b)"
+    },
+    {
+     "title": "50",
+     "section": "3062",
+     "description": "nt new",
+     "law_section": "7503(b)"
+    },
+    {
+     "title": "50",
+     "section": "3062",
+     "description": "nt new",
+     "law_section": "7503(c)"
+    },
+    {
+     "title": "50",
+     "section": "3062",
+     "description": "nt new",
+     "law_section": "7503(e)"
+    },
+    {
+     "title": "50",
+     "section": "3062",
+     "description": "nt new",
+     "law_section": "7503(f)"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "nt new",
+     "law_section": "7509"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "nt",
+     "law_section": "7513(b)"
+    },
+    {
+     "title": "50",
+     "section": "3301",
+     "description": "nt new",
+     "law_section": "7601"
+    },
+    {
+     "title": "44",
+     "section": "3501",
+     "description": "nt new",
+     "law_section": "7605"
+    },
+    {
+     "title": "50",
+     "section": "3519b",
+     "description": "nt new",
+     "law_section": "7802(b)"
+    },
+    {
+     "title": "50",
+     "section": "3519b",
+     "description": "nt new",
+     "law_section": "7803"
+    },
+    {
+     "title": "50",
+     "section": "3024",
+     "description": "nt",
+     "law_section": "7901(b)(2)"
+    },
+    {
+     "title": "50",
+     "section": "1902",
+     "description": "nt new",
+     "law_section": "7901(k)"
+    },
+    {
+     "title": "50",
+     "section": "1881",
+     "description": "nt",
+     "law_section": "7902(a)(1)"
+    },
+    {
+     "title": "18",
+     "section": "2511",
+     "description": "nt",
+     "law_section": "7902(a)(2)"
+    },
+    {
+     "title": "50",
+     "section": "1801",
+     "description": "nt",
+     "law_section": "7902(b)"
+    }
+   ],
+   "reason": "839 section(s) changed by this law alone in the window; 2 shared with another law dropped"
+  }
+ ],
+ "hard_cases": [
+  {
+   "pl": "118-7",
+   "reason": "all 1 target sections also changed by another law in the window"
+  },
+  {
+   "pl": "118-34",
+   "reason": "all 25 target sections also changed by another law in the window"
+  }
+ ]
+}
