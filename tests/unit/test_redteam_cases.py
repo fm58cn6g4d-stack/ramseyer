@@ -1,4 +1,4 @@
-"""Regression tests from the red-team review (records/red-team-2026-10.md): billmap's real parse -> resolve ->
+"""Regression tests from the red-team review (records/red-team-2026-10.md): ramseyer's real parse -> resolve ->
 dry-run pipeline on the review's synthetic index (redteam/synthetic.py; placeholder statute text only)."""
 import importlib.util
 import zipfile
@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from billmap.data.index import Index
-from billmap.data.indexer import Indexer
-from billmap.dryrun.predict import run_bill
-from billmap.parse import parse_text
-from billmap.resolve.popular import norm_name
-from billmap.resolve.resolver import Resolver
+from ramseyer.data.index import Index
+from ramseyer.data.indexer import Indexer
+from ramseyer.dryrun.predict import run_bill
+from ramseyer.parse import parse_text
+from ramseyer.resolve.popular import norm_name
+from ramseyer.resolve.resolver import Resolver
 
 _spec = importlib.util.spec_from_file_location("synthetic", Path(__file__).parents[2] / "redteam" / "synthetic.py")
 synthetic = importlib.util.module_from_spec(_spec)

@@ -6,11 +6,11 @@ One command turns a draft into a report folder you can open, and a review loop l
 
 | Command | Does |
 | --- | --- |
-| billmap sync | Fetch and index the current release point; keep prior ones |
-| billmap analyze draft.docx --out report/ | Run the full pipeline |
-| billmap analyze --decisions decisions.json | Re-run applying your review decisions |
-| billmap residue report | Show recurring unfamiliar shapes (tab 9) |
-| billmap serve-mcp | Start the MCP server from tab 2, including an analyze\_draft tool so Claude can run the pipeline |
+| ramseyer sync | Fetch and index the current release point; keep prior ones |
+| ramseyer analyze draft.docx --out report/ | Run the full pipeline |
+| ramseyer analyze --decisions decisions.json | Re-run applying your review decisions |
+| ramseyer residue report | Show recurring unfamiliar shapes (tab 9) |
+| ramseyer serve-mcp | Start the MCP server from tab 2, including an analyze\_draft tool so Claude can run the pipeline |
 
 ## Report folder
 
@@ -27,7 +27,7 @@ One command turns a draft into a report folder you can open, and a review loop l
 
 Each Needs-review item in summary.html shows the source text, the candidates, and accept or reject controls. Because the page is static, choices save in the browser and export as decisions.json; re-running with that file applies them. A small web app is a v2 option.
 
-## Config (billmap.toml)
+## Config (ramseyer.toml)
 
 Release point pin, how many prior release points to keep, cache paths, model names and budgets, the rules file path, and a no-model switch.
 
@@ -37,7 +37,7 @@ Unpublished drafts stay on your machine. The only outbound content is the minima
 
 ## Operations
 
-- A weekly scheduled `billmap sync`
+- A weekly scheduled `ramseyer sync`
 - Every output records tool version, release point and input hash, so any run can be reproduced
 - A README with a 10-minute quickstart and a sample draft built from public enacted-bill text
 

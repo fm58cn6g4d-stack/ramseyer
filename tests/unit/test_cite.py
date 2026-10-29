@@ -1,6 +1,6 @@
 import pytest
 
-from billmap.data import cite
+from ramseyer.data import cite
 
 
 def test_parse_variants():

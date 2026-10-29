@@ -1,6 +1,6 @@
 """Parser targets (M4/M5): references clauses, Acts cited by date or long title, nested Act units, "such Act".
 Drafts are synthetic; Act names and numbers are placeholders."""
-from billmap.parse import parse_text
+from ramseyer.parse import parse_text
 
 
 def targets(draft: str):

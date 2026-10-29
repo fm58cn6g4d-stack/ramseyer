@@ -1,7 +1,7 @@
 """Dry-run engine (M6) on a synthetic section: placeholder statute text, real USLM structure."""
-from billmap.dryrun.engine import Engine, Working, find_all, sentence_case, tidy, title_case
-from billmap.parse import parse_text
-from billmap.parse.grammar import _expand
+from ramseyer.dryrun.engine import Engine, Working, find_all, sentence_case, tidy, title_case
+from ramseyer.parse import parse_text
+from ramseyer.parse.grammar import _expand
 
 NS = "http://xml.house.gov/schemas/uslm/1.0"
 XML = f"""<section xmlns="{NS}" identifier="/us/usc/t99/s1"><num value="1">§ 1.</num><heading> Placeholder</heading>
@@ -153,7 +153,7 @@ def test_replacing_text_that_starts_with_punctuation_keeps_words_apart():
 
 
 def test_self_check_flags_enumerated_text_left_inline_and_unapplied_mentions():
-    from billmap.dryrun.verify import structure_problems, unapplied_mentions
+    from ramseyer.dryrun.verify import structure_problems, unapplied_mentions
     work = Working(XML, "/us/usc/t99/s1", positive_law=True)
     eng = Engine(work)
     ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection (a) by "
@@ -167,7 +167,7 @@ def test_self_check_flags_enumerated_text_left_inline_and_unapplied_mentions():
 
 
 def test_label_order_reads_roman_and_letters():
-    from billmap.dryrun.verify import _in_order
+    from ramseyer.dryrun.verify import _in_order
     assert _in_order(["i", "ii", "iii", "iv", "v"]) and _in_order(["h", "i", "j"]) and _in_order(["1", "2", "10"])
     assert _in_order(["A", "B", "C"]) and not _in_order(["i", "iii", "ii"]) and not _in_order(["b", "a"])
 

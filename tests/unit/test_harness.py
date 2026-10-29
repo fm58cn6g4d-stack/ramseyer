@@ -3,11 +3,11 @@ import zipfile
 
 import pytest
 
-from billmap.data.index import Index
-from billmap.data.indexer import Indexer
-from billmap.oracle import harness
-from billmap.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw
-from billmap.oracle.harness import Prediction
+from ramseyer.data.index import Index
+from ramseyer.data.indexer import Indexer
+from ramseyer.oracle import harness
+from ramseyer.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw
+from ramseyer.oracle.harness import Prediction
 
 NS = "http://xml.house.gov/schemas/uslm/1.0"
 

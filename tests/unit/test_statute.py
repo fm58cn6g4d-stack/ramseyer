@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from billmap.data.indexer import Indexer
-from billmap.statute import StatuteService, call
+from ramseyer.data.indexer import Indexer
+from ramseyer.statute import StatuteService, call
 
 NS = "http://xml.house.gov/schemas/uslm/1.0"
 
@@ -73,7 +73,7 @@ def test_cited_by_includes_refs_to_subunits(svc):
 def test_definitions_scope_and_act_to_code(svc):
     d = svc.definitions("99 U.S.C. 1")["definitions"]
     assert [(x["term"], x["scope_kind"], x["reason"]) for x in d] == [("widget", "chapter", "resolved")]
-    from billmap.resolve.resolver import Resolver
+    from ramseyer.resolve.resolver import Resolver
     svc._resolvers = {"1-2": Resolver(svc.ix, {}, {})}        # offline: no popular names or tables
     a = svc.act_to_code("Pub. L. 150-7", "301(a)")
     assert (a["outcome"], a["cite"], a["verified"]) == ("CODIFIED", "99 U.S.C. 1", False)

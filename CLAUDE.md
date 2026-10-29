@@ -1,6 +1,6 @@
-# billmap: build-session conventions
+# ramseyer: build-session conventions
 
-billmap maps draft bills onto the U.S. Code. The plan is in `docs/` (mirrored from the
+ramseyer maps draft bills onto the U.S. Code. The plan is in `docs/` (mirrored from the
 Build Plan Claude doc; see `docs/README.md`). It is developed on its own branch inside the
 project-2050 repo and is **not merged to main** until Espen says so.
 
@@ -21,15 +21,15 @@ project-2050 repo and is **not merged to main** until Espen says so.
 uv venv -p python3.11 .venv && uv pip install -p .venv/bin/python -e '.[dev]'
 .venv/bin/python -m pytest -q                 # offline unit tests
 .venv/bin/python scripts/probe_sources.py     # M0 gate; writes var/probe.md
-.venv/bin/billmap sync                        # index the current release point (~3 min, 1.6 GB)
+.venv/bin/ramseyer sync                        # index the current release point (~3 min, 1.6 GB)
 .venv/bin/python scripts/m1_gate.py           # M1 gate; writes var/m1_gate.md
 .venv/bin/python scripts/m2_gate.py           # M2 gate; writes var/m2_gate.md
 .venv/bin/python scripts/build_corpus.py      # M3 corpus + oracle index (~15 min, ~7 GB under var/oracle)
 .venv/bin/python scripts/m3_gate.py           # M3 gate; writes var/m3_gate.md
 .venv/bin/python scripts/m4_gate.py           # M4 gate; writes var/m4_gate.md
-.venv/bin/billmap parse draft.txt --out var/ir.json   # parse a draft (drafts stay under var/)
+.venv/bin/ramseyer parse draft.txt --out var/ir.json   # parse a draft (drafts stay under var/)
 .venv/bin/python scripts/m5_gate.py           # M5 gate; writes var/m5_gate.md
-.venv/bin/billmap resolve "Section 317U(b) of the Public Health Service Act (42 U.S.C. 247b-23)"
+.venv/bin/ramseyer resolve "Section 317U(b) of the Public Health Service Act (42 U.S.C. 247b-23)"
 .venv/bin/python scripts/m6_gate.py           # M6 gate; writes var/m6_gate.md (~3 min)
 .venv/bin/python scripts/build_heldout.py     # M6b held-out manifest + index (tests/oracle/heldout.json, var/oracle/heldout.sqlite)
 .venv/bin/python scripts/m6_gate.py --heldout # M6b gate; writes var/m6b_gate.md
@@ -44,14 +44,14 @@ uv venv -p python3.11 .venv && uv pip install -p .venv/bin/python -e '.[dev]'
 .venv/bin/python redteam/synthetic.py [CASE]           # the red team's adversarial cases on a synthetic index
 ```
 
-Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `BILLMAP_CONTACT`.
+Secrets go in `.env` (see `.env.example`): `API_DATA_GOV_KEY`, `RAMSEYER_CONTACT`.
 
 ## Milestone gates
 
 | Milestone | Gate lives in |
 | --- | --- |
 | M0 | `scripts/probe_sources.py` -> `var/probe.md`; result recorded in `records/milestones.md` |
-| M1 | `billmap sync` builds `var/index/billmap.sqlite`; `scripts/m1_gate.py` -> `var/m1_gate.md` |
+| M1 | `ramseyer sync` builds `var/index/ramseyer.sqlite`; `scripts/m1_gate.py` -> `var/m1_gate.md` |
 | M2 | `scripts/m2_gate.py` -> `var/m2_gate.md` |
 | M3 | `scripts/build_corpus.py` builds `tests/oracle/corpus.json` and `var/oracle/oracle.sqlite`; `scripts/m3_gate.py` -> `var/m3_gate.md`, `tests/oracle/baseline.json` |
 | M4 | `scripts/m4_gate.py` -> `var/m4_gate.md`, residue in `var/m4_residue.jsonl`; pattern fixtures from `scripts/harvest_patterns.py` |

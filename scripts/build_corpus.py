@@ -10,12 +10,12 @@ import re
 import sys
 import time
 
-from billmap import config
-from billmap.data import congress
-from billmap.data.http import Fetcher
-from billmap.oracle import store
-from billmap.oracle.candidates import discover, num
-from billmap.oracle.corpus import Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
+from ramseyer import config
+from ramseyer.data import congress
+from ramseyer.data.http import Fetcher
+from ramseyer.oracle import store
+from ramseyer.oracle.candidates import discover, num
+from ramseyer.oracle.corpus import Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
 
 SIZE = 20
 SELECTION = (
@@ -39,7 +39,7 @@ def main() -> int:
     d = discover(f, cfg.olrc_base)
     rps, by_law, cands = d.rps, d.by_law, d.cands
     # Keep laws that changed section text: the pinned index's source credits cite them.
-    from billmap.data.index import Index
+    from ramseyer.data.index import Index
     main_ix = Index(cfg.index_path, cfg.release_pin)
     hard_cases = []
 

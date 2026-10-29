@@ -24,19 +24,19 @@ from functools import lru_cache
 
 from lxml import etree
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.data.index import Index, LookupError_
-from billmap.data.indexer import text_of
-from billmap.dryrun.predict import run_bill
-from billmap.oracle import harness, store
-from billmap.oracle.govinfo_overlay import GovInfoOverlay
-from billmap.oracle.corpus import MANIFEST, Corpus
-from billmap.parse import parse_text
-from billmap.parse.xmltext import render
-from billmap.resolve import popular
-from billmap.resolve.actcode import classification_map
-from billmap.resolve.resolver import Resolver, classification_rows
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index, LookupError_
+from ramseyer.data.indexer import text_of
+from ramseyer.dryrun.predict import run_bill
+from ramseyer.oracle import harness, store
+from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
+from ramseyer.oracle.corpus import MANIFEST, Corpus
+from ramseyer.parse import parse_text
+from ramseyer.parse.xmltext import render
+from ramseyer.resolve import popular
+from ramseyer.resolve.actcode import classification_map
+from ramseyer.resolve.resolver import Resolver, classification_rows
 
 HELDOUT = MANIFEST.with_name("heldout.json")
 HELDOUT_DB = store.ORACLE_DB.with_name("heldout.sqlite")
@@ -148,7 +148,7 @@ def main() -> int:
             statuses[tr.result.status if tr.result else f"unattributed:{tr.resolution.outcome}"] += 1
         return run.predictions
 
-    rep = harness.evaluate(corpus, predictor, "billmap M6", open_index, labels=None)
+    rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None)
     m = rep.metrics
     mism = [o for o in rep.outcomes if o.outcome == "mismatch"]
     # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..." and
@@ -309,7 +309,7 @@ def main() -> int:
                                      "before": r.before_span if r else None, "after": r.after_span if r else None},
                                     ensure_ascii=False) + "\n")
     if not args.law:
-        MANIFEST.with_name(f"{tag}_baseline.json").write_text(json.dumps({"predictor": "billmap M6", "metrics": m}, indent=1) + "\n")
+        MANIFEST.with_name(f"{tag}_baseline.json").write_text(json.dumps({"predictor": "ramseyer M6", "metrics": m}, indent=1) + "\n")
     print("\n".join(lines))
     return 0 if all(ok for _, ok, _ in checks) else 1
 

@@ -14,16 +14,16 @@ import json
 import sys
 import time
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.oracle.corpus import Corpus
-from billmap.parse import parse_text
-from billmap.parse.grammar import CONFIDENCE_THRESHOLD
-from billmap.dryrun.engine import nested_to_double
-from billmap.parse.grammar import PH_RE, lift_quotes
-from billmap.parse.ops import op_starts
-from billmap.parse.segment import walk
-from billmap.parse.xmltext import render, xml_counts
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.oracle.corpus import Corpus
+from ramseyer.parse import parse_text
+from ramseyer.parse.grammar import CONFIDENCE_THRESHOLD
+from ramseyer.dryrun.engine import nested_to_double
+from ramseyer.parse.grammar import PH_RE, lift_quotes
+from ramseyer.parse.ops import op_starts
+from ramseyer.parse.segment import walk
+from ramseyer.parse.xmltext import render, xml_counts
 
 
 def main() -> int:

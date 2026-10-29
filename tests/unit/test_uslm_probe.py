@@ -2,7 +2,7 @@ import zipfile
 
 import pytest
 
-from billmap.data import uslm
+from ramseyer.data import uslm
 
 # Synthetic structure only: placeholder text, no statute content.
 DOC = """<?xml version="1.0" encoding="UTF-8"?>

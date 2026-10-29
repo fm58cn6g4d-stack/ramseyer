@@ -1,5 +1,5 @@
 """Drafting-error detection benchmark (red team, question 1). Known-good instructions from the tuning corpus (applied
-CLEAN, section text equal to R_after) are copied with one realistic drafting error each; billmap should no longer
+CLEAN, section text equal to R_after) are copied with one realistic drafting error each; ramseyer should no longer
 call the result CLEAN. Errors are injected into the parsed instruction, so this measures the resolver and the
 dry-run engine, not the parser. Writes var/m6c_errors.md.
 Run:  .venv/bin/python scripts/m6c_error_benchmark.py [--sample 300] [--seed 20261029] [--set tuning]
@@ -13,17 +13,17 @@ import re
 import sys
 import time
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.data.index import Index, LookupError_
-from billmap.dryrun.predict import run_bill
-from billmap.oracle import harness, store
-from billmap.oracle.corpus import MANIFEST, Corpus
-from billmap.parse import parse_text
-from billmap.parse.xmltext import render
-from billmap.resolve import popular
-from billmap.resolve.actcode import classification_map
-from billmap.resolve.resolver import Resolver, classification_rows
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index, LookupError_
+from ramseyer.dryrun.predict import run_bill
+from ramseyer.oracle import harness, store
+from ramseyer.oracle.corpus import MANIFEST, Corpus
+from ramseyer.parse import parse_text
+from ramseyer.parse.xmltext import render
+from ramseyer.resolve import popular
+from ramseyer.resolve.actcode import classification_map
+from ramseyer.resolve.resolver import Resolver, classification_rows
 
 TEXT_OPS = ("STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH")
 

@@ -38,7 +38,7 @@ The data layer turns official, free files into one local SQLite index that every
 
 ## Incremental updates
 
-A weekly `billmap sync` checks the release point label, reloads only titles marked updated, and keeps prior release points according to billmap.toml.
+A weekly `ramseyer sync` checks the release point label, reloads only titles marked updated, and keeps prior release points according to ramseyer.toml.
 
 ## Invariants (tests)
 

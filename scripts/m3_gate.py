@@ -12,11 +12,11 @@ from functools import lru_cache
 
 from lxml import etree
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.oracle import harness, store
-from billmap.oracle.corpus import MANIFEST, Corpus, sha256
-from billmap.oracle.harness import Prediction
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.oracle import harness, store
+from ramseyer.oracle.corpus import MANIFEST, Corpus, sha256
+from ramseyer.oracle.harness import Prediction
 
 BASELINE = MANIFEST.with_name("baseline.json")
 

@@ -16,18 +16,18 @@ import random
 import sys
 import time
 
-from billmap import config
-from billmap.data.cite import normalize_section
-from billmap.data.http import Fetcher
-from billmap.data.index import Index, LookupError_
-from billmap.oracle import harness, store
-from billmap.oracle.corpus import Corpus
-from billmap.parse import parse_text
-from billmap.parse.xmltext import render
-from billmap.resolve import popular
-from billmap.resolve.actcode import classification_map
-from billmap.resolve.cites import designation, parse_designation, prefix_match
-from billmap.resolve.resolver import Resolver, classification_rows
+from ramseyer import config
+from ramseyer.data.cite import normalize_section
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index, LookupError_
+from ramseyer.oracle import harness, store
+from ramseyer.oracle.corpus import Corpus
+from ramseyer.parse import parse_text
+from ramseyer.parse.xmltext import render
+from ramseyer.resolve import popular
+from ramseyer.resolve.actcode import classification_map
+from ramseyer.resolve.cites import designation, parse_designation, prefix_match
+from ramseyer.resolve.resolver import Resolver, classification_rows
 
 
 def truth_for(law, bill_loc: str) -> set[tuple[str, str, bool]]:

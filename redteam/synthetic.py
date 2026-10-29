@@ -1,4 +1,4 @@
-"""Red-team harness: run billmap's real parse -> resolve -> dry-run pipeline (dryrun.predict.run_bill) on drafts
+"""Red-team harness: run ramseyer's real parse -> resolve -> dry-run pipeline (dryrun.predict.run_bill) on drafts
 against a small synthetic index. All statute text here is synthetic placeholder text; the USLM structure follows
 the real release XML. The index is built under var/redteam/ (gitignored).
 
@@ -11,12 +11,12 @@ import sys
 import zipfile
 from pathlib import Path
 
-from billmap.data.index import Index
-from billmap.data.indexer import Indexer
-from billmap.dryrun.predict import run_bill
-from billmap.parse import parse_text
-from billmap.resolve.popular import norm_name
-from billmap.resolve.resolver import Resolver
+from ramseyer.data.index import Index
+from ramseyer.data.indexer import Indexer
+from ramseyer.dryrun.predict import run_bill
+from ramseyer.parse import parse_text
+from ramseyer.resolve.popular import norm_name
+from ramseyer.resolve.resolver import Resolver
 
 NS = "http://xml.house.gov/schemas/uslm/1.0"
 VAR = Path(__file__).resolve().parents[1] / "var" / "redteam"

@@ -1,5 +1,5 @@
 [project]
-name = "billmap"
+name = "ramseyer"
 version = "0.0.1"
 description = "Map draft bills onto the U.S. Code, checked against an OLRC release point."
 requires-python = ">=3.11"
@@ -16,7 +16,7 @@ dependencies = [
 dev = ["pytest>=8"]
 
 [project.scripts]
-billmap = "billmap.cli:app"
+ramseyer = "ramseyer.cli:app"
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -1,8 +1,8 @@
 """Resolver helpers and decision rules, on synthetic inputs (placeholder text, invented numbers)."""
-from billmap.parse.grammar import Ctx, apply_head, lift_quotes
-from billmap.resolve.actcode import _date_key, _enacting_segment
-from billmap.resolve.cites import designation, parse_designation, parse_parenthetical, prefix_match
-from billmap.resolve.popular import identity, norm_name, parse
+from ramseyer.parse.grammar import Ctx, apply_head, lift_quotes
+from ramseyer.resolve.actcode import _date_key, _enacting_segment
+from ramseyer.resolve.cites import designation, parse_designation, parse_parenthetical, prefix_match
+from ramseyer.resolve.popular import identity, norm_name, parse
 
 
 def test_parenthetical_forms():

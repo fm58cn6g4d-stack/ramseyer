@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from billmap.parse import parse_text
-from billmap.parse.grammar import Ctx, apply_head, lift_quotes
-from billmap.parse.segment import walk
+from ramseyer.parse import parse_text
+from ramseyer.parse.grammar import Ctx, apply_head, lift_quotes
+from ramseyer.parse.segment import walk
 
 PATTERNS = sorted((Path(__file__).parents[1] / "parse" / "patterns").glob("P*.json"))
 

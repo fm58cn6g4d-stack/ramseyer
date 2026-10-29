@@ -62,7 +62,7 @@ Run the build in Claude Code (desktop or web) in a fresh git repo on your own ma
 Export each tab to Markdown into a docs/ folder in the new repo, then paste this into the build session:
 
 ```text
-You are building billmap, a tool that maps draft bills onto the U.S. Code. The full plan is in docs/ (exported from the Build Plan doc). Read docs/00-build-plan.md first, then each component file as you reach its milestone.
+You are building ramseyer, a tool that maps draft bills onto the U.S. Code. The full plan is in docs/ (exported from the Build Plan doc). Read docs/00-build-plan.md first, then each component file as you reach its milestone.
 
 Rules:
 1. Work one milestone at a time (M0 to M12). At the end of each, run its acceptance gate, commit, and report measured results before starting the next.

@@ -1,5 +1,5 @@
-from billmap.data.http import redact
-from billmap import config
+from ramseyer.data.http import redact
+from ramseyer import config
 
 
 def test_redact_strips_api_key():
@@ -8,11 +8,11 @@ def test_redact_strips_api_key():
 
 
 def test_config_reads_pin_and_env(tmp_path, monkeypatch):
-    (tmp_path / "billmap.toml").write_text((config.ROOT / "billmap.toml").read_text())
-    (tmp_path / ".env").write_text("API_DATA_GOV_KEY=k\nBILLMAP_CONTACT=ops@example.org\n")
+    (tmp_path / "ramseyer.toml").write_text((config.ROOT / "ramseyer.toml").read_text())
+    (tmp_path / ".env").write_text("API_DATA_GOV_KEY=k\nRAMSEYER_CONTACT=ops@example.org\n")
     monkeypatch.delenv("API_DATA_GOV_KEY", raising=False)
-    monkeypatch.delenv("BILLMAP_CONTACT", raising=False)
+    monkeypatch.delenv("RAMSEYER_CONTACT", raising=False)
     cfg = config.load(tmp_path)
     assert cfg.release_pin == "119-134"
     assert cfg.api_key == "k"
-    assert cfg.user_agent == "billmap/0.0.1 (+ops@example.org)"
+    assert cfg.user_agent == "ramseyer/0.0.1 (+ops@example.org)"

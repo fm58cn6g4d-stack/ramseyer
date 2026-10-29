@@ -1,7 +1,7 @@
 """Build a GovInfo held-out set: the laws enacted between two of GovInfo's annual U.S. Code editions, checked
 against them (default: laws of 2024 on the 2023 and 2024 editions).
 
-The editions are OLRC's XHTML (one granule per section), converted to USLM by src/billmap/data/xhtml_uslm.py
+The editions are OLRC's XHTML (one granule per section), converted to USLM by src/ramseyer/data/xhtml_uslm.py
 (measured by scripts/xhtml_check.py) and loaded with the standard indexer as release points "usc-<year>" in
 var/oracle/govinfo[_<year>].sqlite. A law is in the window when it was enacted after the first edition's
 "current through" date and on or before the second's, per title. A target row is usable when no other law in the
@@ -20,14 +20,14 @@ import zipfile
 from datetime import date
 from urllib.parse import urljoin
 
-from billmap import config
-from billmap.data import congress, govinfo, olrc
-from billmap.data.cite import normalize_section
-from billmap.data.http import Fetcher
-from billmap.data.index import Index
-from billmap.data.indexer import Indexer
-from billmap.data.xhtml_uslm import chunks, title_document
-from billmap.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
+from ramseyer import config
+from ramseyer.data import congress, govinfo, olrc
+from ramseyer.data.cite import normalize_section
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index
+from ramseyer.data.indexer import Indexer
+from ramseyer.data.xhtml_uslm import chunks, title_document
+from ramseyer.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
 
 TABLES = {2021: "tbl117pl_1st.html", 2022: "tbl117pl_2nd.html", 2023: "tbl118pl_1st.html",
           2024: "tbl118pl_2nd.html", 2025: "tbl119pl_1st.html"}

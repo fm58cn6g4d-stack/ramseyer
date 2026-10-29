@@ -27,7 +27,7 @@ Unit tests: 10 passed (`pytest -q`), all offline.
 **Gate** (from `docs/00-build-plan.md`): all titles for one release point indexed; 100 random
 sections round-trip cite, section and text with no nulls. Plus the invariants in `docs/02-data-layer.md`.
 
-**Run:** `.venv/bin/billmap sync` (3.3 min) then `.venv/bin/python scripts/m1_gate.py` (about 30 s); output in `var/m1_gate.md`.
+**Run:** `.venv/bin/ramseyer sync` (3.3 min) then `.venv/bin/python scripts/m1_gate.py` (about 30 s); output in `var/m1_gate.md`.
 
 | Check | Result | Measured |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Index size: **1.57 GB** (SQLite with FTS5). Rows: 783k nodes, 1.31M refs, 253k n
 - **Status notes:** a subunit whose content is an OLRC note such as "[Repealed.]" (12 U.S.C. 1464(g)) now has
   that status (107 subunits); the note stays out of `text_plain`.
 
-`billmap sync` now cross-checks every section against the XHTML edition and stores each difference
+`ramseyer sync` now cross-checks every section against the XHTML edition and stores each difference
 in `edition_diffs`, so later stages can warn when the two OLRC editions disagree on a section:
 
 | Result at 119-134 | Sections |
@@ -71,16 +71,16 @@ and footnote markers present in only one edition. The index keeps the XML as its
 cited_by and search work over MCP and match uscode.house.gov on 50 spot checks; cited_by equals the
 inverted refs table.
 
-**Built:** `billmap.statute.StatuteService`, with 11 tools: resolve_cite, get_section (operative, plain or
+**Built:** `ramseyer.statute.StatuteService`, with 11 tools: resolve_cite, get_section (operative, plain or
 xml; as_of), get_pincite, cross_refs, cited_by, definitions, neighbors, search (FTS5 BM25), changes,
-coverage, act_to_code. Thin wrappers expose them as an MCP server over stdio (`billmap serve-mcp`,
-MCP SDK 2.3) and as a CLI (`billmap statute <tool> k=v`). Sample client configs are in `README.md`.
+coverage, act_to_code. Thin wrappers expose them as an MCP server over stdio (`ramseyer serve-mcp`,
+MCP SDK 2.3) and as a CLI (`ramseyer statute <tool> k=v`). Sample client configs are in `README.md`.
 
 **Run:** `.venv/bin/python scripts/m2_gate.py` (52 s with a cold page cache); output in `var/m2_gate.md`.
 
 | Check | Result | Measured |
 | --- | --- | --- |
-| Tools work over MCP (stdio client spawns `billmap serve-mcp`) | PASS | 11 tools listed; 7 calls, each with release point 119-134; the deliberate bad cite returns a structured not_found |
+| Tools work over MCP (stdio client spawns `ramseyer serve-mcp`) | PASS | 11 tools listed; 7 calls, each with release point 119-134; the deliberate bad cite returns a structured not_found |
 | 50 spot checks against uscode.house.gov (seed 20261028) | PASS | Headings 50/50 equal; text 25 equal, 25 rendering-only, 0 content; every page stamped "through Public Law 119-134" |
 | cited_by equals the inverted refs table | PASS | 600 comparisons over 300 cited sections (text only, and with notes); 0 mismatches |
 | Every response carries the release point; only documented error codes | PASS | 14 calls; codes seen: ambiguous, not_found, out_of_range |
@@ -123,7 +123,7 @@ It can grow once older release points are reachable.
 which is Act text held in a note under 50 U.S.C. 1881. OLRC classifies them to nine sections each, but no
 section text or source credit changes. They are recorded in `hard_cases`, to come back for notes and Act text (M5/M6).
 
-**Harness** (`billmap.oracle.harness`): a predictor returns, per law, a status and the predicted
+**Harness** (`ramseyer.oracle.harness`): a predictor returns, per law, a status and the predicted
 `text_plain` for each section. The harness compares the prediction with the section at R_after
 (whitespace and quote style ignored), and reports match, mismatch, missed, extra and unexpected_change. It
 also reports the tab-11 metrics: false-clean rate, deterministic coverage and model tokens, with mismatches split
@@ -156,7 +156,7 @@ Found along the way:
 instructions in the source equals the number in the IR plus UNPARSED; deterministic coverage is measured
 and logged.
 
-**Built** (`billmap.parse`):
+**Built** (`ramseyer.parse`):
 - **Normalization** keeps an offset map back to the original text.
 - **Segmentation** builds a tree of divisions, titles, sections and enumerated units. Quoted blocks attach
   to the unit that introduces them. Ambiguous enumerators (`(i)`, `(I)`) are settled by reading ahead to
@@ -167,7 +167,7 @@ and logged.
   instruction per scope.
 - **IR:** a pydantic model with the fields in tab 3, plus `through`, `unit` and `redesignate`.
 - **Accounting:** every instruction the parser cannot match becomes UNPARSED, with its source text and a reason.
-- **CLI:** `billmap parse draft.txt --out ir.json`.
+- **CLI:** `ramseyer parse draft.txt --out ir.json`.
 
 **How the gate is measured honestly:** the parser reads only plain text rendered from each enrolled bill's XML,
 as a staffer would paste it. The "count in" comes from the XML markup itself (`xmltext.xml_counts`): its
@@ -216,7 +216,7 @@ exposed five harvest regexes that had mislabeled correct parses, now corrected.
 **Gate** (from `docs/00-build-plan.md` and `docs/05-resolver.md`): zero silent mis-resolutions on 50 Act-section
 references drawn from the oracle corpus, checked against the next release point.
 
-**Built** (`billmap.resolve`):
+**Built** (`ramseyer.resolve`):
 - **Code targets:** a section and unit, a chapter or subchapter chain, or a whole title resolves to its node.
   Duplicate section numbers, missing units and repealed sections are reported, never guessed.
 - **Act targets:** the Act is identified from the drafted public law, the OLRC Popular Name table, or both.
@@ -231,7 +231,7 @@ references drawn from the oracle corpus, checked against the next release point.
   flagged "unverified: parenthetical only".
 - **Outcomes:** CODIFIED, NOTE, SPLIT, UNCODIFIED and UNKNOWN, each with evidence, flags and a reason.
   Positive-law status is stamped on every result.
-- **Wiring:** the statute server's `act_to_code` tool now uses the resolver, and `billmap resolve "<target as drafted>"` runs it from the command line.
+- **Wiring:** the statute server's `act_to_code` tool now uses the resolver, and `ramseyer resolve "<target as drafted>"` runs it from the command line.
 
 **Decision (mine, recorded):** layer 1 ignores positive-law titles. There, a section's first credit names the
 law that inserted it (10 U.S.C. 1791 credits Pub. L. 104-106 § 568), not an Act section codified there. Using
@@ -279,10 +279,10 @@ SPLIT 5; Code targets CODIFIED 1,131, UNKNOWN 7; public-law targets NOTE 15, UNC
 
 ## M6: Dry-run engine (2026-10-28)
 
-**Built:** `src/billmap/dryrun/engine.py` applies parsed instructions, in bill order, to a working copy of
+**Built:** `src/ramseyer/dryrun/engine.py` applies parsed instructions, in bill order, to a working copy of
 each section's USLM XML at the law's R_before release point. Text edits run on a linear view of the scope's
 text mapped back to the XML text nodes. New units are built as USLM elements from the quoted block.
-`src/billmap/dryrun/predict.py` runs parse, resolve and dry-run for a bill, one prediction per Code section
+`src/ramseyer/dryrun/predict.py` runs parse, resolve and dry-run for a bill, one prediction per Code section
 reached, including new sections. Every instruction gets a status: CLEAN, WARN, AMBIGUOUS, NOT_FOUND,
 TARGET_MISSING, CONFLICT or UNPARSED, and the section takes the worst.
 
@@ -398,7 +398,7 @@ Testing tab rev 2) and mirrored in `docs/`:
 - **Order:** M8 (comparative print) moves ahead of M7 (Word ingestion), which waits for real drafts.
 
 **Held-out set:**
-- **Files:** `scripts/build_heldout.py` writes `tests/oracle/heldout.json` and builds `var/oracle/heldout.sqlite`. Selection is shared with the tuning corpus through `src/billmap/oracle/candidates.py`; the tuning manifest is reproduced byte for byte.
+- **Files:** `scripts/build_heldout.py` writes `tests/oracle/heldout.json` and builds `var/oracle/heldout.sqlite`. Selection is shared with the tuning corpus through `src/ramseyer/oracle/candidates.py`; the tuning manifest is reproduced byte for byte.
 - **Contents:** every eligible law not in the tuning corpus, which is 10 laws with 10 target sections (titles 15, 16, 29, 30, 34 and 42).
   - **Set aside:** 119-84 and 119-87, which amend Act text kept in notes.
   - **Small by necessity:** OLRC publishes no USLM snapshot before 119-73not60 (January 2026). The other laws in the window either touch one or two sections or were already used for tuning.
@@ -435,7 +435,7 @@ target is **35% of held-out targets**, with substantive false-clean under 1%.
 
 **Source and conversion:**
 - **Editions:** GovInfo's 2023 edition (current through 2024-01-03) and 2024 edition (current through 2025-01-06), one XHTML granule per section, fetched with the api.data.gov key.
-- **Converter:** `src/billmap/data/xhtml_uslm.py` turns OLRC's XHTML into USLM, and the standard indexer loads it as release points `usc-2023` and `usc-2024` in `var/oracle/govinfo.sqlite`.
+- **Converter:** `src/ramseyer/data/xhtml_uslm.py` turns OLRC's XHTML into USLM, and the standard indexer loads it as release points `usc-2023` and `usc-2024` in `var/oracle/govinfo.sqlite`.
   - **Measured:** on the current release (119-134), 57,660 of 58,696 sections (98.2%) convert with text and unit paths equal to the USLM index (`scripts/xhtml_check.py`).
   - **Conventions found:** recorded in `records/verify-first.md`.
 - **Laws:** 118th-Congress laws enacted between the two editions' dates (per title), using the sections each law alone changed in that window. That gives 92 laws and 1,312 targets (`tests/oracle/heldout_govinfo.json`). 11 laws are set aside with reasons: every target section was shared with another law, or no enrolled XML exists.
@@ -526,7 +526,7 @@ target is **35% of held-out targets**, with substantive false-clean under 1%.
 - **New sections:** a section numbered in a positive-law title is predicted by its number when the unit it is added to does not resolve (WARN). Example: "Subtitle VII of chapter 20" for the Code's subchapter VII.
 - **"this Act":** a struck "this Act" that the Code prints as "this chapter" (or subchapter, part, title) is found in that form (WARN).
 
-**Self-checks (`src/billmap/dryrun/verify.py`):** independent of R_after. They lower a CLEAN section to WARN when:
+**Self-checks (`src/ramseyer/dryrun/verify.py`):** independent of R_after. They lower a CLEAN section to WARN when:
 - inserted text still holds an enumerator and heading inline ("c. Application reviews.—");
 - unit labels are out of order or duplicated;
 - an unapplied instruction names the section;
@@ -545,7 +545,7 @@ They fire 5 times across all sets. One lowered a test-half false-clean (42 U.S.C
 
 ## M6c: Red-team response (2026-10-29)
 
-**Why this section exists:** an independent session reviewed billmap at commit 94712c0 without consulting the builder.
+**Why this section exists:** an independent session reviewed ramseyer at commit 94712c0 without consulting the builder.
 - **Report:** `records/red-team-2026-10.md`.
 - **Reproducing cases:** `redteam/synthetic.py`.
 - **Finding:** CLEAN meant "applied literally", not "verified".
@@ -582,7 +582,7 @@ They fire 5 times across all sets. One lowered a test-half false-clean (42 U.S.C
 ### Measurement rebuilt (F5, F6, F15)
 
 **F6, wrong-section edits:**
-- The GovInfo sets now fetch, on demand, any section billmap reaches outside the answer key (`src/billmap/oracle/govinfo_overlay.py`, cached).
+- The GovInfo sets now fetch, on demand, any section ramseyer reaches outside the answer key (`src/ramseyer/oracle/govinfo_overlay.py`, cached).
 - CLEAN predictions on sections no law in the window touched are graded against R_after and count as false-cleans when they differ.
 - **Result:** 1 such CLEAN, right. The other 32 sit on sections other laws in the window also changed, so they are reported as not gradable. Predicting through all laws in the window is the remaining step.
 - The first, unfiltered count (28 of 33 "wrong") was an artefact of those shared sections.
@@ -617,7 +617,7 @@ They fire 5 times across all sets. One lowered a test-half false-clean (42 U.S.C
 
 **Method:**
 - Instructions known to be right on the tuning corpus are copied with one injected drafting error each.
-- Detected means billmap no longer calls the edit CLEAN.
+- Detected means ramseyer no longer calls the edit CLEAN.
 - Errors are injected after parsing, so this measures the resolver and engine.
 - 300 sampled; 288 controls stay CLEAN alone.
 

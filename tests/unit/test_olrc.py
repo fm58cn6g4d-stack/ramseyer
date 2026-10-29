@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from billmap.data import olrc
+from ramseyer.data import olrc
 
 FIX = Path(__file__).parent / "fixtures"
 BASE = "https://uscode.house.gov/download.html"

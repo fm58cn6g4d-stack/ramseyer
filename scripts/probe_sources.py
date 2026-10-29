@@ -13,9 +13,9 @@ from urllib.parse import urljoin
 
 from lxml import etree, html as lhtml
 
-from billmap import config
-from billmap.data import congress, govinfo, olrc, uslm
-from billmap.data.http import Fetcher
+from ramseyer import config
+from ramseyer.data import congress, govinfo, olrc, uslm
+from ramseyer.data.http import Fetcher
 
 SMALL_TITLE = "04"
 BILL = (119, "hr", 1)  # enacted; has an enrolled XML text version

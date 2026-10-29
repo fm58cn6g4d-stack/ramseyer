@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import re
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.oracle.corpus import Corpus
-from billmap.parse import parse_text
-from billmap.parse.xmltext import render
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.oracle.corpus import Corpus
+from ramseyer.parse import parse_text
+from ramseyer.parse.xmltext import render
 
 OUT = config.ROOT / "tests" / "parse" / "patterns"
 N_POS, N_NEG = 6, 4

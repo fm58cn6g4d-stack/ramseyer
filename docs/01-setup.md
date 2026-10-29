@@ -5,9 +5,9 @@ Build in Claude Code in a new git repo on your own machine, and prove the enviro
 ## Repo layout
 
 ```text
-billmap/
+ramseyer/
   docs/                 exported tabs of this doc
-  src/billmap/
+  src/ramseyer/
     data/               fetch, index, schema
     parse/              ingest, segment, grammar, ir
     resolve/            cites, actcode
@@ -20,7 +20,7 @@ billmap/
   tests/                unit, corpus, oracle
   var/                  gitignored: downloads, sqlite, caches, residue_log.jsonl
   CLAUDE.md             conventions for the build session
-  billmap.toml          release point pin, budgets, models, rules path
+  ramseyer.toml          release point pin, budgets, models, rules path
 ```
 
 ## Stack

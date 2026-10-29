@@ -1,6 +1,6 @@
 """Segmenter and parser on synthetic drafts (placeholder wording; not statute text)."""
-from billmap.parse import parse_text
-from billmap.parse.segment import walk
+from ramseyer.parse import parse_text
+from ramseyer.parse.segment import walk
 
 L, R = "“", "”"
 

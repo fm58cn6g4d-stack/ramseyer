@@ -12,13 +12,13 @@ import re
 import sys
 import time
 
-from billmap import config
-from billmap.data import congress
-from billmap.data.http import Fetcher
-from billmap.data.index import Index
-from billmap.oracle import store
-from billmap.oracle.candidates import discover, num
-from billmap.oracle.corpus import Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
+from ramseyer import config
+from ramseyer.data import congress
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index
+from ramseyer.oracle import store
+from ramseyer.oracle.candidates import discover, num
+from ramseyer.oracle.corpus import Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
 
 HELDOUT = config.ROOT / "tests" / "oracle" / "heldout.json"
 HELDOUT_DB = config.VAR / "oracle" / "heldout.sqlite"

@@ -2,7 +2,7 @@
 Each is a drafting form seen in enacted laws; the statute words here are placeholders."""
 import pytest
 
-from billmap.parse import parse_text
+from ramseyer.parse import parse_text
 
 HEAD = "SEC. 2. X.\nSection 1 of title 99, United States Code, is amended—\n"
 

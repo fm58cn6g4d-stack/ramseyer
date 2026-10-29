@@ -1,6 +1,6 @@
-"""Measure the XHTML -> USLM converter (src/billmap/data/xhtml_uslm.py) against the XML edition of the same release.
+"""Measure the XHTML -> USLM converter (src/ramseyer/data/xhtml_uslm.py) against the XML edition of the same release.
 
-For every section of the pinned release point's XHTML edition (htm_uscAll zip, cached by `billmap sync`), the
+For every section of the pinned release point's XHTML edition (htm_uscAll zip, cached by `ramseyer sync`), the
 converted section is compared with the indexed USLM section on
   - text: text_of() of both, after the harness normalization;
   - structure: the set of unit paths ("(a)(1)(B)") below the section.
@@ -20,13 +20,13 @@ from pathlib import Path
 
 from lxml import etree
 
-from billmap import config
-from billmap.data.http import Fetcher
-from billmap.data.index import Index
-from billmap.data.indexer import SUB, local, text_of
-from billmap.data.xhtml import rendering_normalized
-from billmap.data.xhtml_uslm import chunks, section_element
-from billmap.oracle.harness import normalize
+from ramseyer import config
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index
+from ramseyer.data.indexer import SUB, local, text_of
+from ramseyer.data.xhtml import rendering_normalized
+from ramseyer.data.xhtml_uslm import chunks, section_element
+from ramseyer.oracle.harness import normalize
 
 FILE_RE = re.compile(r"^PRELIMusc(\d+)([aA]?)\.htm$")
 

@@ -11,11 +11,11 @@ import random
 import sys
 import time
 
-from billmap import config
-from billmap.data import cite as citemod
-from billmap.data.http import Fetcher
-from billmap.data.index import Index, LookupError_
-from billmap.data.xhtml import body_words, comparable, first_number, listing as xhtml_listing
+from ramseyer import config
+from ramseyer.data import cite as citemod
+from ramseyer.data.http import Fetcher
+from ramseyer.data.index import Index, LookupError_
+from ramseyer.data.xhtml import body_words, comparable, first_number, listing as xhtml_listing
 
 
 def main() -> int:
@@ -123,7 +123,7 @@ def main() -> int:
                    f"{len(ids):,} sections; {pop_fail} failed; {pop_amb} ambiguous (duplicate numbers); "
                    f"{pop_nocite} by identifier (no U.S.C. citation form)"))
 
-    # Whole population, as a measurement: XML text vs XHTML edition (stored by `billmap sync`).
+    # Whole population, as a measurement: XML text vs XHTML edition (stored by `ramseyer sync`).
     ed = dict(db.execute("SELECT kind, count(*) FROM edition_diffs WHERE rp=? GROUP BY 1", (rp,)).fetchall())
     content = [f"{r[0]}: {r[1][:140]}" for r in db.execute(
         "SELECT n.identifier, d.detail FROM edition_diffs d JOIN nodes n ON n.id=d.node_id "

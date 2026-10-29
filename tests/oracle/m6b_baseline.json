@@ -1,5 +1,5 @@
 {
- "predictor": "billmap M6",
+ "predictor": "ramseyer M6",
  "metrics": {
   "targets": 10,
   "matched": 2,

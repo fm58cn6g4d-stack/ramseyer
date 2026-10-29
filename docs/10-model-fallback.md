@@ -21,7 +21,7 @@ The model is called only for residue, its output is a proposal, and a proposal c
 
 - Default: Claude Sonnet 5.5, low to medium effort
 - Escalate to Claude Opus 5.5 at high effort only after two failed verifications
-- Per-bill token and dollar caps in billmap.toml; hitting a cap stops model calls and marks the rest NEEDS\_HUMAN
+- Per-bill token and dollar caps in ramseyer.toml; hitting a cap stops model calls and marks the rest NEEDS\_HUMAN
 - Identical shapes are clustered and sent as one call per cluster
 - Results are cached by a hash of the normalized item, the target text hash and the release point, so nothing is called twice
 - --no-model disables all calls, and the first model call in a session asks for confirmation because drafts are unpublished
@@ -32,7 +32,7 @@ var/residue\_log.jsonl holds one line per item: timestamp, bill hash, shape\_has
 
 ## Promotion workflow
 
-`billmap residue report` lists shapes by frequency. When a shape has appeared at least 3 times and at least 90 percent of its model proposals verified, the tool drafts a grammar rule and test fixtures from the logged items. You review and merge, and CI blocks any rule that lowers accuracy on the corpus.
+`ramseyer residue report` lists shapes by frequency. When a shape has appeared at least 3 times and at least 90 percent of its model proposals verified, the tool drafts a grammar rule and test fixtures from the logged items. You review and merge, and CI blocks any rule that lowers accuracy on the corpus.
 
 ## Metrics tracked per run
 

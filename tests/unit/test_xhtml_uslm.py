@@ -1,6 +1,6 @@
 """XHTML -> USLM converter on synthetic section markup (structure as OLRC prints it; placeholder text)."""
-from billmap.data.indexer import text_of
-from billmap.data.xhtml_uslm import NS, chunks, section_element
+from ramseyer.data.indexer import text_of
+from ramseyer.data.xhtml_uslm import NS, chunks, section_element
 
 HEAD = ('<!-- documentid:99_1 --><!-- itempath:/990/CHAPTER 1/Sec. 1 -->'
         '<!-- field-start:head --><h3 class="section-head">&sect;1. Placeholder rule</h3><!-- field-end:head -->')

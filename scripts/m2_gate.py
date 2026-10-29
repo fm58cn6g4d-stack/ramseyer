@@ -18,10 +18,10 @@ import time
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from billmap import config
-from billmap.data import xhtml
-from billmap.data.http import Fetcher
-from billmap.statute import TOOLS, StatuteService, call
+from ramseyer import config
+from ramseyer.data import xhtml
+from ramseyer.data.http import Fetcher
+from ramseyer.statute import TOOLS, StatuteService, call
 
 MCP_CALLS = [
     ("resolve_cite", {"citation": "49 U.S.C. 24101(a)"}),
@@ -35,7 +35,7 @@ MCP_CALLS = [
 
 
 async def mcp_round_trip(cfg) -> tuple[list[str], list[tuple[str, dict]]]:
-    params = StdioServerParameters(command=str(config.ROOT / ".venv/bin/billmap"), args=["serve-mcp"],
+    params = StdioServerParameters(command=str(config.ROOT / ".venv/bin/ramseyer"), args=["serve-mcp"],
                                    cwd=str(config.ROOT))
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
