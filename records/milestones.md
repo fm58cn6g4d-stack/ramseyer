@@ -542,3 +542,106 @@ They fire 5 times across all sets. One lowered a test-half false-clean (42 U.S.C
 - **WARN mismatches:** OLRC's editorial choices in inserted text ("this Act" -> "this chapter", proper-noun case in headings, Act-section translations on one witness).
 
 **Open (for Espen):** substantive false-clean on unseen laws is now 1.51% (test half), against the 1% target. Confident answers stand at 38.9% on the same half, against the 35% target.
+
+## M6c: Red-team response (2026-10-29)
+
+**Why this section exists:** an independent session reviewed billmap at commit 94712c0 without consulting the builder.
+- **Report:** `records/red-team-2026-10.md`.
+- **Reproducing cases:** `redteam/synthetic.py`.
+- **Finding:** CLEAN meant "applied literally", not "verified".
+- **What Espen chose:** fix the critical findings first, then rebuild the measurement and add a drafting-error benchmark. M8 waits.
+- **Regression tests:** every finding below has one, in `tests/unit/test_redteam_cases.py` and `tests/unit/test_grammar_forms.py`. 283 unit tests pass.
+
+| Finding | What changed |
+| --- | --- |
+| F1: ordinals read as "each" | The `nth` group is separate from "each place". An explicit "the first place" is `nth:1`; the default "first" means none was given. |
+| F2: chapter- and title-wide edits dropped | Applied section by section to every baseline section of the unit that contains the words (WARN). This happens only when the instruction names no narrower place of its own and says "each place it appears" or names the unit. Otherwise NOT_EXECUTED with the reason. A first version fanned "In subsection (a)(2) of such section 710a" out over 264 sections; the narrower-place rule and "such section 710a" parsing fixed it. |
+| F3: Act-wide edits | Applied to the sections the Code credits to the Act (WARN). Act-wide or listed repeals that are not executed (including "(1) The Atomic Energy Defense Act (50 U.S.C. 2501 et seq.)") lower every section of that Act to WARN. |
+| F4: unknown verbs vanish | "deleting", "replacing … with", "substituting … for" and the imperatives (strike, insert, add, redesignate) are read as the usual verbs and flagged; they stay WARN. "… shall be applied by substituting …" is a rule of application, not an amendment: NOT_EXECUTED (four M5 "silent wrongs" came from this before the rule). Units that say "is amended" or sit under an "… is—" head with no known verb are UNPARSED. **94 items under "is—" heads (e.g. "(1) transferred to the end of section 2810") had been invisible to both the parser and the M4 counter.** |
+| F4: independent counter | M4 now also checks that every quotation after the first verb of an amendatory unit is used by an instruction. This is independent of the verb list. Of the 127 unused found first, 109 were fixed in the grammar or were head names; 18 remain, all in units already reported UNPARSED or low-confidence. |
+| F7: delayed amendments not dry-run | Dry-run on a copy. The predicted text stays unamended, as OLRC does, but a missing quote is reported (NOT_FOUND etc.). |
+| F8: "$1,000" inside "$1,000,000" | Number boundaries (comma or period plus digit). STALE_BASELINE implemented: on NOT_FOUND, earlier release points are searched and named. |
+| F9: sentence splitter | Abbreviation-aware ("U.S.", "Pub.", "No.", initials). A sentence-numbered edit on a unit that has subunits is AMBIGUOUS. A miss inside a qualified part is reported as such, not as CONFLICT. "in the paragraph defining the term “X”" is a locator (it had put a sentence edit at the section's second sentence). |
+| F10: one witness | Targets resolved on source credits alone, or on the drafted parenthetical alone, are capped at WARN. |
+| F11: structure | A replacement must carry the replaced label. An added label must not duplicate an existing one and must follow its predecessor. After a redesignation, references in the section to the old labels are flagged. |
+| F12: labels keyed per section | Each label stores its reason and hashes of the predicted and R_after texts. It expires when either changes. All 8 were re-checked against their documented reasons before restamping. |
+| F13: known-bad source text | Sections with XML/XHTML content differences are not CLEAN. |
+| F14: no status | Every instruction gets a terminal status: NOT_EXECUTED with the reason for notes, uncodified or unresolved targets, and unsupported unit edits. The M6 gate checks "instructions in = instructions with a status" on every set: 0 missing. |
+| Rule 3 | Every prediction carries its release point. |
+
+**More forms found by the independent quote check:**
+- strikes anchored on neighbouring words ("striking “or” after “X”", "the period after “21”");
+- "both places" and "at each place";
+- a location between the quote and "and inserting";
+- "through the period", "through the end of the paragraph" and "through “B”";
+- inline quotes after "the following:";
+- "striking the second sentence and inserting";
+- a replacement ending ":" that introduces a quoted block;
+- "In subsection (a)" with a capital "In".
+
+### Measurement rebuilt (F5, F6, F15)
+
+**F6, wrong-section edits:**
+- The GovInfo sets now fetch, on demand, any section billmap reaches outside the answer key (`src/billmap/oracle/govinfo_overlay.py`, cached).
+- CLEAN predictions on sections no law in the window touched are graded against R_after and count as false-cleans when they differ.
+- **Result:** 1 such CLEAN, right. The other 32 sit on sections other laws in the window also changed, so they are reported as not gradable. Predicting through all laws in the window is the remaining step.
+- The first, unfiltered count (28 of 33 "wrong") was an artefact of those shared sections.
+
+**F15, resolving against the Code before each law** (`--resolve-before`, tuning corpus):
+- With the current code, 364 CLEAN, 363 right, against 363 of 363 with the pinned index.
+- The one difference is 14 U.S.C. 319: R_after has the section with no text (moved by a law outside the bill).
+- That run first found 2 more errors: Atomic Energy Defense Act sections in title 50, amended CLEAN while the same bill repeals the Act. Fixed: unexecuted Act repeals lower the Act's sections (F3 row above).
+
+**F5, the test half and a sealed set:**
+- The GovInfo test half has been looked at repeatedly, so it is no longer clean.
+- A **sealed set** was built after all the fixes above: the 2023 laws on GovInfo's 2022 and 2023 editions; 14 laws, 729 target sections.
+- Its manifest was committed (dc91387) before its one measurement, on that commit. Its cases have not been inspected.
+- The gate reports every set per law and by stratum, with Wilson intervals.
+
+| Set (same code) | Matched | CLEAN share | Substantive false-clean | 95% interval |
+| --- | --- | --- | --- | --- |
+| Tuning corpus (in-sample) | 565 | 28.0% | 0 of 363 | 0%–1.0% |
+| GovInfo 2024, dev half (in-sample) | 182 | 25.7% | 0 of 118 | 0%–3.2% |
+| GovInfo 2024, test half (looked at; no longer clean) | 409 | 35.8% | 5 of 306 | 0.7%–3.8% |
+| **Sealed 2023 set: all** | 326 | **33.2%** | **5 of 242 (2.07%)** | **0.9%–4.7%** |
+| Sealed: FY2024 NDAA (118-31) | — | — | 5 of 206 (2.43%) | 1.0%–5.6% |
+| Sealed: the other 13 laws | — | — | 0 of 36 | 0%–9.6% |
+
+**Reading the numbers:**
+- On unseen law, about 2% of confident answers are wrong in substance (plausibly 1%–5%).
+- The errors cluster in the large defense authorization bills.
+- The non-NDAA samples are too small to say more than "no errors seen".
+- The 1% target is not met.
+
+### Drafting-error detection benchmark (`scripts/m6c_error_benchmark.py`)
+
+**Method:**
+- Instructions known to be right on the tuning corpus are copied with one injected drafting error each.
+- Detected means billmap no longer calls the edit CLEAN.
+- Errors are injected after parsing, so this measures the resolver and engine.
+- 300 sampled; 288 controls stay CLEAN alone.
+
+| Injected error | Cases | Detected (not CLEAN) | Rate | Statuses given |
+| --- | --- | --- | --- | --- |
+| neighbouring section number | 158 | 141 | 89.2% | TARGET_MISSING 98, NOT_FOUND 35, WARN 5, AMBIGUOUS 3 |
+| ordinal that does not exist (“the second place it appears”) | 180 | 171 | 95.0% | NOT_FOUND 171 |
+| replacement block with the wrong label | 12 | 12 | 100.0% | WARN 12 |
+| stale amount (a shorter number that the current one starts with) | 17 | 17 | 100.0% | NOT_FOUND 17 |
+| stale quote (one word or number changed) | 184 | 184 | 100.0% | NOT_FOUND 184 |
+| wrong unit label in the location | 221 | 197 | 89.1% | NOT_FOUND 94, TARGET_MISSING 92, WARN 6, CONFLICT 4, AMBIGUOUS 1 |
+| all | 772 | 722 | 93.5% | |
+
+
+**What the misses are:**
+- **Unit operations** (strike, replace or redesignate "subsection (c)") aimed at a neighbouring section that also has that unit. No text witness exists for these.
+- **Punctuation anchors.**
+- **Ordinals:** some "misses" are real second occurrences.
+
+The sequence check on added labels (F11) cost nothing on the tuning set but did not move this benchmark: its misses are not additions.
+
+**Open:**
+- **Still above target:** the false-clean target is not met on the sealed set (2.07%).
+- **Remaining structural limits:**
+  - wrong-section unit operations (above);
+  - sections changed by several laws in a window (ungradable until laws are chained);
+  - the parser is measured on enrolled XML only (red team F16: degraded and introduced-version text is next).
