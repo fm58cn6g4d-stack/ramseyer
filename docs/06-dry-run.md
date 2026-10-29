@@ -45,3 +45,29 @@ Status, before span, after span, match count, 200 characters of surrounding evid
 - Batch by section and cache section trees
 - Property tests: applying and then reversing an edit reproduces the original; mutating a quote produces NOT\_FOUND
 - The oracle test in tab 11 is the main acceptance gate
+
+## Failure categories and the Act-text cross-check (added Oct 29, 2026)
+
+Every non-CLEAN result also says why the amendment could not be carried out, and each instruction is checked against the Act's own text as well as the Code.
+
+**Four reasons (M6d).** These are the House Comparative Print Suite's notification categories:
+
+1. an error in drafting (typo, wrong citation);
+2. an error in the current-law data;
+3. an error in the system (an unsupported instruction);
+4. the amendment has already been executed into current law.
+
+The fourth is new to ramseyer. Today a struck text that is gone, with the inserted text already present, is reported NOT\_FOUND. Add an ALREADY\_EXECUTED status and test it on oracle laws whose before release point already carries the change.
+
+**Act text in Code notes (M6e).** 583 of about 3,400 tuning instructions (17%) amend Act text quoted in a note (363) or uncodified text (220), and are NOT\_EXECUTED today. Dry-run the 363 note cases against the note's quoted text and grade them against the next release's note. M8a covers uncodified Acts that have a compilation.
+
+**GPO as a second reader (M6e).** For enacted laws, GPO's USLM tags each amending verb (`amendingAction`) and each Code citation (`ref`). Compare that reading with ramseyer's parse instruction by instruction; a disagreement lowers CLEAN to WARN. The tagging is verb-level only and has known errors, so it is a witness, not an answer key.
+
+**Act and Code cross-check (M8a).** Run each instruction against both sources and compare where it lands:
+
+| Quote found in the Act | Quote found in the Code | Reading |
+| --- | --- | --- |
+| Yes, same effect | Yes, same effect | Strongest result ramseyer can give |
+| Yes | No | OLRC's editorial form differs from the Act; report both |
+| No | No | Drafting error or a stale draft |
+| No | Yes | Compilation out of date or the draft targets Code form; report with both currency dates |
