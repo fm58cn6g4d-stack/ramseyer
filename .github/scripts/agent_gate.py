@@ -310,11 +310,13 @@ def same_changes(old, new):
 
 
 def review_items(comments, reviews):
-    """Issue comments and formal PR reviews as review inputs. A dismissed review is withdrawn and does not count."""
+    """Issue comments and formal PR reviews as review inputs. A dismissed approval is withdrawn and does not count; a
+    dismissed changes-requested still blocks, since a block stands until the same reviewer approves."""
     items = [{"body": c.get("body"), "created_at": c["created_at"], "user": c["user"]["login"],
               "app": (c.get("performed_via_github_app") or {}).get("slug")} for c in comments]
     for r in reviews:
-        if r.get("body") and (r.get("state") or "").upper() != "DISMISSED":
+        dismissed = (r.get("state") or "").upper() == "DISMISSED"
+        if r.get("body") and not (dismissed and (parse_review(r["body"]) or ("",))[0] == "approve"):
             items.append({"body": r["body"], "created_at": r.get("submitted_at") or "", "user": r["user"]["login"],
                           "app": (r.get("performed_via_github_app") or {}).get("slug")})
     return items

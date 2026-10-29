@@ -26,7 +26,8 @@ file to match.
    ```
 
    Use `Agent-Review: changes-requested` to block. A block stands until the same reviewer
-   approves. A review of an older head does not count, unless the only later change is a merge
+   approves, even if the GitHub review is dismissed. Dismissing an approving GitHub review
+   withdraws that approval. A review of an older head does not count, unless the only later change is a merge
    of main.
 6. The gate merges the PR when its tier allows (below) and every required check passes:
    `rebuild-and-tests`, `merge-tier` and `agent-review`.
