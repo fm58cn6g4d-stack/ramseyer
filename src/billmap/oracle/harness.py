@@ -21,7 +21,7 @@ from billmap.oracle.corpus import Corpus, CorpusLaw
 
 Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "STALE_BASELINE", "CONFLICT",
                  "UNPARSED"]
-Stage = Literal["parser", "resolver", "engine", "verify", "editorial", "unclassified"]   # verify: a self-check
+Stage = Literal["parser", "resolver", "engine", "verify", "editorial", "unclassified", "ungradable"]
 LABELS = Path(__file__).resolve().parents[3] / "tests" / "oracle" / "labels.json"
 QUOTES = str.maketrans({"“": '"', "”": '"', "‘": "'", "’": "'"})
 
@@ -43,6 +43,7 @@ class SectionOutcome(BaseModel):
     status: str | None
     stage: str | None
     detail: str = ""
+    after_differs: bool | None = None   # off-target predictions: does the predicted text differ from R_after?
 
 
 class Report(BaseModel):
@@ -154,8 +155,11 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
             at, _ = section_text(after, ident)
             bt, _ = section_text(before, ident)
             kind = "extra" if normalize(p.text) == normalize(bt) == normalize(at) else "unexpected_change"
+            differs = None if at is None and p.text is not None else normalize(p.text) != normalize(at)
             outcomes.append(SectionOutcome(pl=law.pl, identifier=ident, outcome=kind, status=p.status, stage=p.stage,
-                                           detail="not classified to this law"))
+                                           detail="not classified to this law" + (
+                                               "; " + first_difference(p.text, at) if differs else ""),
+                                           after_differs=differs))
             counts[kind] += 1
         by_law[law.pl] = dict(counts)
     graded = [o for o in outcomes if o.outcome in ("match", "mismatch")]
@@ -174,6 +178,10 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "clean": len(clean),
         "false_clean": len(false_clean),
         "false_clean_rate": round(len(false_clean) / len(clean), 4) if clean else 0.0,
+        # CLEAN on a section the law is not classified to: right only if the text equals R_after (red team F6).
+        "clean_off_target": sum(o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN" for o in outcomes),
+        "clean_off_target_wrong": sum(o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
+                                      and o.after_differs is not False for o in outcomes),
         "deterministic_coverage": round(deterministic / predicted_n, 4) if predicted_n else 0.0,
         "model_tokens": tokens,
     }

@@ -1,11 +1,12 @@
-"""Build the M6b GovInfo held-out set: laws of 2024 checked against GovInfo's 2023 and 2024 U.S. Code editions.
+"""Build a GovInfo held-out set: the laws enacted between two of GovInfo's annual U.S. Code editions, checked
+against them (default: laws of 2024 on the 2023 and 2024 editions).
 
 The editions are OLRC's XHTML (one granule per section), converted to USLM by src/billmap/data/xhtml_uslm.py
-(measured by scripts/xhtml_check.py) and loaded with the standard indexer as release points "usc-2023" and
-"usc-2024" in var/oracle/govinfo.sqlite. A law is in the window when it was enacted after the 2023 edition's
-"current through" date and on or before the 2024 edition's, per title. A target row is usable when no other law
-in the window touches the same section. Writes tests/oracle/heldout_govinfo.json.
-Run:  .venv/bin/python scripts/build_govinfo_heldout.py [--titles 49] [--limit-laws N]
+(measured by scripts/xhtml_check.py) and loaded with the standard indexer as release points "usc-<year>" in
+var/oracle/govinfo[_<year>].sqlite. A law is in the window when it was enacted after the first edition's
+"current through" date and on or before the second's, per title. A target row is usable when no other law in the
+window touches the same section. Writes tests/oracle/heldout_govinfo[_<year>].json and the touched-sections list.
+Run:  .venv/bin/python scripts/build_govinfo_heldout.py [--editions 2022 2023] [--titles 49] [--limit-laws N]
 """
 from __future__ import annotations
 
@@ -28,15 +29,21 @@ from billmap.data.indexer import Indexer
 from billmap.data.xhtml_uslm import chunks, title_document
 from billmap.oracle.corpus import ClassifiedRow, Corpus, CorpusLaw, ReleasePointRef, sha256, title_sort_key
 
-MANIFEST = config.ROOT / "tests" / "oracle" / "heldout_govinfo.json"
-DB = config.VAR / "oracle" / "govinfo.sqlite"
-EDITIONS = (2023, 2024)
-LABEL = {y: f"usc-{y}" for y in EDITIONS}
+TABLES = {2021: "tbl117pl_1st.html", 2022: "tbl117pl_2nd.html", 2023: "tbl118pl_1st.html",
+          2024: "tbl118pl_2nd.html", 2025: "tbl119pl_1st.html"}
+
+
+def paths(editions: tuple[int, int]):
+    """Manifest, touched-sections list and index for a pair of editions; (2023, 2024) keeps the original names."""
+    suffix = "" if editions == (2023, 2024) else f"_{editions[1]}"
+    manifest = config.ROOT / "tests" / "oracle" / f"heldout_govinfo{suffix}.json"
+    return (manifest, manifest.with_name(f"heldout_govinfo{suffix}_touched.json"),
+            config.VAR / "oracle" / f"govinfo{suffix}.sqlite")
 SELECTION = (
-    "Held out (GovInfo): public laws of the 118th Congress enacted after the 2023 U.S. Code edition's "
-    "'current through' date and on or before the 2024 edition's (per title, read from the editions), with the "
-    "sections each changes alone in that window (classification rows, notes excluded). Text is GovInfo's "
-    "per-section XHTML, converted to USLM (98.2% exact on the 119-134 release, scripts/xhtml_check.py)."
+    "Held out (GovInfo): public laws enacted after the {a} U.S. Code edition's 'current through' date and on or "
+    "before the {b} edition's (per title, read from the editions), with the sections each changes alone in that "
+    "window (classification rows, notes excluded). Text is GovInfo's per-section XHTML, converted to USLM (98.2% "
+    "exact on the 119-134 release, scripts/xhtml_check.py)."
 )
 
 
@@ -48,7 +55,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--titles", nargs="*", help="limit to these Code titles")
     ap.add_argument("--limit-laws", type=int, default=0)
+    ap.add_argument("--touched-only", action="store_true", help="write the touched-sections list and stop")
+    ap.add_argument("--editions", nargs=2, type=int, default=[2023, 2024], help="the before and after editions")
     args = ap.parse_args()
+    EDITIONS = tuple(args.editions)
+    LABEL = {y: f"usc-{y}" for y in EDITIONS}
+    MANIFEST, TOUCHED, DB = paths(EDITIONS)
     cfg = config.load()
     f = Fetcher(cfg)
     pinned = Index(cfg.index_path, cfg.release_pin)
@@ -56,7 +68,7 @@ def main() -> int:
                                                 (pinned.rp_id,))}
 
     rows = []
-    for t in ("tbl118pl_1st.html", "tbl118pl_2nd.html"):
+    for t in sorted({TABLES[y] for y in (EDITIONS[0], EDITIONS[1], EDITIONS[1] + 1) if y in TABLES}):
         rows += olrc.parse_classification_table(f.get(urljoin(cfg.olrc_base, f"classification/{t}")).text())
     titles = sorted({r.title for r in rows if not r.title.startswith("A") and re.fullmatch(r"\d+a?", r.title)
                      and (not args.titles or r.title in args.titles)}, key=title_sort_key)
@@ -75,11 +87,11 @@ def main() -> int:
             ct = govinfo.current_through(govinfo.uscode_section_htm(f, y, t, first)) if first else None
             if ct:
                 through[(y, t)] = ymd(ct)
-    print("current through:", {f"{t}": (str(through.get((2023, t))), str(through.get((2024, t)))) for t in titles
-                               if (2023, t) in through}, file=sys.stderr)
+    print("current through:", {f"{t}": (str(through.get((EDITIONS[0], t))), str(through.get((EDITIONS[1], t))))
+                               for t in titles if (EDITIONS[0], t) in through}, file=sys.stderr)
 
     def in_window(r) -> bool:
-        lo, hi = through.get((2023, r.title)), through.get((2024, r.title))
+        lo, hi = through.get((EDITIONS[0], r.title)), through.get((EDITIONS[1], r.title))
         return bool(lo and hi and r.enacted and lo < date.fromisoformat(r.enacted) <= hi)
 
     win = [r for r in rows if r.title in titles and in_window(r)]
@@ -87,11 +99,17 @@ def main() -> int:
     for r in win:
         if "nt" not in r.description.split():
             touch[(r.title, normalize_section(r.section))].add(r.public_law)
+    # Every section any law in the window changed: an off-target prediction on one of these cannot be graded against
+    # the next edition, which carries the other laws' changes too (scripts/m6_gate.py, red team F6).
+    TOUCHED.write_text(json.dumps({f"/us/usc/t{t.lower()}/s{sec}": sorted(pls) for (t, sec), pls in
+                                   sorted(touch.items())}, indent=0, ensure_ascii=False) + "\n")
+    if args.touched_only:
+        return 0
     by_law = collections.defaultdict(list)
     for r in win:
         by_law[r.public_law].append(r)
     hard, laws, need = [], [], collections.defaultdict(set)
-    pls = sorted(by_law, key=lambda p: int(p.split("-")[1]))
+    pls = sorted(by_law, key=lambda p: tuple(int(x) for x in p.split("-")))
     for pl in pls:
         usable = [r for r in by_law[pl] if "nt" not in r.description.split()
                   and touch[(r.title, normalize_section(r.section))] == {pl}]
@@ -101,7 +119,8 @@ def main() -> int:
                 hard.append({"pl": pl, "reason": f"all {len(dropped)} target sections also changed by another law "
                                                   "in the window"})
             continue
-        meta = json.loads(f.get(f"{cfg.congress_api}law/118/pub/{pl.split('-')[1]}?format=json&api_key={cfg.api_key}").text())
+        meta = json.loads(f.get(f"{cfg.congress_api}law/{pl.split('-')[0]}/pub/{pl.split('-')[1]}?format=json&api_key="
+                                f"{cfg.api_key}").text())
         bill = meta["bill"]
         versions = congress.text_versions(f, int(bill["congress"]), bill["type"].lower(), int(bill["number"]))
         urls = congress.xml_urls([v for v in versions if (v.get("type") or "").lower().startswith("enrolled")])
@@ -114,7 +133,7 @@ def main() -> int:
         law_titles = sorted({r.title for r in usable}, key=title_sort_key)
         laws.append(CorpusLaw(pl=pl, name=bill.get("title") or "", bill=f"{bill['congress']} {bill['type'].lower()} "
                               f"{bill['number']}", enrolled_url=urls[0], enrolled_sha256=sha256(resp.path),
-                              rp_before=LABEL[2023], rp_after=LABEL[2024], titles=law_titles, rows=crow,
+                              rp_before=LABEL[EDITIONS[0]], rp_after=LABEL[EDITIONS[1]], titles=law_titles, rows=crow,
                               reason=f"{len(usable)} section(s) changed by this law alone in the window"
                                      + (f"; {len(dropped)} shared with another law dropped" if dropped else "")))
         for r in usable:
@@ -153,7 +172,8 @@ def main() -> int:
         refs.append(ReleasePointRef(label=LABEL[y], date=f"{y} edition", page_url=f"https://www.govinfo.gov/app/collection/uscode/{y}",
                                     titles=sorted(need, key=title_sort_key),
                                     zip_urls=[f"{cfg.govinfo_api}packages/USCODE-{y}-title{t}" for t in sorted(need, key=title_sort_key)]))
-    corpus = Corpus(built=time.strftime("%Y-%m-%d"), selection=SELECTION, release_points=refs, laws=laws, hard_cases=hard)
+    corpus = Corpus(built=time.strftime("%Y-%m-%d"), selection=SELECTION.format(a=EDITIONS[0], b=EDITIONS[1]),
+                    release_points=refs, laws=laws, hard_cases=hard)
     corpus.save(MANIFEST)
     print(f"GovInfo held-out: {len(laws)} laws, {sum(len(l.targets) for l in laws)} target rows, "
           f"{sum(len(v) for v in need.values())} sections; {len(hard)} laws set aside")
