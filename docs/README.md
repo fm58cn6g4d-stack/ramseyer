@@ -12,7 +12,7 @@ File numbers run one ahead of the tab numbers because the overview tab comes fir
 | `03-free-statute-server.md` | 2 Free statute server | Doc export, revision 1 | 2026-10-28 |
 | `04-draft-parser.md` | 3 Draft parser | Doc export, revision 1 | 2026-10-28 |
 | `05-resolver.md` | 4 Resolver | Doc export, revision 1 | 2026-10-28 |
-| `06-dry-run.md` | 5 Dry-run | Doc export, revision 1; failure categories section mirrored (tab rev 2) | 2026-10-29 |
+| `06-dry-run.md` | 5 Dry-run | Doc export, revision 1; failure categories section mirrored (tab rev 3) | 2026-10-29 |
 | `07-comparative-print.md` | 6 Comparative print | Doc export, revision 1; two displays section mirrored (tab rev 2) | 2026-10-29 |
 | `08-ripple-graph.md` | 7 Ripple graph | Espen's upload | 2026-10-28 |
 | `09-flags.md` | 8 Flags | Espen's upload | 2026-10-28 |

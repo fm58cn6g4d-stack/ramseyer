@@ -71,3 +71,5 @@ The fourth is new to ramseyer. Today a struck text that is gone, with the insert
 | Yes | No | OLRC's editorial form differs from the Act; report both |
 | No | No | Drafting error or a stale draft |
 | No | Yes | Compilation out of date or the draft targets Code form; report with both currency dates |
+
+The first three readings come from the survey of related work. The fourth row, and the handling in rows 2 and 4 (report both, report both currency dates), are this plan's own proposals, to be checked when M8a is measured.
