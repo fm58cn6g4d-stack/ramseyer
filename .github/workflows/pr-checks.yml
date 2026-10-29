@@ -1,0 +1,72 @@
+# ramseyer PR checks. Required checks for main: rebuild-and-tests (this job), and the commit statuses
+# merge-tier and agent-review (set by the gate job here and by agent-gate.yml). Rules: CONTRIBUTING.md.
+name: PR checks
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  rebuild-and-tests:
+    name: rebuild-and-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      tested_base: ${{ steps.base.outputs.sha }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - id: base
+        name: Record the main commit this merge result was tested against
+        run: echo "sha=$(git rev-parse HEAD^1)" >> "$GITHUB_OUTPUT"
+      - name: Tool versions
+        run: python3 --version
+      - name: Install, unit tests and gate tests
+        run: bash .github/scripts/run-checks.sh
+
+  gate:
+    name: merge-gate
+    needs: rebuild-and-tests
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      statuses: write
+      checks: read
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - name: Load the gate from the default branch
+        # The gate's code and policy are the default branch's copy, so a PR cannot change the rules that judge it.
+        # Bootstrap only: before the gate exists on the default branch, the PR's copy is used, with a warning.
+        run: |
+          git fetch --no-tags origin "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/pr/head"
+          if [[ ! -f .github/scripts/agent_gate.py ]]; then
+            echo "::warning::Bootstrap: the default branch has no merge gate yet, so this run uses the PR's copy."
+            git checkout refs/remotes/pr/head -- .github/scripts .github/merge-policy.json
+          fi
+      - name: Classify the tier
+        run: >
+          python3 .github/scripts/agent_gate.py classify
+          --base "${{ github.event.pull_request.base.sha }}" --head refs/remotes/pr/head
+          --tested-base "${{ needs.rebuild-and-tests.outputs.tested_base }}"
+          --out "$RUNNER_TEMP/classification.json"
+      - name: Set statuses, update the gate comment, merge if allowed
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AGENT_AUTOMERGE: ${{ vars.AGENT_AUTOMERGE }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: >
+          python3 .github/scripts/agent_gate.py gate --pr "${{ github.event.pull_request.number }}"
+          --classification "$RUNNER_TEMP/classification.json" --event "${{ github.event.action }}"
+          --pushed-at "${{ github.event.pull_request.updated_at }}"
