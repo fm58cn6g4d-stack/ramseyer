@@ -537,6 +537,28 @@ class Classify(unittest.TestCase):
         self.assertFalse(g.same_changes(reviewed, edited))
         self.assertFalse(g.same_changes("0" * 40, merged))
 
+    def test_rename_keeps_source_tier(self):
+        self.git("mv", "tests/oracle/labels.json", "tests/labels_archive.json")
+        cls = g.classify(self.base, self.commit("r"), POLICY)
+        self.assertEqual(cls["tier"], 3)
+        self.assertIn("renamed from tests/oracle/labels.json", cls["reasons"][0][2])
+
+    def test_same_changes_when_main_edits_the_same_file(self):
+        lines = [f"line {i}\n" for i in range(60)]
+        self.write("records/long.md", "".join(lines))
+        self.commit("long file")
+        self.git("checkout", "-q", "-b", "pr")
+        self.write("records/long.md", "".join(lines[:2] + ["line 2, revised\n"] + lines[3:]))
+        reviewed = self.commit("pr edits line 2")
+        self.git("checkout", "-q", "main")
+        self.write("records/long.md", "".join(lines[:45] + ["line 45, main\n"] + lines[46:]))
+        self.commit("main edits line 45")
+        self.git("checkout", "-q", "pr")
+        self.git("merge", "-q", "--no-edit", "main")
+        merged = self.git("rev-parse", "HEAD").strip()
+        self.git("checkout", "-q", "main")
+        self.assertTrue(g.same_changes(reviewed, merged))
+
     def test_merge_rules_are_tier3(self):
         self.write(".github/merge-policy.json", "{}\n")
         self.assertEqual(g.classify(self.base, self.commit("g"), POLICY)["tier"], 3)

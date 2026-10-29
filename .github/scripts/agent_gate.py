@@ -222,6 +222,11 @@ def classify(base, head, policy):
                 reasons.append((path, 2, "regenerated model output"))
             continue
         rule = match_rule(path, policy)
+        if st == "R":
+            # A rename also removes the source path: keep the higher tier of the two.
+            src = match_rule(old, policy)
+            if isinstance(src["tier"], int) and isinstance(rule["tier"], int) and src["tier"] > rule["tier"]:
+                rule = {"tier": src["tier"], "why": f"renamed from {old}: {src['why']}"}
         tier, why = rule["tier"], rule["why"]
         if tier == "domain":
             before = file_at(f"{base}", old) if st != "A" else ""
@@ -295,10 +300,20 @@ def same_changes(old, new):
         if subprocess.run(["git", "merge-base", "--is-ancestor", old, new], cwd=ROOT,
                           stderr=subprocess.DEVNULL).returncode:
             return False
-        own = lambda c: git("diff", "--no-color", git("merge-base", "HEAD", c).strip(), c)
-        return own(old) == own(new)
+        return own_patch_id(old) == own_patch_id(new)
     except RuntimeError:
         return False  # a commit not available locally: no carry-over
+
+
+def own_patch_id(c):
+    """A fingerprint of the PR's own changes at commit c (the diff from its merge base with main). Without context
+    lines, and through `git patch-id`, which ignores blob hashes and line numbers, so a clean merge of main that
+    edits other lines of the same file does not change it."""
+    diff = git("diff", "--no-color", "--no-ext-diff", "-U0", git("merge-base", "HEAD", c).strip(), c)
+    r = subprocess.run(["git", "patch-id", "--stable"], cwd=ROOT, input=diff, capture_output=True, text=True)
+    if r.returncode:
+        raise RuntimeError(f"git patch-id: {r.stderr.strip()}")
+    return r.stdout.split()[0] if r.stdout.strip() else ""
 
 
 def evaluate_reviews(items, head_sha, author, owners, policy, carries=lambda h: False, ignore_blocks=False):
