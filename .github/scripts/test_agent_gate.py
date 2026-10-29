@@ -556,8 +556,15 @@ class Classify(unittest.TestCase):
         self.git("checkout", "-q", "pr")
         self.git("merge", "-q", "--no-edit", "main")
         merged = self.git("rev-parse", "HEAD").strip()
+        self.write("records/long.md", "".join(lines[:2] + ["    line 2, revised\n"] + lines[3:]))
+        indented = self.commit("pr re-indents its line")
+        self.write("records/long.md", "".join(lines[:2] + lines[3:6] + ["line 2, revised\n"] + lines[6:45]
+                                              + ["line 45, main\n"] + lines[46:]))
+        moved = self.commit("pr moves its line")
         self.git("checkout", "-q", "main")
         self.assertTrue(g.same_changes(reviewed, merged))
+        self.assertFalse(g.same_changes(reviewed, indented))  # whitespace can change behaviour (Python)
+        self.assertFalse(g.same_changes(reviewed, moved))
 
     def test_merge_rules_are_tier3(self):
         self.write(".github/merge-policy.json", "{}\n")

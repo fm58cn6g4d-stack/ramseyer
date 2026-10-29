@@ -292,28 +292,21 @@ def parse_review(body):
 
 
 def same_changes(old, new):
-    """True when `new` only adds main to `old`: old is an ancestor of new and the PR's own changes (the diff from
-    each commit's merge base with main) are identical. Then a review of `old` still describes `new`."""
+    """True when `new` only adds main to `old`: old is an ancestor of new, and merging main (as of new's merge base
+    with it) into old gives exactly new's tree. Then a review of `old` still describes `new`."""
     try:
         if git("rev-parse", old).strip() == git("rev-parse", new).strip():
             return True
         if subprocess.run(["git", "merge-base", "--is-ancestor", old, new], cwd=ROOT,
                           stderr=subprocess.DEVNULL).returncode:
             return False
-        return own_patch_id(old) == own_patch_id(new)
+        # Replay main onto the reviewed commit: the carry-over holds only if that merge is clean and gives exactly
+        # the new tree, so any edit beyond main's (even whitespace, or moving a line) voids it.
+        r = subprocess.run(["git", "merge-tree", "--write-tree", old, git("merge-base", "HEAD", new).strip()],
+                           cwd=ROOT, capture_output=True, text=True)
+        return r.returncode == 0 and r.stdout.split()[0] == git("rev-parse", f"{new}^{{tree}}").strip()
     except RuntimeError:
         return False  # a commit not available locally: no carry-over
-
-
-def own_patch_id(c):
-    """A fingerprint of the PR's own changes at commit c (the diff from its merge base with main). Without context
-    lines, and through `git patch-id`, which ignores blob hashes and line numbers, so a clean merge of main that
-    edits other lines of the same file does not change it."""
-    diff = git("diff", "--no-color", "--no-ext-diff", "-U0", git("merge-base", "HEAD", c).strip(), c)
-    r = subprocess.run(["git", "patch-id", "--stable"], cwd=ROOT, input=diff, capture_output=True, text=True)
-    if r.returncode:
-        raise RuntimeError(f"git patch-id: {r.stderr.strip()}")
-    return r.stdout.split()[0] if r.stdout.strip() else ""
 
 
 def evaluate_reviews(items, head_sha, author, owners, policy, carries=lambda h: False, ignore_blocks=False):
