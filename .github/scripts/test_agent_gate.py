@@ -132,6 +132,15 @@ class Reviews(unittest.TestCase):
         self.assertEqual(g.pr_author("", "feature/x", POLICY), (None, None))
 
 
+class ReviewItems(unittest.TestCase):
+    def test_dismissed_review_does_not_count(self):
+        body = "Agent-Review: approve\nReviewed-Head: abc1234\nReviewer: claude-code session_B"
+        rev = lambda state: {"body": body, "state": state, "submitted_at": "t", "user": {"login": "u"},
+                             "performed_via_github_app": {"slug": "claude"}}
+        self.assertEqual(len(g.review_items([], [rev("COMMENTED")])), 1)
+        self.assertEqual(g.review_items([], [rev("DISMISSED")]), [])
+
+
 class ReviewFlow(unittest.TestCase):
     author = ("claude-code", "session_A")
     OLD = "c" * 40

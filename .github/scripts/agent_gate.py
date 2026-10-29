@@ -309,6 +309,17 @@ def same_changes(old, new):
         return False  # a commit not available locally: no carry-over
 
 
+def review_items(comments, reviews):
+    """Issue comments and formal PR reviews as review inputs. A dismissed review is withdrawn and does not count."""
+    items = [{"body": c.get("body"), "created_at": c["created_at"], "user": c["user"]["login"],
+              "app": (c.get("performed_via_github_app") or {}).get("slug")} for c in comments]
+    for r in reviews:
+        if r.get("body") and (r.get("state") or "").upper() != "DISMISSED":
+            items.append({"body": r["body"], "created_at": r.get("submitted_at") or "", "user": r["user"]["login"],
+                          "app": (r.get("performed_via_github_app") or {}).get("slug")})
+    return items
+
+
 def evaluate_reviews(items, head_sha, author, owners, policy, carries=lambda h: False, ignore_blocks=False):
     """items: [{'body','created_at','app'}] in any order. `carries(h)` says whether an approval of commit h still
     describes the head (see same_changes). Returns (ok, summary, approvals, blocks)."""
@@ -598,12 +609,7 @@ def gate(args, policy):
     status(gh, head, "merge-tier", tier_state, tier_desc, run_url)
 
     author = pr_author(pr.get("body"), pr["head"]["ref"], policy)
-    items = [{"body": c.get("body"), "created_at": c["created_at"], "user": c["user"]["login"],
-              "app": (c.get("performed_via_github_app") or {}).get("slug")} for c in comments]
-    for r in gh.pages(f"/pulls/{n}/reviews"):
-        if r.get("body"):
-            items.append({"body": r["body"], "created_at": r.get("submitted_at") or "", "user": r["user"]["login"],
-                          "app": (r.get("performed_via_github_app") or {}).get("slug")})
+    items = review_items(comments, gh.pages(f"/pulls/{n}/reviews"))
     for it in items:
         if parse_review(it["body"]):
             print(f"review comment by {it['user']} at {it['created_at']}, performed_via_github_app={it['app']}: {parse_review(it['body'])}")
