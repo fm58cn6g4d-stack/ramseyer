@@ -36,6 +36,8 @@
   "clean": 1295,
   "false_clean": 1215,
   "false_clean_rate": 0.9382,
+  "clean_off_target": 0,
+  "clean_off_target_wrong": 0,
   "deterministic_coverage": 1.0,
   "model_tokens": 0,
   "mismatch_unclassified": 1215

@@ -12,6 +12,8 @@
   "clean": 0,
   "false_clean": 0,
   "false_clean_rate": 0.0,
+  "clean_off_target": 0,
+  "clean_off_target_wrong": 0,
   "deterministic_coverage": 1.0,
   "model_tokens": 0,
   "mismatch_engine": 2

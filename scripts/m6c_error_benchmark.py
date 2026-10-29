@@ -128,7 +128,7 @@ def main() -> int:
                 tally[kind][1] += 1
                 reasons[kind][r.status] += 1
             else:
-                misses[kind].append(f"{law.pl} {ins.id}: {mut.target.cite_norm or mut.target.cite_raw} "
+                misses[kind].append(f"{law.pl} {ins.id} {ins.op} {ins.unit or ''}: {mut.target.cite_norm or mut.target.cite_raw} "
                                     f"{''.join(mut.target.path)} find={mut.find!r:.60} occ={mut.occurrence}")
     total = [sum(v[0] for v in tally.values()), sum(v[1] for v in tally.values())]
     lines = ["# M6c drafting-error detection benchmark", "",

@@ -1116,6 +1116,10 @@ class Engine:
             parent.insert(idx + k, u)
         if dup:
             return Result(ins.id, "WARN", f"the added unit's label ({dup[0]}) already exists in the unit")
+        gap = _sequence_gap(parent, units[0]) if units and local(units[0]) in SUB else None
+        if gap:
+            # "(d)" added after a last "(b)": a wrong section or unit is the likelier explanation (M6c benchmark).
+            return Result(ins.id, "WARN", gap)
         warn = None
         prev = parent[idx - 1] if idx > 0 else None
         if prev is not None and local(prev) in SUB and units and local(units[0]) in SUB:
@@ -1209,6 +1213,27 @@ class Engine:
             return Result(ins.id, "CLEAN", "section repealed")
         scope.getparent().remove(scope)
         return Result(ins.id, "CLEAN", f"{''.join(path)} repealed")
+
+
+def _sequence_gap(parent, unit) -> str | None:
+    """The label of an added unit should follow the one before it ("(c)" after "(b)"); None when it does, or when
+    there is nothing to compare with (first unit, repeal stubs, labels of other kinds)."""
+    from billmap.parse.segment import successor
+    sibs = [c for c in parent if local(c) in SUB]
+    i = sibs.index(unit)
+    if i == 0:
+        return None
+    prev, new = _num(sibs[i - 1]), _num(unit)
+    level = local(unit)
+    if not prev or not new or local(sibs[i - 1]) != level:
+        return None
+    try:
+        nxt = successor(level, prev)
+    except (ValueError, KeyError):
+        return None
+    if new != nxt and not (new[:-1] == prev and new[-1:].isalpha()):     # "(2A)" after "(2)" is an inserted unit
+        return f"the added unit ({new}) does not follow ({prev}); expected ({nxt})"
+    return None
 
 
 def _num(el) -> str:

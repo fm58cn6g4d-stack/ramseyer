@@ -15,7 +15,7 @@ from billmap.dryrun.engine import NS, Engine, Result, Working, build_units, fold
 from billmap.dryrun.verify import structure_problems, unapplied_mentions
 from billmap.oracle.harness import Prediction
 from billmap.parse.grammar import quote_free
-from billmap.parse.ir import Instruction
+from billmap.parse.ir import Instruction, Target
 from billmap.resolve.cites import parse_parenthetical
 from billmap.resolve.resolver import Resolution, Resolver
 
@@ -178,7 +178,14 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
     act_wide: dict[str, list[Instruction]] = {}
     for tr in traces:
         t = tr.instruction.target
-        if tr.section is None and t.kind in ("act", "pl") and not t.section and tr.instruction.op in TEXT_OPS:
+        if tr.section is None and t.kind == "unknown" and tr.instruction.op == "REPEAL" and t.cite_raw:
+            # A listed repeal item naming a whole Act: "(1) The Atomic Energy Defense Act (50 U.S.C. 2501 et seq.)."
+            m = re.match(r"^\(?\w*\)?\s*(?:The |the )?(?P<act>[A-Z][^()]*?(?:Act|Code)(?: of \d{4})?)\s*(?:\((?P<p>[^()]*)\))?",
+                         t.cite_raw)
+            if m:
+                t = Target(kind="act", act=m["act"].strip(), usc_parenthetical=m["p"], cite_raw=t.cite_raw)
+        if tr.section is None and t.kind in ("act", "pl") and not t.section and tr.instruction.op in TEXT_OPS + (
+                "REPEAL",):
             ids, _ = resolver._identities(t, parse_parenthetical(t.usc_parenthetical))
             for sid in resolver.acts.sections_of(ids):
                 act_wide.setdefault(ix._node(sid).identifier, []).append(tr.instruction)
@@ -267,7 +274,8 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
     for ident, work, items, status, stage, deterministic in pending:
         if status == "CLEAN":
             problems = structure_problems(work) + unapplied_mentions(ident, instructions, applied - failed, work) + \
-                [f"the Act-wide instruction {i.id} was not executed and may change this section"
+                [f"the Act-wide instruction {i.id} ({'repeals the Act' if i.op == 'REPEAL' else i.op}) was not "
+                 "executed and may change this section"
                  f"{' (it contains “' + i.find[:40] + '”)' if i.find else ''}" for i in act_wide.get(ident, [])
                  if not i.find or fold(i.find, True)[0] in fold(work.render() or "", True)[0]]
             problems = [p for p in problems if not any(f"instruction {ins.id} " in p for ins, _, _ in items)]
