@@ -162,7 +162,39 @@ The suite is the most direct analog to ramseyer, as Espen pointed out. It is int
 
 **The case for ramseyer:** the suite's existence shows that the House values this kind of tool, and that model grammar plus a versioned law store is the working design. ramseyer's room is in being open, auditable (measured against the enacted record, with the method published) and strict about never dropping an instruction. It also offers checks the suite describes but cannot show publicly. Committee reports' "changes in existing law" sections are now probably produced with the suite, so grading ramseyer against them amounts to grading it against the suite and HOLC.
 
-## Draft bill → adopted Act (Espen, 2026-10-29)
+## Draft bill → the Act it amends, as currently in force (Espen, 2026-10-29)
+
+Espen's point: compare a draft not only with the Code but with **the current text of the Act it amends**.
+
+**The second current-law source:**
+- It is the Act as amended, which is what drafters write against: "Section 5 of the X Act".
+- It comes from HOLC's Statute Compilations: about 2,710 USLM files in GovInfo bulk data (`bulkdata/json/COMPS`).
+- Each states its currency, e.g. `<currentThroughPublicLaw>116–260</currentThroughPublicLaw>` for the Geothermal Steam Act of 1970.
+
+**The two sources are two witnesses:**
+- **In a positive-law title**, the Code is the law and is the only text.
+- **In a non-positive title**, the Act is the law; the Code is prima facie evidence, and OLRC rewrites the Act's text into Code form ("this Act" → "this chapter", Act section numbers → Code cites).
+- **Executing against both is a cross-check.** Run a draft against the Act's own text, then against the Code text, and compare where the two land:
+  - A quote found in the Act but not in the Code points to OLRC's editorial form.
+  - A quote found in neither points to a drafting error or a stale draft.
+  - A quote found in both, with the same effect, is the strongest result ramseyer can give.
+  - Several of ramseyer's WARN and NOT_FOUND classes today are Code-form mismatches that the Act text would settle directly.
+
+**Two displays, chosen per provision:**
+- **An amendment to existing text** gets a comparative print in context: the existing law with struck and inserted text, Ramseyer-style.
+- **A draft that largely creates new statute** gets a different view (a new section, a new chapter, a free-standing program):
+  - the new provisions as structure;
+  - where they would sit (inserted after section X of chapter Y; or, for free-standing text, an estimated classification, labelled as an estimate);
+  - what existing law they lean on (definitions used, cross-references, conforming amendments).
+
+  Most bills mix both, so the choice is made per provision.
+
+## Testing on draft versions of enacted laws
+
+The point in this section was raised in the discussion and kept as a method:
+- An enacted law's change to the Code is known from the release points.
+- Its earlier versions (introduced, reported) can be run through ramseyer as if they were drafts.
+- Their predicted changes can be graded against what the enacted version actually did, wherever the provision was carried into law.
 
 **The second layer:** match a draft (or an introduced or reported version) to the Act as adopted, and show what survived, what changed and what was dropped. Ramseyer so far does draft → Code.
 
