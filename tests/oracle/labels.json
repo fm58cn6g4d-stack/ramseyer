@@ -1,10 +1,50 @@
 {
- "119-60 /us/usc/t37/s204": "editorial",
- "119-60 /us/usc/t10/s139a": "editorial",
- "119-60 /us/usc/t46/s7307": "editorial",
- "119-60 /us/usc/t46/s7308": "editorial",
- "119-60 /us/usc/t46/s7309": "editorial",
- "119-60 /us/usc/t46/s70001": "editorial",
- "118-180 /us/usc/t42/s280i–4": "editorial",
- "119-60 /us/usc/t10/s2218": "editorial"
+ "119-60 /us/usc/t37/s204": {
+  "stage": "editorial",
+  "reason": "OLRC inserted at “regular component” where the law says “reserve component” (37 U.S.C. 204(h)(1))",
+  "pred": "1a61767be7ce74b1",
+  "after": "78ac5cb523aa1379"
+ },
+ "119-60 /us/usc/t10/s139a": {
+  "stage": "editorial",
+  "reason": "R_after reads “section section 3221”, an OLRC slip",
+  "pred": "c83f7bd5f2ea67da",
+  "after": "8accca375893c94c"
+ },
+ "119-60 /us/usc/t46/s7307": {
+  "stage": "editorial",
+  "reason": "OLRC printed “18 months” without the apostrophe the enrolled bill leaves",
+  "pred": "378ec7bd1700a12f",
+  "after": "1384eb8cb2327e7b"
+ },
+ "119-60 /us/usc/t46/s7308": {
+  "stage": "editorial",
+  "reason": "OLRC printed “12 months” without the apostrophe the enrolled bill leaves",
+  "pred": "21beb3b69fc3c153",
+  "after": "dc75a095536aa91d"
+ },
+ "119-60 /us/usc/t46/s7309": {
+  "stage": "editorial",
+  "reason": "OLRC printed “6 months” without the apostrophe the enrolled bill leaves",
+  "pred": "8de3e45c4efc588d",
+  "after": "53a402825716092a"
+ },
+ "119-60 /us/usc/t46/s70001": {
+  "stage": "editorial",
+  "reason": "OLRC set a SAFE Port Act provision in as subsection (l); its text is not in Pub. L. 119-60",
+  "pred": "eab58e59326c7715",
+  "after": "db2f16ac5f15a961"
+ },
+ "118-180 /us/usc/t42/s280i–4": {
+  "stage": "editorial",
+  "reason": "the edition prints “28,100,000” without “$”; the enrolled law has “$”",
+  "pred": "8dd06b648d055d96",
+  "after": "402a095b1ba7aa91"
+ },
+ "119-60 /us/usc/t10/s2218": {
+  "stage": "editorial",
+  "reason": "OLRC dropped the comma after the struck parenthetical with its References-in-Text footnote",
+  "pred": "f01a1e7ec993527a",
+  "after": "149db0fd44fefdeb"
+ }
 }

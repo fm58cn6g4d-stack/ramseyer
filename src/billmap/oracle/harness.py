@@ -8,6 +8,7 @@ predictions for sections the law does not touch are "extra".
 from __future__ import annotations
 
 import collections
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -32,6 +33,7 @@ class Prediction(BaseModel):
     stage: Stage | None = None       # where the predictor failed, when it knows
     model_tokens: int = 0            # tokens spent on this section by any model fallback
     deterministic: bool = True       # produced without a model
+    release_point: str | None = None  # the release point the prediction was checked against (rule 3)
 
 
 class SectionOutcome(BaseModel):
@@ -102,6 +104,18 @@ def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> boo
                for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (a.id,)) if t not in b_notes)
 
 
+def text_hash(text: str | None) -> str:
+    return hashlib.sha256(normalize(text or "").encode()).hexdigest()[:16]
+
+
+def label_stage(label, predicted: str | None, after: str | None) -> str | None:
+    """A hand label applies only to the texts it was checked against: {"stage", "pred", "after", "reason"} with
+    hashes of the predicted and R_after texts (red team F12). A changed text, or a bare label, does not apply."""
+    if isinstance(label, dict) and label.get("pred") == text_hash(predicted) and label.get("after") == text_hash(after):
+        return label.get("stage")
+    return None
+
+
 def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Prediction]], name: str,
              open_index: Callable[[str], Index], labels: dict | None = None) -> Report:
     labels = labels if labels is not None else (json.loads(LABELS.read_text()) if LABELS.exists() else {})
@@ -124,7 +138,8 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                                    detail="classified to this law; no prediction")
             else:
                 same = normalize(p.text) == normalize(t["after"])
-                stage = labels.get(f"{law.pl} {ident}") or p.stage or (None if same else "unclassified")
+                stage = label_stage(labels.get(f"{law.pl} {ident}"), p.text, t["after"]) or p.stage or \
+                    (None if same else "unclassified")
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="match" if same else "mismatch",
                                    status=p.status, stage=stage,
                                    detail="" if same else first_difference(p.text, t["after"]))

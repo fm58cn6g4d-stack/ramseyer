@@ -31,6 +31,8 @@ ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubcha
                      r"(?:\([\w]+\))*(?![\w\u2013-])(?! of (?:title \d+|this title|this chapter|such title))"
                      r"(?! of the )(?!,? United States Code)(?! of Public Law)(?! \()"
                      r"|\bthis (?:title|Act|subtitle)\b")
+ABBREV = re.compile(r"(?:\b(?:U\.S|U\.S\.C|Sec|Secs|No|Nos|Stat|Pub|Mr|Mrs|Ms|Dr|St|Co|Inc|Corp|Jr|Sr|seq|al|etc|"
+                    r"Ph\.D|i\.e|e\.g|Jan|Feb|Mar|Apr|Aug|Sept|Oct|Nov|Dec|ch|subch|pt|div|tit)|(?<![\w.])[A-Z])\.$")
 MARGINS = re.compile(r",? and (?:by )?(?:adjusting|moving) the (?:margins|indentation)[^;.]*(?:[;.]|; and)?")
 ORDER = ["subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem"]
 LEVEL_TAGS = set(ORDER)
@@ -305,7 +307,12 @@ def find_all(hay: str, needle: str, allowed: list[tuple[int, int]]) -> tuple[lis
         # allowed range is a boundary too: the linear view joins a heading and its text with no space ("UseOf").
         lead = a not in starts and hay[a:a + 1].isalnum() and a > 0 and hay[a - 1].isalnum()
         trail = b not in ends and hay[b - 1:b].isalnum() and b < len(hay) and hay[b].isalnum()
-        return not (lead or trail)
+        # A number continues across "," or "." followed by a digit: "$1,000" is not found in "$1,000,000" or
+        # "1.5" in "21.5" (red team F8; a stale amount must come back NOT_FOUND).
+        num_trail = hay[b - 1:b].isdigit() and re.match(r"[,.]\d", hay[b:b + 2]) is not None
+        num_lead = hay[a:a + 1].isdigit() and (hay[a - 1:a].isdigit() or re.search(r"\d[,.]$", hay[max(0, a - 2):a])
+                                                is not None)
+        return not (lead or trail or num_trail or num_lead)
 
     hits = [(m.start(), m.start() + len(needle)) for m in re.finditer(re.escape(needle), hay)]
     hits = [h for h in hits if inside(*h) and bounded(*h)]
@@ -612,7 +619,9 @@ class Engine:
         lo = allowed[0][0] if allowed else 0
         hi = allowed[-1][1] if allowed else len(hay)
         body = hay[lo:hi]
-        bounds = [0] + [m.end() for m in re.finditer(r"(?<=[.])\s+(?=[A-Z(“])", body)] + [len(body)]
+        # A period ends a sentence unless it closes an abbreviation ("U.S. Government", "Pub. L.", "No. 5").
+        bounds = [0] + [m.end() for m in re.finditer(r"(?<=[.])\s+(?=[A-Z(“\"])", body)
+                        if not ABBREV.search(body[:m.start()])] + [len(body)]
         spans = [(lo + bounds[i], lo + bounds[i + 1]) for i in range(len(bounds) - 1)]
         idx = {"first": 0, "second": 1, "third": 2, "fourth": 3, "last": -1}[which]
         try:
@@ -683,6 +692,10 @@ class Engine:
 
     def _status_for_missing(self, ins, find, path):
         """NOT_FOUND, or CONFLICT when the text existed at the baseline and an earlier instruction removed it."""
+        cur = self.work.unit(path) if path else self.work.el
+        if ins.target.qualifiers and cur is not None and find_all(text_of(cur), find, [(0, 10 ** 9)])[0]:
+            # In the unit, but not in the part the qualifier names (a sentence, the matter preceding ...).
+            return "NOT_FOUND", f"present in the unit but not in the {', '.join(ins.target.qualifiers)}"
         if self.work.original is not None:
             orig = self.work.unit(path, root=self.work.original) if path else self.work.original
             if orig is not None:
@@ -1037,11 +1050,17 @@ class Engine:
             if not old or old[0] is None:
                 return Result(ins.id, "TARGET_MISSING", f"{ins.unit} not found")
             parent, idx = old[0].getparent(), old[0].getparent().index(old[0])
+            old_labels = [_num(o) for o in old if o is not None]
+            new_labels = [_num(u) for u in units]
             for o in old:
                 if o is not None and o.getparent() is parent:
                     parent.remove(o)
             for k, u in enumerate(units):
                 parent.insert(idx + k, u)
+            if units and new_labels[:1] != old_labels[:1]:
+                # "striking subsection (b) and inserting “(c) …”": a label that does not continue the sequence.
+                return Result(ins.id, "WARN", f"replaced {ins.unit} with a unit labelled ({new_labels[0]}), not "
+                              f"({old_labels[0]})")
             return Result(ins.id, "CLEAN" if units else "AMBIGUOUS", f"replaced {ins.unit}")
         # "is amended to read as follows": the whole target unit (or section).
         if not units:
@@ -1091,8 +1110,12 @@ class Engine:
                     if local(c) in ("continuation", "notes", "sourceCredit"):
                         idx = i
                         break
+        existing = {_num(c) for c in parent if local(c) in SUB}
+        dup = [_num(u) for u in units if local(u) in SUB and _num(u) in existing]
         for k, u in enumerate(units):
             parent.insert(idx + k, u)
+        if dup:
+            return Result(ins.id, "WARN", f"the added unit's label ({dup[0]}) already exists in the unit")
         warn = None
         prev = parent[idx - 1] if idx > 0 else None
         if prev is not None and local(prev) in SUB and units and local(units[0]) in SUB:
@@ -1154,6 +1177,12 @@ class Engine:
                 if (num.text or "").startswith("[") and later and _label_key(later[0]) <= _label_key(num.get("value") or ""):
                     _remove_keep_tail(c)
                     flags.append(f"dropped the repeal stub {num.text.rstrip()} left out of order")
+        # Cross-references in the section to a moved unit by its old label may need conforming (docs/06-dry-run.md).
+        word = (ins.unit or "").split(" ")[0].rstrip("s") or "paragraph"
+        text = text_of(self.work.el) if self.work.el is not None else ""
+        stale = [old for old, _ in moves if re.search(rf"\b{word} {re.escape(old)}(?![\w(])", text)]
+        if stale:
+            flags.append(f"the section still refers to {word} {', '.join(stale)}; references may need conforming")
         return Result(ins.id, "WARN" if flags else "CLEAN", "; ".join(flags) or f"redesignated {len(found)} unit(s)")
 
     def _redesignate_inline(self, ins, scope, moves):
@@ -1180,6 +1209,11 @@ class Engine:
             return Result(ins.id, "CLEAN", "section repealed")
         scope.getparent().remove(scope)
         return Result(ins.id, "CLEAN", f"{''.join(path)} repealed")
+
+
+def _num(el) -> str:
+    n = el.find(NS + "num")
+    return (n.get("value") or "").strip("[]()") if n is not None else ""
 
 
 def _label_key(label: str) -> tuple:

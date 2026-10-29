@@ -1,7 +1,9 @@
 """Parse -> resolve -> dry-run for one bill, producing per-section predictions for the oracle harness."""
 from __future__ import annotations
 
+import copy
 import re
+import sqlite3
 from collections import OrderedDict
 from dataclasses import dataclass, field
 
@@ -38,8 +40,10 @@ class BillRun:
     working: dict[str, Working] = field(default_factory=dict)     # identifier -> amended working copy
 
 
-def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Index) -> BillRun:
-    """Instructions in bill order -> one Prediction per Code section they reach (text at `baseline` + edits)."""
+def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Index,
+             prior: list[Index] = ()) -> BillRun:
+    """Instructions in bill order -> one Prediction per Code section they reach (text at `baseline` + edits).
+    `prior`: earlier release points, searched when quoted text is not found (STALE_BASELINE)."""
     ix = resolver.ix
     by_section: "OrderedDict[str, list[tuple[Instruction, list[str], Trace]]]" = OrderedDict()
     traces: list[Trace] = []
@@ -228,15 +232,30 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                 fanned[ins.id].append(r.status)
                 tr.result = r
             elif any(f.startswith("delayed effective date") for f in ins.flags):
-                # Not executed at the next release point: OLRC sets the amendment out in a note.
+                # Takes effect later: OLRC sets it out in a note until then, so the predicted text stays as it is.
+                # The edit is still dry-run on a copy, so a quote that is not there is reported (red team F7).
                 why = next(f for f in ins.flags if f.startswith("delayed effective date"))
-                tr.result = Result(ins.id, "WARN", f"not applied: {why}")
+                probe = Engine(copy.deepcopy(work))
+                probe.act_ref = act_refs(ins) if ins.target.kind in ("act", "pl") else None
+                r = probe.run(ins, path)
+                tr.result = Result(ins.id, "WARN" if r.status == "CLEAN" else r.status,
+                                   f"not applied now ({why}); "
+                                   + ("the edit applies cleanly to the current text" if r.status == "CLEAN"
+                                      else f"checked against the current text: {r.detail}"))
             else:
                 eng.act_ref = act_refs(ins) if ins.target.kind in ("act", "pl") else None
                 tr.result = eng.run(ins, path)
+                if tr.result.status == "NOT_FOUND" and ins.find and prior:
+                    tr.result = stale_or(tr.result, ins, ident, prior)
             st = tr.result.status
-            if tr.resolution.flags and "needs review" in tr.resolution.flags and st == "CLEAN":
+            if st == "CLEAN" and any(f == "needs review" or f.startswith("single source") or
+                                     f.startswith("unverified") for f in tr.resolution.flags):
+                # One witness for the target (source credits, or the drafted parenthetical alone) is not enough for
+                # a confident answer (red team F10).
                 st = "WARN"
+                tr.result.status = "WARN"
+                tr.result.detail = "; ".join(x for x in (tr.result.detail, "target resolved on one witness: "
+                                                         + ", ".join(tr.resolution.flags)) if x)
             statuses.append(st)
             if st not in ("CLEAN", "NOT_APPLICABLE") and stage is None:
                 stage = STAGE.get(st, "engine") if "needs review" not in tr.resolution.flags else "resolver"
@@ -256,8 +275,15 @@ def run_bill(instructions: list[Instruction], resolver: Resolver, baseline: Inde
                 status, stage = "WARN", "verify"
                 traces.append(Trace(items[0][0], items[0][2].resolution, ident,
                                     Result(items[0][0].id, "WARN", "self-check: " + "; ".join(problems))))
+        if status == "CLEAN" and (bad := edition_diff(baseline, ident)):
+            # OLRC's XML and XHTML editions differ on this section's content (19 U.S.C. 2702(b)'s country list):
+            # the text the edit was checked against may be incomplete (red team F13).
+            status, stage = "WARN", "verify"
+            traces.append(Trace(items[0][0], items[0][2].resolution, ident,
+                                Result(items[0][0].id, "WARN", f"source text in doubt: {bad}")))
         predictions.append(Prediction(identifier=ident, status="CLEAN" if status == "NOT_APPLICABLE" else status,
-                                      text=work.render(), stage=stage, deterministic=deterministic))
+                                      text=work.render(), stage=stage, deterministic=deterministic,
+                                      release_point=baseline.release_point))
     for tr in traces:
         if tr.instruction.id in fanned and fanned[tr.instruction.id]:
             sts = fanned[tr.instruction.id]
@@ -282,6 +308,31 @@ def unit_wide(ins: Instruction) -> bool:
     if OWN_PLACE.search(own):
         return False
     return ins.occurrence == "each" or bool(ins.target.cite_raw and ins.target.cite_raw in (ins.source_text or ""))
+
+
+def stale_or(r: Result, ins: Instruction, ident: str, prior: list[Index]) -> Result:
+    """NOT_FOUND, or STALE_BASELINE when an earlier release point has the quoted text: the draft may have been
+    written against older text that a later law changed (docs/06-dry-run.md)."""
+    needle = fold(nested_to_double(ins.find), True)[0]
+    for ix in prior:
+        try:
+            xml = ix.section_xml(ix.by_identifier(ident))
+        except LookupError_:
+            continue
+        if needle in fold(text_of(etree.fromstring(xml.encode())), True)[0]:
+            return Result(ins.id, "STALE_BASELINE", f"“{ins.find[:60]}” is not in the current text but was at release "
+                          f"point {ix.release_point}: the draft may predate a later amendment", matches=0)
+    return r
+
+
+def edition_diff(ix: Index, ident: str) -> str | None:
+    try:
+        node = ix.by_identifier(ident)
+        row = ix.db.execute("SELECT kind, detail FROM edition_diffs WHERE node_id=? AND kind<>'rendering'",
+                            (node.id,)).fetchone()
+    except (LookupError_, sqlite3.OperationalError):
+        return None
+    return f"OLRC's XML and XHTML editions differ ({row[0]}): {row[1][:120]}" if row else None
 
 
 def not_executed_reason(tr: Trace) -> str:

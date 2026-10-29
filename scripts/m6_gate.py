@@ -92,6 +92,8 @@ def main() -> int:
     ap.add_argument("--show", type=int, default=30)
     ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b); same as --set heldout")
     ap.add_argument("--set", choices=sorted(SETS), default="tuning")
+    ap.add_argument("--refresh-labels", action="store_true",
+                    help="re-stamp the hashes of hand labels on this set after checking each difference by hand")
     args = ap.parse_args()
     cfg = config.load()
     f = Fetcher(cfg)
@@ -140,6 +142,27 @@ def main() -> int:
     graded = m["matched"] + m["mismatched"]
     clean_mism = [o for o in mism if o.status == "CLEAN"]
     labels = json.loads(harness.LABELS.read_text()) if harness.LABELS.exists() else {}
+    # Hand labels bind to the exact texts they were checked against; list the ones that no longer apply.
+    label_rows = []
+    for o in mism:
+        key = f"{o.pl} {o.identifier}"
+        if key not in labels:
+            continue
+        work = runs[o.pl].working.get(o.identifier)
+        pred = work.render() if work is not None else None
+        try:
+            after = harness.section_text(open_index(corpus.law(o.pl).rp_after), o.identifier)[0]
+        except LookupError_:
+            after = None
+        lab = labels[key]
+        applies = harness.label_stage(lab, pred, after) is not None
+        label_rows.append(f"- {key}: {'applies' if applies else 'EXPIRED'}: {o.detail[:200]}")
+        if args.refresh_labels and not applies:
+            reason = lab.get("reason", "") if isinstance(lab, dict) else ""
+            labels[key] = {"stage": "editorial", "reason": reason, "pred": harness.text_hash(pred),
+                           "after": harness.text_hash(after)}
+    if args.refresh_labels:
+        harness.LABELS.write_text(json.dumps(labels, indent=1, ensure_ascii=False) + "\n")
     labelled = sum(1 for o in clean_mism if f"{o.pl} {o.identifier}" in labels and o.stage == "editorial"
                    and (o.pl, o.identifier) not in detected_ids)
     detected = sum(1 for o in clean_mism if (o.pl, o.identifier) in detected_ids)
@@ -182,6 +205,7 @@ def main() -> int:
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
               "", "Mismatches by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
               *(["", "Halves:", *halves] if halves else []),
+              "", "Hand labels on this set (tests/oracle/labels.json):", *(label_rows or ["- none"]),
               "", "## Per law", ""]
     lines += [f"- {pl}: " + ", ".join(f"{k} {v}" for k, v in sorted(c.items())) for pl, c in rep.by_law.items()]
     lines += ["", f"## Mismatches (first {args.show}; CLEAN ones first)", ""]
