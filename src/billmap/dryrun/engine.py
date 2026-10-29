@@ -19,10 +19,12 @@ from billmap.parse.ir import Instruction
 from billmap.parse.normalize import normalize
 from billmap.parse.segment import Segmenter, walk
 
+# NOT_EXECUTED: the instruction reached no section text (a note, uncodified Act text, an unresolved target); it is
+# reported with the reason, never dropped.
 Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "STALE_BASELINE", "CONFLICT",
-                 "UNPARSED", "NOT_APPLICABLE"]
+                 "UNPARSED", "NOT_APPLICABLE", "NOT_EXECUTED"]
 SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "AMBIGUOUS", "STALE_BASELINE", "CONFLICT", "NOT_FOUND",
-            "TARGET_MISSING", "UNPARSED"]
+            "TARGET_MISSING", "NOT_EXECUTED", "UNPARSED"]
 NS = f"{{{USLM}}}"
 STRUCTURAL = re.compile(r"^\u201c?\(\w{1,6}\)\s|\u2014\u201c?\(\w{1,6}\)|\.\u2014")
 ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubchapter|[Pp]art) (?:\d+[A-Za-z]?|[IVXL]+|[A-Z])"
@@ -539,11 +541,12 @@ class Engine:
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":
-            loose = [f for f in ins.flags if f.startswith("expected a quoted block") or
+            loose = [f for f in ins.flags if f.startswith(("expected a quoted block", "nonstandard verb")) or
                      (f.startswith("unconsumed") and not MARGINS.fullmatch(f[len("unconsumed: "):].strip()))]
             if loose:
-                # The parser left part of the instruction unread, so a clean edit may be an incomplete one.
-                r.status, r.detail = "WARN", "; ".join(x for x in (r.detail, "parser left text unread: " +
+                # The parser left part of the instruction unread, or read an unusual verb as a usual one: a clean
+                # edit may be an incomplete or misread one.
+                r.status, r.detail = "WARN", "; ".join(x for x in (r.detail, "read with caution: " +
                                                                     loose[0][:120]) if x)
         self.results.append(r)
         return r
@@ -631,6 +634,17 @@ class Engine:
         scope = self._scope(path) if self.work.el is not None else None
         if scope is None and not (ins.op == "REPLACE_UNIT" and not path and self.work.el is None):
             return Result(rid, "TARGET_MISSING", f"no unit {''.join(path)} in {self.work.identifier}")
+        term = next((q[len("defining "):] for q in ins.target.qualifiers if q.startswith("defining ")), None)
+        if term is not None and scope is not None:
+            # "in the paragraph defining the term “State”": the one unit whose text opens with that definition.
+            want = fold(f'The term "{nested_to_double(term)}"', True)[0]
+            hits = [e for e in scope.iter() if local(e) in LEVEL_TAGS and
+                    fold(" ".join(text_of(c) for c in e if local(c) in ("content", "chapeau")), True)[0]
+                    .lstrip().startswith(want)]
+            if len(hits) != 1:
+                return Result(rid, "AMBIGUOUS" if hits else "TARGET_MISSING",
+                              f"{len(hits)} units define the term “{term}”")
+            scope = hits[0]
         handler = getattr(self, "_op_" + ins.op.lower(), None)
         if handler is None:
             return Result(rid, "AMBIGUOUS", f"op {ins.op} not supported by the engine")
@@ -693,6 +707,9 @@ class Engine:
         return text
 
     def _edit(self, ins, scope, path, find, make_new, positional=False, label="", join="replace"):
+        if any(q.endswith(" sentence") for q in ins.target.qualifiers) and scope is not None and \
+                any(local(c) in SUB for c in scope):
+            return Result(ins.id, "AMBIGUOUS", "a sentence of a unit that has subunits: no single sentence order")
         segs, hay, hits, how, err = self._locate(ins, scope, find, positional)
         if err:
             return Result(ins.id, "TARGET_MISSING", err)
@@ -888,6 +905,9 @@ class Engine:
         return handler(ins, scope, path)
 
     def _op_strike(self, ins, scope, path):
+        if ins.unit and ins.unit.endswith("sentence") and any(local(c) in SUB for c in scope):
+            # Sentences are counted in a unit's own text; a unit with subunits has no single sentence order.
+            return Result(ins.id, "AMBIGUOUS", f"the {ins.unit} of a unit that has subunits")
         if ins.unit and ins.unit.endswith("sentence"):
             segs = Working.segments(scope)
             hay = linear(segs)
@@ -895,8 +915,13 @@ class Engine:
             if not rng:
                 return Result(ins.id, "NOT_FOUND", f"no {ins.unit}")
             a, b = rng[0]
-            replace_span(segs, a, b, "")
-            return Result(ins.id, "CLEAN", f"struck the {ins.unit}")
+            new = ""
+            if ins.replace:                    # "striking the second sentence and inserting “…”"
+                new = self._tr(nested_to_double(" ".join(block_lines(ins.replace)) if "\n" in ins.replace
+                                                else ins.replace)).strip()
+                new += " " if hay[a:b] != hay[a:b].rstrip() else ""
+            replace_span(segs, a, b, new)
+            return Result(ins.id, "CLEAN", f"{'replaced' if new else 'struck'} the {ins.unit}")
         positional = any(f.startswith("positional") for f in ins.flags)
         return self._edit(ins, scope, path, nested_to_double(ins.find or ""), lambda old: "", positional)
 
@@ -930,7 +955,13 @@ class Engine:
         start = hits[0][0]
         allowed_end = max(b for _, b in self._allowed(segs, ins, ins.find)) if segs else len(hay)
         through = ins.through or "end of unit"
-        if through.startswith("end") or through.startswith("the end") or "at the end" in through:
+        if through in (".", ";", ":"):
+            # "and all that follows through the period": the next one after the start.
+            nxt = hay.find(through, start + len(ins.find or ""), allowed_end)
+            if nxt < 0:
+                return Result(ins.id, "NOT_FOUND", f"no “{through}” after the start")
+            end = nxt + 1
+        elif through.startswith("end") or through.startswith("the end") or "at the end" in through:
             end = allowed_end
             # keep the unit's terminal punctuation when the strike runs "through the end"
         else:

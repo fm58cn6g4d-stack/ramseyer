@@ -130,7 +130,7 @@ class Segmenter:
                     self._close_block()
                 continue
             if line.startswith("\u201c") and self.current is not None and (
-                    self.current.text.rstrip().endswith(":") or
+                    self.current.text.rstrip().endswith((":", ":\u201d", "\u2014\u201d")) or
                     self.current.text.count("\u201c") > self.current.text.count("\u201d")):
                 # A quoted block follows text ending "the following:" / "as follows:". Each paragraph of the
                 # block opens with “; the block ends at the line that closes with ” (inner quotes are ‘ ’).

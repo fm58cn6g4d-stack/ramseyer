@@ -8,7 +8,7 @@ from billmap.parse.grammar import (CONFIDENCE_THRESHOLD, REFERENCES_CLAUSE, Ctx,
                                    quote_free)
 from billmap.parse.ir import Instruction, Node, ParseResult
 from billmap.parse.normalize import normalize
-from billmap.parse.ops import count_ops
+from billmap.parse.ops import AMENDED, OPEN_HEAD, count_ops
 from billmap.parse.segment import LEVEL_PREFIX, Segmenter
 
 AMEND_WORDS = re.compile(r"\b(?:amended|amending|repealed)\b")
@@ -59,7 +59,7 @@ def parse_text(text: str) -> ParseResult:
 
     bill_memory: dict = {}      # the Code unit named last, for "Such subchapter is further amended" in a later section
 
-    def visit(node: Node, ctx: Ctx | None) -> None:
+    def visit(node: Node, ctx: Ctx | None, parent_text: str = "") -> None:
         if node.level == "section":
             ctx = Ctx()
             if bill_memory.get("usc") is not None:
@@ -74,6 +74,15 @@ def parse_text(text: str) -> ParseResult:
             if n:
                 counts[node.loc] = counts.get(node.loc, 0) + n
             ops, child_ctx = parse_unit_text(node, ctx)
+            if not ops and not node.children and (AMENDED.search(qf) or OPEN_HEAD.search(quote_free(parent_text))):
+                # "is amended so as to strike …", or an item under "… is—" ("(1) transferred to the end of section
+                # 2810"), with no verb the grammar knows: reported, with its text, rather than dropped.
+                ops = [Instruction(id=f"{node.loc}#0", bill_loc=node.loc, source_text=node.text, span=node.span,
+                                   # under "… is—" the subject is the head's target, not a place the item names
+                                   target=(child_ctx if AMENDED.search(qf) else ctx).target_out(), op="UNPARSED",
+                                   confidence=0.0,
+                                   reason="amendatory wording with no instruction verb the grammar knows: "
+                                          + node.text[:160])]
             instructions.extend(ops)
             if n or AMEND_WORDS.search(qf):
                 node.cls = "AMENDATORY"
@@ -81,7 +90,7 @@ def parse_text(text: str) -> ParseResult:
                 node.cls = "FREESTANDING"
                 node.freestanding_type = freestanding_type(node.text)
         for c in node.children:
-            visit(c, child_ctx)
+            visit(c, child_ctx, node.text)
         if node.level == "section" and ctx is not None and ctx.memory.get("usc") is not None:
             bill_memory["usc"] = ctx.memory["usc"]
 

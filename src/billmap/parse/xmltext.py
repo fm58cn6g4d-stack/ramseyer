@@ -14,7 +14,7 @@ import re
 
 from lxml import etree
 
-from billmap.parse.ops import count_ops
+from billmap.parse.ops import AMENDED, OPEN_HEAD, count_ops
 
 HEADINGS = {"division": "DIVISION", "title": "TITLE", "subtitle": "Subtitle", "part": "PART",
             "subpart": "Subpart", "chapter": "CHAPTER", "subchapter": "Subchapter"}
@@ -170,6 +170,11 @@ def xml_counts(xml_path) -> dict[str, int]:
             continue
         quote_free = " ".join(inline_without_quotes(t) for t in texts)
         n = count_ops(quote_free)
+        if not n and not any(c.tag in STRUCT for c in el):
+            parent = el.getparent()
+            ptext = parent.find("text") if parent is not None and parent.tag in STRUCT else None
+            if AMENDED.search(quote_free) or (ptext is not None and OPEN_HEAD.search(inline_without_quotes(ptext))):
+                n = 1                   # amendatory wording with no known verb: the parser reports it UNPARSED
         if n:
             key = _loc(el)
             counts[key] = counts.get(key, 0) + n

@@ -25,9 +25,12 @@ LABEL = r"\((?:[0-9]+[A-Za-z]?|[a-z]{1,4}|[A-Z]{1,4})\)"
 LABELS = rf"(?:{LABEL})+"
 SECTION_NUM = r"\d+[\w\u2013-]*"
 UNIT = r"(?:sub)?(?:section|paragraph|clause|item)s?|subparagraphs?|subclauses?|subitems?"
-OCC = (r"(?:\s+(?:in )?(?P<occ>each place (?:it|such term|that term|the term|such terms|they|such phrase|such words?) "
-       r"appears?(?: in (?:the )?text (?:and|or) (?:section |subsection )?headings?| in [^,;]*?)?|(?:the|in the) (?P<nth>first|second|third|fourth|last) place (?:it|such term) "
-       r"appears?|each place it occurs))?")
+# "each place it appears" (occ) and "the second place it appears" (nth) are separate groups: an ordinal is never "each".
+OCC = (r"(?:\s+(?:in )?(?:(?P<occ>(?:at )?each place (?:it|such term|that term|the term|such terms|they|such phrase|such "
+       r"words?) appears?(?: in (?:the )?text (?:and|or) (?:section |subsection )?headings?| in [^,;]*?)?|each place it occurs|"
+       r"both places (?:it|such term|the term|they) appears?)|"
+       r"(?:the|in the) (?P<nth>first|second|third|fourth|fifth|last) place (?:it|such term|that term|the term) "
+       r"appears?))?")
 PUNCT = {"period": ".", "semicolon": ";", "comma": ",", "colon": ":", "dash": "—", "em dash": "—",
          "close quotation mark": "”", "closing quotation marks": "”", "closing parenthesis": ")",
          "parenthesis": ")", "quotation marks": "”"}
@@ -137,14 +140,17 @@ SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|
 # "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
 SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           rf"[Ss]uch section(?: (?P<num>{SECTION_NUM}))?\b")
+SUCH_SECTION_NUM = re.compile(rf"\b[Ss]uch section (?P<num>\d+[\w\u2013.-]*?)(?=[,\s]|$)")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
 # Not "Section 3(c) of <a law the grammar does not know>": a root from context would pick the wrong law.
 BARE_SECTION = re.compile(rf"^(?:[Ss]ection|[Ii]n section) (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?=[\s,]|$)(?! of\b)")
 IN_SECTION = re.compile(rf"\b(?:[Ii]n|for|of) section (?P<sec>\d+[\w–.-]*)(?P<path>{LABELS})?(?![\w–(])(?! of)")
-LOCATION = re.compile(rf"\bin (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
+LOCATION = re.compile(rf"\b[Ii]n (?:the )?(?P<unit>subsection|paragraph|subparagraph|clause|subclause|item|subitem)s?"
                       rf" (?P<labels>{LABELS}(?:(?:,| and| or|, and) {LABELS})*)")
 EACH_OF = re.compile(rf"\bin each of (?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {LABELS})+)")
+DEFINING = re.compile(r"\b[Ii]n (?:the )?(?:paragraph|subsection|subparagraph|clause|subclause|item|provision) "
+                      r"defining (?:the )?(?:terms? )?⟦(?P<q>\d+)⟧")
 HEADING_QUAL = re.compile(rf"(?:\b[Ii]n |^)[Tt]he (?:(?P<u>section|subsection|paragraph|subparagraph|clause) )?heading"
                           rf"(?! of the \w+ column)(?: (?:for|of) (?P<fu>subsection|paragraph|subparagraph|clause) "
                           rf"(?P<fl>{LABELS}))?")
@@ -286,6 +292,12 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         for u in reversed(list(re.finditer(SUCH_UNIT_OF, m["chain"]))):     # outermost unit is named last
             _set_path(ctx, u["unit"].lower(), u["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
+    elif (m := SUCH_SECTION_NUM.search(h)) and (ctx.memory.get("last") is not None or _usc_base(ctx) is not None):
+        # "In subsection (a)(2) of such section 710a, as so redesignated—": the section named in the title in context.
+        base = ctx.memory.get("last") if ctx.memory.get("last") is not None else _usc_base(ctx)
+        ctx.target = base.model_copy(deep=True)
+        ctx.target.section, ctx.target.cite_raw, ctx.target.path, ctx.target.qualifiers = m["num"], m.group(0), [], []
+        ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
     elif (m := PAREN_SECTION.search(h.strip())) and ctx.target.kind in ("unknown", "act"):
         # "Section 2(6) (16 U.S.C. 973(6)) is amended": the Act is implied by the enclosing provision, or by the
         # bill's references clause ("... shall be considered to be made to ... the Social Security Act").
@@ -369,6 +381,11 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                 ctx.qualifiers.append(q)
             if rx is HEADING_QUAL and m["fu"]:          # "the subsection heading for subsection (c)"
                 _set_path(ctx, m["fu"], m["fl"])
+    for m in DEFINING.finditer(h):
+        # "in the paragraph defining the term “State”": the engine finds the unit that defines the term.
+        term = quotes[int(m["q"])] if quotes and int(m["q"]) < len(quotes) else None
+        if term and f"defining {term}" not in ctx.qualifiers:
+            ctx.qualifiers.append(f"defining {term}")
     return flags
 
 
@@ -389,9 +406,13 @@ TERM = r"(?:the (?:terms?|phrases?|words?|figures?) )?"       # "striking the te
 AS_REDESIGNATED = r"(?:,? \(?as (?:so )?redesignated(?: by [^,()]+)?\)?,?)?"
 PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P13", re.compile(rf"^striking {q('a')}{OCC} and all that follows through {q('b')}"
-                       rf"(?: and inserting (?:{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
-    ("P13d", re.compile(rf"^striking {q('a')} and all that follows through (?P<toend>the end of (?:the )?[\w ()]+?|"
-                        rf"(?:the )?(?:period|semicolon) at the end)(?: and inserting (?:{q('c')}|(?P<block>{FOLLOWING})))?"),
+                       rf"(?: and inserting (?:(?:the following:? ?)?{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
+    ("P13t", re.compile(rf"^striking {q('a')} through {q('b')}"
+                        rf"(?: and inserting (?:(?:the following:? ?)?{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
+    ("P13d", re.compile(rf"^striking {q('a')} and all that follows through (?P<toend>the end of (?:the )?(?:section|"
+                        rf"subsection|paragraph|subparagraph|clause|subclause|item|subitem|sentence)(?: \(\w+\))*|"
+                        rf"(?:the )?(?P<tpunct>period|semicolon|colon)(?P<tend> at the end)?)(?: and inserting (?:(?:the following:? ?)?{q('c')}|"
+                        rf"(?P<block>{FOLLOWING})))?"),
      "STRIKE_THROUGH"),
     ("P13e", re.compile(rf"^striking {q('a')}{OCC} and all that follows(?: through the end(?: of [\w ]+?(?: \([\w]+\))*)?)?"
                         rf"(?: and inserting (?:(?:the following:? ?)?{q('c')}|(?P<block>{FOLLOWING})))?"), "STRIKE_THROUGH"),
@@ -399,6 +420,11 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
                        rf"and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
     ("P7", re.compile(rf"^striking (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and| through) {LABELS})*)"
                       rf"(?P<of> of [\w ]+? {LABELS})? and inserting (?P<block>{FOLLOWING})"), "REPLACE_UNIT"),
+    # "striking “or” after “military installation resilience,”", "striking the period after “21”", "striking “and”
+    # before “14504”": the struck words are found next to the anchor words.
+    ("P3a", re.compile(rf"^striking (?:{q('a')}|the (?P<punct>period|semicolon|comma|colon|em dash|dash)(?: that appears)?)"
+                       rf" (?P<where>after|before) {q('x')}(?: and inserting (?:{q('c')}|(?:a|an|the) (?P<punct2>period|"
+                       rf"semicolon|comma|colon|em dash|dash)))?"), "STRIKE_INSERT"),
     ("P2", re.compile(rf"^striking {TERM}{q('a')}{AT_END}{OCC} and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})|"
                       rf"(?:a|an|the) (?P<punct2>period|semicolon|comma|colon|em dash|dash)){OCC.replace('occ', 'occ2').replace('nth', 'nth2')}"),
      "STRIKE_INSERT"),
@@ -419,7 +445,8 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P10x", re.compile(r"^striking the (?:(?P<u>section|subsection|paragraph|subparagraph|clause|subclause) )?heading"
                         r"(?! and)"), "AMEND_HEADING"),
     ("P3p", re.compile(rf"^striking {DESCR}(?: at the end(?: of [\w ()]+?)?)?{OCC}"), "STRIKE"),
-    ("P3s", re.compile(r"^striking the (?P<sent>first|second|third|last|fourth) sentence"), "STRIKE"),
+    ("P3s", re.compile(rf"^striking the (?P<sent>first|second|third|last|fourth) sentence(?: and inserting (?:(?:the "
+                       rf"following:? ?)?{q('b')}|(?P<block>{FOLLOWING})))?"), "STRIKE"),
     ("P11s", re.compile(rf"^striking {ITEM}(?: and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})))?"),
      "CONFORM_TOC"),
     ("P11i", re.compile(rf"^inserting (?P<where>after|before) {ITEM},? (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING}))"),
@@ -430,12 +457,12 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P5i", re.compile(rf"^inserting at the end(?: (?:thereof|of [\w ]+?(?: {LABELS})?))?,? (?:{q('b')}|(?P<block>{FOLLOWING}))"),
      "ADD_END"),
     ("P6", re.compile(rf"^inserting (?P<where>after|before) (?:the )?(?P<unit>{UNIT}) (?P<labels>{LABELS})"
-                      rf"(?: of [\w ]+? {LABELS})?{AS_REDESIGNATED},? (?P<block>{FOLLOWING})"),
+                      rf"(?: of [\w ]+? {LABELS})?{AS_REDESIGNATED},? (?P<block>{FOLLOWING})(?: ?{q('b')})?"),
      "ADD_UNIT_"),
     ("P4b", re.compile(rf"^inserting (?P<where>after|before) {q('a')}{OCC},? (?P<block>{FOLLOWING})(?: ?{q('b')})?"),
      "INSERT_"),
     # "inserting the following before the period at the end: “…”", "inserting before the semicolon the following:"
-    ("P4pb", re.compile(rf"^inserting (?:the following:? )?(?P<where>after|before) {DESCR}(?P<atend2> at the end(?: of "
+    ("P4pb", re.compile(rf"^(?:inserting|adding at the end) (?:the following:? )?(?P<where>after|before) {DESCR}(?P<atend2> at the end(?: of "
                         rf"[\w ()]+?)?)?(?:,? (?P<block>{FOLLOWING}))?:?(?: ?{q('b')})?"), "INSERT_"),
     ("P4", re.compile(rf"^inserting {q('b')} (?P<where>after|before) {q('a')}{OCC}"), "INSERT_"),
     ("P4p", re.compile(rf"^inserting {q('b')} (?P<where>after|before) {DESCR}(?: at the end(?: of [\w ()]+?)?)?{OCC}"),
@@ -455,7 +482,8 @@ def _occ(m: re.Match) -> str:
         return "each"
     nth = gd.get("nth") or gd.get("nth2")
     if nth:
-        return {"first": "first", "second": "nth:2", "third": "nth:3", "fourth": "nth:4", "last": "last"}[nth]
+        return {"first": "nth:1", "second": "nth:2", "third": "nth:3", "fourth": "nth:4", "fifth": "nth:5",
+                "last": "last"}[nth]
     return "first"
 
 
@@ -481,9 +509,45 @@ def _expand(labels_phrase: str) -> list[str]:
     return out
 
 
+MID_LOC = re.compile(r"^(?P<head>striking (?:the (?:terms?|phrases?|words?) )?⟦\d+⟧(?: (?:at )?(?:each|both) places? [^⟦,;]*?"
+                     r"appears?)?),? (?P<loc>in (?:the )?(?:(?:sub)?sections?|paragraphs?|subparagraphs?|clauses?|"
+                     r"subclauses?|(?:\w+ )?heading|first sentence|second sentence|third sentence|last sentence)\b[^⟦]*?),?"
+                     r" (?P<tail>and inserting\b.*)$")
+NONSTANDARD = [   # (pattern, standard form): read as the usual verbs; the instruction is flagged and stays WARN
+    (re.compile(r"^replacing (⟦\d+⟧)(.*?) with (⟦\d+⟧)"), r"striking \1\2 and inserting \3"),
+    (re.compile(r"^substituting (⟦\d+⟧) for (⟦\d+⟧)"), r"striking \2 and inserting \1"),
+    (re.compile(r"^deleting\b"), "striking"),
+    (re.compile(r"^strike\b"), "striking"),
+    (re.compile(r"^insert\b"), "inserting"),
+    (re.compile(r"^add\b"), "adding"),
+    (re.compile(r"^redesignate\b"), "redesignating"),
+]
+
+
 def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | None:
     """One instruction clause (starting at its verb) -> op fields, or None if no pattern matches."""
     c = " ".join(clause.split())          # a quote may start on the next line ("and inserting\n“(D) …”")
+    nonstandard, loc = None, None
+    if re.search(r"\band insert\b", c):
+        c, nonstandard = re.sub(r"\band insert\b", "and inserting", c), "insert"
+    m = MID_LOC.match(c)
+    if m:   # "striking “A” in subsections (b)(6)(B), (c)(1), and (e)(3) and inserting “B”"
+        c, loc = f"{m['head']} {m['tail']}", m["loc"]
+    for rx, std in NONSTANDARD:
+        if rx.match(c):
+            nonstandard = c.split()[0]
+            c = rx.sub(std, c, count=1)
+            c = re.sub(r"\band insert\b", "and inserting", c)     # imperative "strike “A” and insert “B”"
+            break
+    out = _parse_clause(c, quotes, block)
+    if out is not None and nonstandard:
+        out["flags"] = out.get("flags", []) + [f"nonstandard verb: {nonstandard}"]
+    if out is not None and loc:
+        out["loc"] = loc
+    return out
+
+
+def _parse_clause(c: str, quotes: list[str], block: str | None) -> dict | None:
     if re.match(r"^(?:is|are)\s+(?:hereby\s+)?repealed", c):
         return {"op": "REPEAL", "pattern": "P9", "rest": c[re.match(r"^\S+\s+(?:hereby\s+)?repealed", c).end():]}
     if re.match(r"^(?:is|are)\s+(?:hereby\s+)?(?:further\s+)?amended\s+to\s+read\s+as\s+follows", c):
@@ -498,8 +562,11 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
         get = lambda k: quotes[int(gd[k])] if gd.get(k) is not None else None  # noqa: E731
         out = {"pattern": pid, "rest": c[m.end():], "occurrence": _occ(m)}
         uses_block = bool(gd.get("block")) or (pid == "P5" and gd.get("b") is None)
-        if pid in ("P13", "P13d", "P13e"):
-            out |= {"op": op, "find": get("a"), "through": get("b") or gd.get("toend") or "end of unit",
+        if pid in ("P13", "P13d", "P13e", "P13t"):
+            through = get("b") or gd.get("toend") or "end of unit"
+            if gd.get("tpunct") and not gd.get("tend"):
+                through = PUNCT[gd["tpunct"]]       # "through the period": the next period after the start
+            out |= {"op": op, "find": get("a"), "through": through,
                     "replace": get("c"),
                     "new_text": block if uses_block else None}
         elif pid == "P7s":            # "Chapter 1009 ... is amended by striking section 100905 and inserting"
@@ -513,9 +580,24 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
                     "flags": ["heading replaced"]}
         elif pid in ("P7", "P7a"):
             out |= {"op": op, "unit": f"{gd['unit']} {gd['labels']}{gd.get('of') or ''}", "new_text": block}
+        elif pid == "P3a":
+            a = get("a") if gd.get("a") is not None else PUNCT[gd["punct"]]
+            c = get("c") if gd.get("c") is not None else (PUNCT[gd["punct2"]] if gd.get("punct2") else None)
+            x = get("x")
+
+            def join(left, right):
+                return left + right if right in PUNCT.values() else left + " " + right
+            if gd["where"] == "after":
+                find, replace = join(x, a), (join(x, c) if c else x)
+            else:
+                find, replace = join(a, x), (join(c, x) if c else x)
+            out |= {"op": op, "find": find, "replace": replace, "flags": [f"anchored {gd['where']} “{x[:40]}”"]}
         elif pid in ("P2", "P2p"):
             find = get("a") if pid == "P2" else PUNCT[gd["punct"]]
             replace = get("b") if gd.get("b") is not None else (PUNCT[gd["punct2"]] if gd.get("punct2") else None)
+            if replace and block and re.search(r"[:\u2014]\s*$", replace) and not gd.get("block"):
+                # "inserting “may not be used at the following:”" and then the block of new units it introduces.
+                replace = "\u201c" + replace + "\n" + block
             out |= {"op": op, "find": find, "replace": replace, "new_text": block if uses_block else None}
             if pid == "P2p" or gd.get("atend"):
                 out["flags"] = ["positional: " + m.group(0).split(" and inserting")[0][len("striking "):]]
@@ -530,10 +612,13 @@ def parse_clause(clause: str, quotes: list[str], block: str | None) -> dict | No
         elif pid == "P3p":
             out |= {"op": op, "find": PUNCT[gd["punct"]], "flags": ["positional: " + m.group(0)[len("striking "):]]}
         elif pid == "P3s":
-            out |= {"op": op, "unit": f"{gd['sent']} sentence"}
+            rep = get("b") if gd.get("b") is not None else (block if gd.get("block") else None)
+            out |= {"op": op, "unit": f"{gd['sent']} sentence", "replace": rep}
         elif pid in ("P6", "P6s"):
             unit = f"{gd['unit']} {gd['labels']}" if pid == "P6" else f"section {gd['labels']}"
-            out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "unit": unit, "new_text": block}
+            inline = "\u201c" + get("b") + "\u201d" if gd.get("b") is not None else None   # “(B) …” quoted inline
+            out |= {"op": op + ("AFTER" if gd["where"] == "after" else "BEFORE"), "unit": unit,
+                    "new_text": inline or block}
         elif pid in ("P11s", "P11i"):
             item = gd.get("item") or ""
             if gd.get("itemq") is not None:
@@ -575,6 +660,7 @@ HEAD_WHERE = re.compile(rf"\b(?P<where>after|before) (?:the )?(?P<unit>{UNIT}) (
                         r"(?:\s*\(as (?:so )?redesignated[^()]*\))?,?\s*(?:by\s*)?$")
 BLANKET = re.compile(r"\b(?:[Ee]ach|[Aa]ny|[Aa]ll) (?P<what>(?:covered |applicable |other )?[\w ]{0,40}?(?:laws?|Acts?|"
                      r"statutes?|provisions? of (?:Federal )?law))\s*,?\s*(?:is|are) (?:hereby )?amended\b")
+APPLIED_AS = re.compile(r"\bshall (?:be applied|apply)\b[^.]{0,80}?\b(?:by|as if)\b\s*$|\bshall be applied\b")
 CONFORMING = re.compile(r"\s*\(and conforming the table of (?:sections|contents|chapters)[^()]*\)")
 TRAILING_OK = re.compile(r"^[\s,.;:\u2014]*(?:respectively|and|or)?[\s,.;:\u2014]*(?:and|or)?[\s,.;:\u2014]*$")
 TRAILING_LOC = re.compile(rf"^,?\s*(?:in|of) (?:the )?(?:{UNIT}|section) [\w–.-]*(?:{LABELS})?"
@@ -669,10 +755,15 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
                                    confidence=0.0, reason=f"no grammar pattern matches: {PH_RE.sub('“…”', clause)[:160]}"))
             continue
         rest = CONFORMING.sub("", parsed.pop("rest", ""))
+        loc_flags = apply_head(parsed.pop("loc"), ictx) if parsed.get("loc") else []   # location set mid-clause
         if (sec := parsed.pop("section", None)) and ictx.target.kind != "unknown":
             ictx.target = ictx.target.model_copy(deep=True)
             ictx.target.section, ictx.path, ictx.qualifiers = sec, [], []
-        pflags = flags + parsed.pop("flags", [])
+        pflags = flags + loc_flags + parsed.pop("flags", [])
+        if APPLIED_AS.search(head):
+            # "Section 301 ... shall be applied by substituting “$130,000,000” for “$120,000,000”": a rule of
+            # application, not an amendment; the Code text is unchanged (OLRC sets it out in a note).
+            pflags.append("rule of application, not an amendment")
         m = TRAILING_LOC.match(rest)
         if m:                                     # "by striking “x” in paragraph (2)"
             apply_head(m.group(0), ictx)

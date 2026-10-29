@@ -106,9 +106,14 @@ def main() -> int:
     statuses = collections.Counter()
     runs = {}
 
+    missing_status: list[str] = []
+
     def predictor(law, before):
-        run = run_bill(parse_text(render(f.get(law.enrolled_url).path)).instructions, resolver, before)
+        instructions = parse_text(render(f.get(law.enrolled_url).path)).instructions
+        run = run_bill(instructions, resolver, before)
         runs[law.pl] = run
+        with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
+        missing_status.extend(f"{law.pl} {i.id}" for i in instructions if i.id not in with_status)
         for tr in run.traces:
             statuses[tr.result.status if tr.result else f"unattributed:{tr.resolution.outcome}"] += 1
         return run.predictions
@@ -140,6 +145,9 @@ def main() -> int:
     detected = sum(1 for o in clean_mism if (o.pl, o.identifier) in detected_ids)
     substantive = sum(1 for o in clean_mism if o.stage != "editorial")
     checks = [
+        ("Every parsed instruction has a status (never drop)", not missing_status,
+         f"{sum(statuses.values())} statuses; instructions without one: {len(missing_status)}"
+         + (f" (e.g. {', '.join(missing_status[:5])})" if missing_status else "")),
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "

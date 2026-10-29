@@ -119,6 +119,15 @@ class ActCodeIndex:
                 sec, path = s.group(1).rstrip("."), tuple(re.findall(r"\([\w]+\)", s.group(2)))
                 self.notes[(ident, sec)].append(Location(sid, path, note_id=nid, evidence=head[:160]))
 
+    def sections_of(self, identities: list[str]) -> set[int]:
+        """Code section node ids whose source credits (or notes) carry any section of these Acts."""
+        if not hasattr(self, "_by_identity"):
+            self._by_identity: dict[str, set[int]] = defaultdict(set)
+            for table in (self.codified, self.notes):
+                for (ident, _), locs in table.items():
+                    self._by_identity[ident].update(l.section_id for l in locs)
+        return set().union(*(self._by_identity.get(i, set()) for i in identities)) if identities else set()
+
     def lookup(self, identities: list[str], section: str) -> tuple[list[Location], list[Location]]:
         cod, nts = [], []
         for ident in identities:

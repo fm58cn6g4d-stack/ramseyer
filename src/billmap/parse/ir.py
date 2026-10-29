@@ -43,7 +43,7 @@ class Instruction(BaseModel):
     new_text: str | None = None        # quoted text or quoted block to add
     unit: str | None = None            # unit named by the op: "subsection (c)", "paragraphs (2) through (5)"
     redesignate: list[tuple[str, str]] | None = None   # [("(2)", "(3)"), ...]
-    occurrence: str = "first"          # first | each | nth:<n>
+    occurrence: str = "first"          # first (none given) | each | last | nth:<n> (drafted ordinal)
     confidence: float = 1.0
     shape_hash: str = ""
     flags: list[str] = Field(default_factory=list)

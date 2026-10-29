@@ -170,3 +170,19 @@ def test_label_order_reads_roman_and_letters():
     from billmap.dryrun.verify import _in_order
     assert _in_order(["i", "ii", "iii", "iv", "v"]) and _in_order(["h", "i", "j"]) and _in_order(["1", "2", "10"])
     assert _in_order(["A", "B", "C"]) and not _in_order(["i", "iii", "ii"]) and not _in_order(["b", "a"])
+
+
+def test_sentence_edits_on_units_with_subunits_are_not_clean():
+    _, res = run("Section 1 of title 99, United States Code, is amended in subsection (b) by striking the second "
+                 "sentence and inserting “Another.”.")
+    assert res[0].status == "AMBIGUOUS"
+
+
+def test_unit_found_by_the_term_it_defines():
+    xml = XML.replace("<content>The determiner shall review each term of the alpha program.</content>",
+                      '<content>The term "alpha" means the first program. It runs yearly.</content>')
+    ins = parse_text("SEC. 2. X.\nSection 1 of title 99, United States Code, is amended, in the subsection defining "
+                     "the term “alpha”, by striking the second sentence and inserting “It runs monthly.”.\n").instructions
+    work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+    r = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert r.status == "CLEAN" and "It runs monthly." in work.render() and "yearly" not in work.render()

@@ -96,7 +96,8 @@ def main() -> int:
         result = parse_text(render(f.get(law.enrolled_url).path))
         seen = set()
         for ins in result.instructions:
-            if ins.op == "UNPARSED" or ("." in ins.id.split("#")[1] and not ins.id.endswith(".0")):
+            if ins.op == "UNPARSED" or ("." in ins.id.split("#")[1] and not ins.id.endswith(".0")) or \
+                    "rule of application, not an amendment" in ins.flags:      # not an amendment of the Code
                 continue
             res = resolver.resolve(ins.target)
             everything[(ins.target.kind, res.outcome)] += 1

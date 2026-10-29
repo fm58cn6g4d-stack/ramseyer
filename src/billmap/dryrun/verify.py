@@ -73,7 +73,8 @@ def unapplied_mentions(ident: str, instructions: list[Instruction], applied: set
         text = (ins.source_text or "").replace("-", "\u2013")
         named = ins.target.kind == "usc" and ins.target.title == title and \
             any(m.group(1) == num for m in SECTION_MENTION.finditer(text))
-        cited = re.search(rf"\b{title} U\.S\.C\. {re.escape(num)}(?![\w\u2013])(?! note)", text)
+        cited = re.search(rf"\b{title} U\.S\.C\. {re.escape(num)}(?![\w\u2013])(?! note)|\bsection {re.escape(num)}"
+                          rf"(?![\w\u2013])(?:\([\w]+\))*,? of (?:the )?title {title}\b", text)
         if named or cited:
             out.append(f"instruction {ins.id} was not applied and names section {num}: “{text[:100]}”")
         elif here and ins.find and any(q.startswith("blanket") for q in ins.target.qualifiers) and \
