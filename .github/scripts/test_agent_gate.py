@@ -551,6 +551,10 @@ class Classify(unittest.TestCase):
         self.assertFalse(g.same_changes(reviewed, edited))
         self.assertFalse(g.same_changes("0" * 40, merged))
 
+    def test_unusual_filename_keeps_its_tier(self):
+        self.write(".github/workflows/\u00e9 x.yml", "on: push\n")
+        self.assertEqual(g.classify(self.base, self.commit("w"), POLICY)["tier"], 3)
+
     def test_rename_keeps_source_tier(self):
         self.git("mv", "tests/oracle/labels.json", "tests/labels_archive.json")
         cls = g.classify(self.base, self.commit("r"), POLICY)

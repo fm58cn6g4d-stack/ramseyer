@@ -62,14 +62,17 @@ def file_at(rev, path):
 
 def changed_files(base, head):
     """[(status, path, old_path)] between the merge base of base..head and head."""
-    out = []
-    for line in git("diff", "--name-status", "-M", f"{base}...{head}").splitlines():
-        parts = line.split("\t")
-        st = parts[0][0]
-        if st == "R":
-            out.append(("R", parts[2], parts[1]))
+    # -z gives raw, NUL-separated paths; without it git quotes and escapes unusual names, and a quoted
+    # ".github/..." would not match its tier rule. Fields: status, path (old and new for a rename or copy).
+    fields, out, i = git("diff", "--name-status", "-z", "-M", f"{base}...{head}").split("\0"), [], 0
+    while i < len(fields) and fields[i]:
+        st = fields[i][0]
+        if st in "RC":
+            out.append((st, fields[i + 2], fields[i + 1]))
+            i += 3
         else:
-            out.append((st, parts[1], parts[1]))
+            out.append((st, fields[i + 1], fields[i + 1]))
+            i += 2
     return out
 
 
