@@ -8,7 +8,7 @@ File numbers run one ahead of the tab numbers because the overview tab comes fir
 | --- | --- | --- | --- |
 | `00-build-plan.md` | Build Plan overview | Doc export, revision 6; M6 revision mirrored (doc rev 10); revised order of work mirrored (doc rev 14) | 2026-10-29 |
 | `01-setup.md` | 0 Setup | Doc export, revision 1 | 2026-10-27 |
-| `02-data-layer.md` | 1 Data layer | Doc export, revision 1; USLM 2, windows and Act text section mirrored (tab rev 2) | 2026-10-29 |
+| `02-data-layer.md` | 1 Data layer | Doc export, revision 1; USLM 2, windows and Act text section mirrored (tab rev 4) | 2026-10-29 |
 | `03-free-statute-server.md` | 2 Free statute server | Doc export, revision 1 | 2026-10-28 |
 | `04-draft-parser.md` | 3 Draft parser | Doc export, revision 1 | 2026-10-28 |
 | `05-resolver.md` | 4 Resolver | Doc export, revision 1 | 2026-10-28 |
