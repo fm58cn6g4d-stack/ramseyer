@@ -267,5 +267,38 @@ def materialize(history: History, label: str, titles: list[str], db_path: Path, 
     ix.db.executemany("INSERT INTO load_issues(rp, title, kind, detail) VALUES (?,?,?,?)",
                       [(rp, t, "history_incomplete", note.split(" ", 2)[1]) for t, note in incomplete])
     ix.mark_complete(rp)
+    ix.db.close()
     zp.unlink()
     return rp
+
+
+class ReleaseIndexes:
+    """Release points of a history oracle set, opened as indexes on demand: each is materialized (with the titles the
+    set needs there) into its own file on first use, and only the most recent `keep` are kept on disk. Laws are graded
+    in release order, so a small window suffices; an evicted release point is rebuilt if asked for again."""
+
+    def __init__(self, history: History, titles: dict[str, list[str]], cache_dir: Path, keep: int = 4, log=print):
+        from collections import OrderedDict
+        self.history, self.titles, self.dir, self.keep, self.log = history, titles, cache_dir, keep, log
+        self.open: OrderedDict = OrderedDict()
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _path(self, label: str) -> Path:
+        return self.dir / f"{label}.sqlite"
+
+    def __call__(self, label: str):
+        from ramseyer.data.index import Index
+        if label in self.open:
+            self.open.move_to_end(label)
+            return self.open[label]
+        path = self._path(label)
+        if not path.exists():
+            materialize(self.history, label, self.titles.get(label, []), path, log=self.log)
+        ix = Index(path, label)
+        self.open[label] = ix
+        while len(self.open) > self.keep:
+            old, old_ix = self.open.popitem(last=False)
+            old_ix.db.close()
+            for p in (self._path(old), Path(f"{self._path(old)}-wal"), Path(f"{self._path(old)}-shm")):
+                p.unlink(missing_ok=True)
+        return ix

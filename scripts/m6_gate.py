@@ -32,6 +32,7 @@ from ramseyer.dryrun.engine import category
 from ramseyer.dryrun.predict import run_bill
 from ramseyer.oracle import harness, store
 from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
+from ramseyer.oracle.history import History, ReleaseIndexes
 from ramseyer.oracle.corpus import MANIFEST, Corpus
 from ramseyer.parse import parse_text
 from ramseyer.parse.xmltext import render
@@ -49,6 +50,14 @@ SETS = {   # name: (manifest, oracle db, output tag, heading)
     # Sealed (red team F5): built after the second red-team round; measured, never inspected case by case.
     "govinfo2023": (MANIFEST.with_name("heldout_govinfo_2023.json"), store.ORACLE_DB.with_name("govinfo_2023.sqlite"),
                     "m6b_govinfo2023", " (sealed held-out: 2023 laws on GovInfo's 2022/2023 editions)"),
+    # M6e: laws from 113-21 on, on the release-point history (scripts/build_history_oracle.py). dev may be tuned on;
+    # test is measured only; sealed is measured once per round and never inspected case by case.
+    "history_dev": (MANIFEST.with_name("history_dev.json"), store.ORACLE_DB.with_name("history_cache"),
+                    "m6e_dev", " (2013-2026 history: dev)"),
+    "history_test": (MANIFEST.with_name("history_test.json"), store.ORACLE_DB.with_name("history_cache"),
+                     "m6e_test", " (2013-2026 history: test, measured only)"),
+    "history_sealed": (MANIFEST.with_name("history_sealed.json"), store.ORACLE_DB.with_name("history_cache"),
+                       "m6e_sealed", " (2013-2026 history: sealed, measured once per round)"),
 }
 FALSE_CLEAN_TARGET = 0.01
 
@@ -127,6 +136,10 @@ def main() -> int:
         # Sections outside the answer key are fetched from the same edition on demand (red team F6).
         open_index = lru_cache(maxsize=None)(lambda label: GovInfoOverlay(store.index(label, db), int(label[-4:]), f,
                                                                           resolver.positive))
+    elif args.set.startswith("history_"):
+        # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
+        open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
+                                    {rp.label: rp.titles for rp in corpus.release_points}, db, log=lambda s: None)
     else:
         open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
     statuses = collections.Counter()
