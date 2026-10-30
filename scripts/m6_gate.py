@@ -28,6 +28,7 @@ from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index, LookupError_
 from ramseyer.data.indexer import text_of
+from ramseyer.dryrun.engine import category
 from ramseyer.dryrun.predict import run_bill
 from ramseyer.oracle import harness, store
 from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
@@ -285,7 +286,11 @@ def main() -> int:
     lines = [f"# {tag.upper()} gate" + heading, "", f"Index {cfg.release_pin}; run {time.strftime('%Y-%m-%d %H:%M:%SZ', time.gmtime())}; "
              f"{time.monotonic() - t0:.0f}s.", "", "| Check | Result | Measured |", "| --- | --- | --- |"]
     lines += [f"| {n} | {'PASS' if ok else 'FAIL'} | {d.replace('|', '/')} |" for n, ok, d in checks]
+    cats = collections.Counter()
+    for k, v in statuses.items():
+        cats[category(k) or "carried out or nothing to do"] += v
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
+              "", "Failure categories (Comparative Print Suite): " + ", ".join(f"{k} {v}" for k, v in cats.most_common()),
               "", "Mismatches by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
               *(["", "Halves:", *halves] if halves else []),
               "", "## Strata", "", *strata, "", "## CLEAN and wrong per law", "",

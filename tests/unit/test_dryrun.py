@@ -186,3 +186,79 @@ def test_unit_found_by_the_term_it_defines():
     work = Working(xml, "/us/usc/t99/s1", positive_law=True)
     r = Engine(work).run(ins[0], list(ins[0].target.path))
     assert r.status == "CLEAN" and "It runs monthly." in work.render() and "yearly" not in work.render()
+
+
+# ---- already executed (M6d): current law already reads as the instruction would leave it ----
+
+def test_strike_insert_already_executed():
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “each term "
+                    "of the omega program” and inserting “each term of the alpha program”.")
+    assert res[0].status == "ALREADY_EXECUTED", res[0].detail
+    assert "each term of the alpha program" in text
+
+
+def test_replacement_containing_the_old_text_is_not_applied_twice():
+    # Striking "alpha" and inserting "alpha program" where the text already reads "alpha program": applying it
+    # again would print "alpha program program".
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “alpha” "
+                    "and inserting “alpha program”.")
+    assert res[0].status == "ALREADY_EXECUTED", res[0].detail
+    assert "program program" not in text
+
+
+def test_insert_after_already_in_place():
+    text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by inserting “of the "
+                    "alpha” after “each term”.")
+    assert res[0].status == "ALREADY_EXECUTED", res[0].detail
+    assert text.count("of the alpha") == 1
+
+
+def test_insert_before_already_in_place():
+    _, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by inserting “shall "
+                 "review” before “each term”.")
+    assert res[0].status == "ALREADY_EXECUTED", res[0].detail
+
+
+def test_a_real_insertion_and_a_missing_quote_are_unchanged():
+    _, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by inserting “and "
+                 "beta” after “alpha”.")
+    assert res[0].status == "CLEAN"
+    _, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “omega” "
+                 "and inserting “zeta rule”.")
+    assert res[0].status == "NOT_FOUND"
+
+
+def test_short_insertions_never_count_as_executed():
+    # "of" is too short to tell an earlier execution from coincidence.
+    _, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “omega” "
+                 "and inserting “of”.")
+    assert res[0].status == "NOT_FOUND"
+
+
+def test_categories():
+    from ramseyer.dryrun.engine import category
+    assert category("ALREADY_EXECUTED") == "already executed"
+    assert category("NOT_FOUND") == "drafting" and category("TARGET_MISSING") == "drafting"
+    assert category("STALE_BASELINE") == "current-law data"
+    assert category("UNPARSED") == "system" and category("NOT_EXECUTED") == "system"
+    assert category("CLEAN") is None and category("WARN") is None
+
+
+def test_a_change_made_earlier_in_the_same_bill_is_a_conflict_not_already_executed():
+    text, res = run("(a) Section 1 of title 99, United States Code, is amended in subsection (a) by inserting “and "
+                    "beta” after “alpha”.\n(b) Section 1 of title 99, United States Code, is amended in subsection "
+                    "(a) by inserting “and beta” after “alpha”.")
+    assert [r.status for r in res] == ["CLEAN", "CONFLICT"], [r.detail for r in res]
+    assert text.count("and beta") == 1
+
+
+def test_a_correction_matches_across_a_footnote_marker_and_removes_it():
+    # OLRC prints the words a correction fixes with a "So in original" footnote: "the the¹ board".
+    xml = XML.replace("notify the board.", 'notify the the<ref class="footnoteRef" idref="fn1">1</ref> board.'
+                      '<note type="footnote" id="fn1">So in original.</note>')
+    ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection "
+                     "(b)(3) by striking “the the board” and inserting “the board”.\n").instructions
+    work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+    res = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert res.status == "CLEAN", res.detail
+    assert "notify the board." in work.render() and "So in original" not in work.render()
