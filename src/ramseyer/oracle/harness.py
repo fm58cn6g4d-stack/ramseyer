@@ -118,12 +118,44 @@ def label_stage(label, predicted: str | None, after: str | None) -> str | None:
 
 
 def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Prediction]], name: str,
-             open_index: Callable[[str], Index], labels: dict | None = None) -> Report:
+             open_index: Callable[[str], Index], labels: dict | None = None,
+             after_law: Callable[[CorpusLaw, list[SectionOutcome], Index, Index], dict] | None = None,
+             checkpoint: Path | None = None, key: str = "", extras: dict[str, dict] | None = None) -> Report:
+    """Grade every law of the corpus.
+
+    after_law(law, its outcomes, R_before, R_after) runs while the law's release points are open and returns
+    whatever its caller needs later (JSON-serializable), collected in `extras` by law. With `checkpoint`, each
+    graded law is appended to that file, and a run with the same `key` (a hash of what the grading depends on)
+    resumes after the last one; a different key starts over."""
     labels = labels if labels is not None else (json.loads(LABELS.read_text()) if LABELS.exists() else {})
     outcomes: list[SectionOutcome] = []
     by_law: dict[str, dict[str, int]] = {}
     tokens = deterministic = predicted_n = 0
+    extras = extras if extras is not None else {}
+    done: dict[str, dict] = {}
+    if checkpoint is not None:
+        lines = checkpoint.read_text().splitlines() if checkpoint.exists() else []
+        if lines and json.loads(lines[0]).get("key") == key:
+            for line in lines[1:]:
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:          # a line cut short by the interruption
+                    break
+                done[rec["pl"]] = rec
+        else:
+            checkpoint.write_text(json.dumps({"key": key}) + "\n")
     for law in corpus.laws:
+        if law.pl in done:
+            rec = done[law.pl]
+            outcomes += [SectionOutcome(**o) for o in rec["outcomes"]]
+            by_law[law.pl] = rec["counts"]
+            predicted_n += rec["predicted"]
+            tokens += rec["tokens"]
+            deterministic += rec["deterministic"]
+            extras[law.pl] = rec["extra"]
+            continue
+        law_outcomes: list[SectionOutcome] = []
+        law_predicted = law_tokens = law_deterministic = 0
         before, after = open_index(law.rp_before), open_index(law.rp_after)
         gt = truth(law, before, after)
         preds = {p.identifier: p for p in predictor(law, before)}
@@ -144,24 +176,35 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="match" if same else "mismatch",
                                    status=p.status, stage=stage,
                                    detail="" if same else first_difference(p.text, t["after"]))
-            outcomes.append(o)
+            law_outcomes.append(o)
             counts[o.outcome] += 1
         for ident, p in preds.items():
-            predicted_n += 1
-            tokens += p.model_tokens
-            deterministic += p.deterministic
+            law_predicted += 1
+            law_tokens += p.model_tokens
+            law_deterministic += p.deterministic
             if ident in gt:
                 continue
             at, _ = section_text(after, ident)
             bt, _ = section_text(before, ident)
             kind = "extra" if normalize(p.text) == normalize(bt) == normalize(at) else "unexpected_change"
             differs = None if at is None and p.text is not None else normalize(p.text) != normalize(at)
-            outcomes.append(SectionOutcome(pl=law.pl, identifier=ident, outcome=kind, status=p.status, stage=p.stage,
-                                           detail="not classified to this law" + (
-                                               "; " + first_difference(p.text, at) if differs else ""),
-                                           after_differs=differs))
+            law_outcomes.append(SectionOutcome(pl=law.pl, identifier=ident, outcome=kind, status=p.status,
+                                               stage=p.stage, detail="not classified to this law" + (
+                                                   "; " + first_difference(p.text, at) if differs else ""),
+                                               after_differs=differs))
             counts[kind] += 1
         by_law[law.pl] = dict(counts)
+        extra = after_law(law, law_outcomes, before, after) if after_law else {}
+        extras[law.pl] = extra
+        if checkpoint is not None:
+            with open(checkpoint, "a") as fh:
+                fh.write(json.dumps({"pl": law.pl, "outcomes": [o.model_dump() for o in law_outcomes],
+                                     "counts": dict(counts), "predicted": law_predicted, "tokens": law_tokens,
+                                     "deterministic": law_deterministic, "extra": extra}, ensure_ascii=False) + "\n")
+        outcomes += law_outcomes
+        predicted_n += law_predicted
+        tokens += law_tokens
+        deterministic += law_deterministic
     graded = [o for o in outcomes if o.outcome in ("match", "mismatch")]
     clean = [o for o in graded if o.status == "CLEAN"]
     false_clean = [o for o in clean if o.outcome == "mismatch"]

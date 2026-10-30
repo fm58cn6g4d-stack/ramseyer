@@ -77,3 +77,37 @@ def test_missed_and_extra(setup):
                            model_tokens=7)]
     m = run(setup, p)
     assert (m["missed"], m["extra"], m["model_tokens"], m["deterministic_coverage"]) == (2, 1, 7, 0.0)
+
+
+def test_a_checkpointed_run_resumes_without_grading_again(setup, tmp_path):
+    corpus, open_index = setup
+    calls = []
+
+    def p(law, before):
+        calls.append(law.pl)
+        return [Prediction(identifier="/us/usc/t99/s2", status="CLEAN", text='§ 2. H2\nBeta "delta".')]
+
+    def hook(law, outs, before, after):
+        return {"seen": sorted(o.identifier for o in outs), "after": after.release_point}
+    ck = tmp_path / "ck.jsonl"
+    first = harness.evaluate(corpus, p, "t", open_index, labels={}, after_law=hook, checkpoint=ck, key="k")
+    x2 = {}
+    again = harness.evaluate(corpus, p, "t", open_index, labels={}, after_law=hook, checkpoint=ck, key="k", extras=x2)
+    assert calls == ["1-2"]                                             # the second run read the checkpoint
+    assert again.metrics == first.metrics and again.outcomes == first.outcomes
+    assert x2["1-2"] == {"seen": ["/us/usc/t99/s2", "/us/usc/t99/s3"], "after": "1-2"}
+    harness.evaluate(corpus, p, "t", open_index, labels={}, after_law=hook, checkpoint=ck, key="other")
+    assert calls == ["1-2", "1-2"]                                      # a different key starts over
+
+
+def test_a_line_cut_short_by_an_interruption_is_graded_again(setup, tmp_path):
+    corpus, open_index = setup
+    calls = []
+
+    def p(law, before):
+        calls.append(law.pl)
+        return []
+    ck = tmp_path / "ck.jsonl"
+    ck.write_text('{"key": "k"}\n{"pl": "1-2", "outc')
+    m = harness.evaluate(corpus, p, "t", open_index, labels={}, checkpoint=ck, key="k").metrics
+    assert calls == ["1-2"] and m["missed"] == 2
