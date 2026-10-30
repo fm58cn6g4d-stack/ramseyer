@@ -175,11 +175,16 @@ def main() -> int:
             ctx = Ctx()
             head, quotes, _ = lift_quotes(cite)
             apply_head(head, ctx, quotes)
-            try:
-                res = after_resolver().resolve(ctx.target_out())
-                return after_resolver().ix._node(res.node_id).identifier if res.node_id else None
-            except Exception:                        # an unresolvable citation is simply not accepted
-                return None
+            # R_after first; it holds only the titles this set needs, so then the pinned index (a section renumbered
+            # since then reads differently from R_after's text and is not accepted).
+            for r in (after_resolver(), resolver):
+                try:
+                    res = r.resolve(ctx.target_out())
+                    if res.node_id:
+                        return r.ix._node(res.node_id).identifier
+                except Exception:                    # an unresolvable citation is simply not accepted
+                    continue
+            return None
 
         def notes(ix, ident) -> list[str]:
             try:
