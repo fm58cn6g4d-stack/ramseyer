@@ -149,6 +149,12 @@ def test_in_each_of_sections_takes_the_title_in_context():
     assert [(i.target.title, i.target.section, i.target.path) for i in listed] == \
         [("99", "1", ["(a)"]), ("99", "2", []), ("99", "3", ["(b)"])]
     assert all(i.occurrence == "each" for i in listed)
+    # § 1991(f)(3) leaves out a comma: "46101(a)(1), 46102(a) 46103(a), ...".
+    gap = parse_text("SEC. 2. X.\n(a) One.—Section 1 of title 99, United States Code, is amended by striking “a” and "
+                     "inserting “b”.\n(b) Chapter 1.—Chapter 1 is amended—\n(3) in each of sections 1(a)(1), 2(a) "
+                     "3(a), and 10(a) by striking “x” and inserting “y”;\n").instructions
+    assert [(i.target.section, i.target.path) for i in gap if i.id.startswith("sec2.b.3")] == \
+        [("1", ["(a)", "(1)"]), ("2", ["(a)"]), ("3", ["(a)"]), ("10", ["(a)"])]
 
 
 def test_a_code_parenthetical_without_a_space_is_not_a_label():

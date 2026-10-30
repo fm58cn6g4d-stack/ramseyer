@@ -170,7 +170,8 @@ SECTION_LIST = re.compile(rf"\b[Ss]ections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| a
                           r" of (?:such title|this title|title \d+,? United States Code)\b")
 # "(1) in each of sections 46101(a)(1), 46102(a), and 46110(a) by striking ...", under "Chapter 461 is amended—":
 # the title is the one in context (Pub. L. 115-254 div. K § 1991(f)).
-EACH_SECTIONS = re.compile(rf"^\s*[Ii]n (?:each of )?sections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) "
+# A comma the drafter left out between two entries ("46102(a) 46103(a)", § 1991(f)(3)) still separates them.
+EACH_SECTIONS = re.compile(rf"^\s*[Ii]n (?:each of )?sections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and|) "
                            rf"{_SN}(?:{LABELS})?)+),?\s*(?:by\s*)?$")
 # "Except as otherwise expressly provided, wherever in this title an amendment or repeal is expressed in terms of an
 # amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to that
@@ -733,7 +734,7 @@ def _section_list(head: str, ctx: Ctx) -> list[Ctx]:
     if not m or ctx.target.kind != "usc":
         return []
     out = []
-    for sm in re.finditer(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?(?=,| and|$)", m["list"]):
+    for sm in re.finditer(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?(?=,| and| \d|$)", m["list"]):
         if not sm["sec"]:
             continue
         d = ctx.copy()
