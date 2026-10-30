@@ -158,3 +158,23 @@ def test_a_code_parenthetical_without_a_space_is_not_a_label():
                      "paragraph (8) by striking “and (7).” and inserting “and (7)”.\n").instructions
     assert (ins[0].target.section, ins[0].target.usc_parenthetical, ins[0].target.path) == \
         ("505–1", "21 U.S.C. 355–1(h)", ["(h)", "(8)"])
+
+
+def test_a_table_in_quoted_text_keeps_the_instruction_from_clean(tmp_path):
+    # Pub. L. 113-67 § 402(b)(2) (22 U.S.C. 4071e): “(C) ... shall be as follows:” and a one-row table; the table
+    # was dropped by the renderer and the section came out CLEAN without it.
+    from ramseyer.parse.xmltext import render
+    bill = tmp_path / "bill.xml"
+    bill.write_text(
+        "<bill><legis-body><section><enum>2.</enum><header>Amendment</header><text>Section 1(b) of title 99, United "
+        "States Code, is amended by adding at the end the following:</text><quoted-block><paragraph><enum>(2)</enum>"
+        "<text>The applicable percentage shall be as follows:</text><table><tgroup cols=\"2\"><tbody><row><entry>"
+        "11.15</entry><entry>After a placeholder date.</entry></row></tbody></tgroup></table></paragraph>"
+        "<after-quoted-block>.</after-quoted-block></quoted-block></section></legis-body></bill>")
+    rendered = render(bill)
+    assert "[table omitted from the dry run: 1 row]" in rendered
+    ins = parse_text(rendered).instructions
+    work = Working(XML, "/us/usc/t99/s1", positive_law=True)
+    res = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert res.status == "WARN" and "table" in res.detail
+    assert "table omitted" not in work.render()

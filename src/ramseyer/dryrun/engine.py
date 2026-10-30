@@ -15,6 +15,7 @@ from typing import Callable, Literal
 from lxml import etree
 
 from ramseyer.data.indexer import NON_OPERATIVE, SUB, USLM, local, text_of
+from ramseyer.parse.xmltext import TABLE_OMITTED
 from ramseyer.parse.ir import Instruction
 from ramseyer.parse.normalize import normalize
 from ramseyer.parse.segment import Segmenter, walk
@@ -467,6 +468,7 @@ def block_lines(block: str) -> list[str]:
     # Inner quotation marks are ‘ ’ in a bill, so a ” still unmatched on a line closes the block a second time: a
     # drafting slip OLRC drops (“... Hawaii.”.” in the middle of a block, Pub. L. 116-315 § 7002; “... general.”;”;”,
     # Pub. L. 117-263 § 502).
+    lines = [x for x in lines if not x.startswith(TABLE_OMITTED)]   # parse/xmltext.py: never statute text
     for i, x in enumerate(lines):
         while x.count("”") > x.count("“") and re.search(r"”[\s.;,:]*$", x):
             x = re.sub(r"”[\s.;,:]*$", "", x).rstrip()
@@ -607,6 +609,9 @@ class Engine:
         r = self._run(ins, path)
         if r.status in ("CLEAN", "WARN"):
             self.done.setdefault(key, ins.id)
+        if r.status == "CLEAN" and TABLE_OMITTED in (ins.new_text or "") + (ins.replace or ""):
+            r.status, r.detail = "WARN", "; ".join(x for x in (r.detail, "the quoted text holds a table the dry run "
+                                                                         "does not carry") if x)
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":
