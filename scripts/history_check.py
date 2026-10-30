@@ -4,7 +4,9 @@ For every release point that is both in the oracle index (var/oracle/oracle.sqli
 scripts/build_corpus.py) and in the history (var/history/history.sqlite, scripts/load_history.py), the same titles
 are materialized from the history (oracle/history.materialize) and every section is compared:
   - text (text_plain), heading and status, exactly;
-  - the set of subunit identifiers.
+  - the set of subunit identifiers;
+  - the notes (type, heading, text) and the source credits, in order.
+Not compared: references, chapter-level structure and notes, and section order within a title.
 Also: the history's release labels all parse, the label order rule reproduces the dataset's publication sequence,
 and the M6d window rule is run over the full label list.
 Run:  .venv/bin/python scripts/history_check.py [--labels 119-100 ...]
@@ -26,13 +28,23 @@ CHECK = config.VAR / "history" / "check.sqlite"
 
 
 def sections(db, rp: int) -> dict[str, tuple]:
-    out = {i: (t, h, s, set()) for i, t, h, s in db.execute(
+    """identifier -> (text, heading, status, subunit identifiers, notes, source credits)."""
+    out = {i: (t, h, s, set(), [], []) for i, t, h, s in db.execute(
         "SELECT identifier, text_plain, heading, status FROM nodes WHERE rp=? AND kind='section'", (rp,))}
     by_id = {nid: i for nid, i in db.execute("SELECT id, identifier FROM nodes WHERE rp=? AND kind='section'", (rp,))}
     for sid, ident in db.execute("SELECT section_id, identifier FROM nodes WHERE rp=? AND kind<>'section'", (rp,)):
         sec = by_id.get(sid)
         if sec in out:
             out[sec][3].add(ident)
+    for sid, ntype, heading, text in db.execute(
+            "SELECT n.section_id, n.note_type, n.heading, n.text FROM notes n JOIN nodes s ON s.id=n.section_id "
+            "WHERE s.rp=? ORDER BY n.id", (rp,)):
+        if by_id.get(sid) in out:
+            out[by_id[sid]][4].append((ntype, heading, text))
+    for sid, raw in db.execute("SELECT c.section_id, c.raw FROM source_credits c JOIN nodes s ON s.id=c.section_id "
+                               "WHERE s.rp=? ORDER BY c.id", (rp,)):
+        if by_id.get(sid) in out:
+            out[by_id[sid]][5].append(raw)
     return out
 
 
@@ -71,7 +83,8 @@ def main() -> int:
     totals = collections.Counter()
     examples = []
     rows = ["| Release point | Titles | Sections (OLRC / history) | Identical | Text | Heading | Status | "
-            "Structure | Only in OLRC | Only in history |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+            "Structure | Notes | Credits | Only in OLRC | Only in history |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for label in shared:
         rp_o = oracle.execute("SELECT id FROM release_points WHERE label=?", (label,)).fetchone()[0]
         titles = [t for (t,) in oracle.execute("SELECT title FROM titles WHERE rp=? ORDER BY title", (rp_o,))]
@@ -83,7 +96,8 @@ def main() -> int:
         c = collections.Counter()
         for ident in so.keys() & sh.keys():
             o, x = so[ident], sh[ident]
-            diff = [k for k, i in (("text", 0), ("heading", 1), ("status", 2), ("structure", 3)) if o[i] != x[i]]
+            diff = [k for k, i in (("text", 0), ("heading", 1), ("status", 2), ("structure", 3), ("notes", 4),
+                                   ("credits", 5)) if o[i] != x[i]]
             if diff and ident in incomplete:
                 c["incomplete in the source data"] += 1
                 examples.append(("incomplete in the source data (not graded)", label, ident))
@@ -99,12 +113,14 @@ def main() -> int:
         examples += [("only in history", label, i) for i in sorted(sh.keys() - so.keys())[:5]]
         totals.update(c)
         rows.append(f"| {label} | {', '.join(titles)} | {len(so)} / {len(sh)} | {c['identical']} | {c['text']} | "
-                    f"{c['heading']} | {c['status']} | {c['structure']} | {c['only_olrc']} | {c['only_history']} |")
+                    f"{c['heading']} | {c['status']} | {c['structure']} | {c['notes']} | {c['credits']} | "
+                    f"{c['only_olrc']} | {c['only_history']} |")
     compared = totals["identical"] + totals["different"] + totals["incomplete in the source data"]
     lines += [f"## Sections: history vs OLRC's zips ({len(shared)} release points)", "", *rows, "",
               f"Total: {totals['identical']} of {compared} sections identical "
               f"({totals['identical'] / max(compared, 1):.2%}); text {totals['text']}, heading {totals['heading']}, "
-              f"status {totals['status']}, structure {totals['structure']}; incomplete in the source data and marked "
+              f"status {totals['status']}, structure {totals['structure']}, notes {totals['notes']}, "
+              f"credits {totals['credits']}; incomplete in the source data and marked "
               f"not gradable {totals['incomplete in the source data']}; only in OLRC {totals['only_olrc']}, "
               f"only in history {totals['only_history']}.", ""]
     if examples:

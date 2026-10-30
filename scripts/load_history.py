@@ -61,9 +61,11 @@ def main() -> int:
             return 1
         f = pq.ParquetFile(local)
         rows = 0
+        # One transaction per shard, with its completion marker: an interrupted shard leaves nothing behind, so a
+        # rerun loads it once.
         for g in range(f.metadata.num_row_groups):
             rows += h.load_rows(f.read_row_group(g, columns=COLUMNS).to_pylist())
-            h.flush_release_map()
+            h.flush_release_map(commit=False)
         h.db.execute("INSERT INTO loaded_shards VALUES (?,?,?)", (name, sh["sha256"], rows))
         h.db.commit()
         if not a.keep_shards:

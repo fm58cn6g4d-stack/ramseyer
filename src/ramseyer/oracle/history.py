@@ -90,12 +90,15 @@ class History:
                         (label, seq, p.congress, p.law, json.dumps(sorted(p.excluded)), p.reissue,
                          str(date) if date else None))
 
-    def flush_release_map(self) -> list[str]:
-        """Write the version -> release rows whose label's sequence is known. Returns labels still without one."""
+    def flush_release_map(self, commit: bool = True) -> list[str]:
+        """Write the version -> release rows whose label's sequence is known. Returns labels still without one.
+        The derived title_releases table is cleared, to be rebuilt from the full map on next use."""
         self.db.execute("INSERT OR IGNORE INTO version_releases SELECT p.vid, r.seq FROM pending_releases p "
                         "JOIN releases r ON r.label=p.label")
         self.db.execute("DELETE FROM pending_releases WHERE label IN (SELECT label FROM releases)")
-        self.db.commit()
+        self.db.execute("DELETE FROM title_releases")
+        if commit:
+            self.db.commit()
         return [l for (l,) in self.db.execute("SELECT DISTINCT label FROM pending_releases ORDER BY label")]
 
     def place_unsequenced(self, total: int) -> tuple[dict[str, int], list[int]]:
@@ -267,5 +270,38 @@ def materialize(history: History, label: str, titles: list[str], db_path: Path, 
     ix.db.executemany("INSERT INTO load_issues(rp, title, kind, detail) VALUES (?,?,?,?)",
                       [(rp, t, "history_incomplete", note.split(" ", 2)[1]) for t, note in incomplete])
     ix.mark_complete(rp)
+    ix.db.close()
     zp.unlink()
     return rp
+
+
+class ReleaseIndexes:
+    """Release points of a history oracle set, opened as indexes on demand: each is materialized (with the titles the
+    set needs there) into its own file on first use, and only the most recent `keep` are kept on disk. Laws are graded
+    in release order, so a small window suffices; an evicted release point is rebuilt if asked for again."""
+
+    def __init__(self, history: History, titles: dict[str, list[str]], cache_dir: Path, keep: int = 4, log=print):
+        from collections import OrderedDict
+        self.history, self.titles, self.dir, self.keep, self.log = history, titles, cache_dir, keep, log
+        self.open: OrderedDict = OrderedDict()
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+    def _path(self, label: str) -> Path:
+        return self.dir / f"{label}.sqlite"
+
+    def __call__(self, label: str):
+        from ramseyer.data.index import Index
+        if label in self.open:
+            self.open.move_to_end(label)
+            return self.open[label]
+        path = self._path(label)
+        if not path.exists():
+            materialize(self.history, label, self.titles.get(label, []), path, log=self.log)
+        ix = Index(path, label)
+        self.open[label] = ix
+        while len(self.open) > self.keep:
+            old, old_ix = self.open.popitem(last=False)
+            old_ix.db.close()
+            for p in (self._path(old), Path(f"{self._path(old)}-wal"), Path(f"{self._path(old)}-shm")):
+                p.unlink(missing_ok=True)
+        return ix

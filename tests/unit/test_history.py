@@ -101,3 +101,25 @@ def test_a_section_split_out_of_another_is_kept_out_and_its_parent_marked(tmp_pa
     db = sqlite3.connect(tmp_path / "ix.sqlite")
     assert db.execute("SELECT detail FROM load_issues WHERE rp=? AND kind='history_incomplete'", (rp,)).fetchall() == \
         [("/us/usc/t99/s2",)]
+
+
+def test_an_interrupted_shard_leaves_nothing_behind(tmp_path):
+    # The loader commits a shard only with its completion marker (Codex, PR #5).
+    h = History(tmp_path / "h.sqlite")
+    h.load_rows([row("1", "Lorem.", ["118-1"])])
+    h.flush_release_map(commit=False)
+    h.db.close()                                                   # interrupted before the marker and the commit
+    h = History(tmp_path / "h.sqlite")
+    assert h.db.execute("SELECT count(*) FROM versions").fetchone()[0] == 0
+
+
+def test_title_release_map_follows_later_loads(tmp_path):
+    # A read before loading finishes must not freeze the derived title -> release map (Codex, PR #5).
+    h = History(tmp_path / "h.sqlite")
+    h.load_rows([row("1", "Lorem.", ["118-1", "118-5"])])
+    h.flush_release_map()
+    assert h.seq("118-5") == h.title_seq("99", "118-5")
+    h.load_rows([row("1", "Lorem ipsum.", ["118-9"])])
+    h.flush_release_map()
+    assert h.title_seq("99", "118-9") == h.seq("118-9")
+    assert "Lorem ipsum." in h.section_xml("/us/usc/t99/s1", "118-9")[0]

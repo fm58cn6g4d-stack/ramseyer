@@ -80,6 +80,9 @@ class ClassificationRow:
 _PL_RE = re.compile(r"^\d+-\d+$")
 # Stat page or range ("762-764"). A quoted new-section number can run straight into the
 # page column with no space: '7201(c)(1) "Subchapter I"1677'.
+_PL_TOKEN = re.compile(r"(\d+-\d+)(?=\s)")
+# The law's section, then its Statutes at Large page(s), separated by spaces or glued after ")", '"', "]" or a letter.
+_TAIL_GLUED_RE = re.compile(r'^(.*?)(?:\s+|(?<=[)"\]A-Za-z]))(\d+(?:-\d+)?(?:,\s?\d+(?:-\d+)?)*)\s*$')
 _TAIL_RE = re.compile(r'^(.*?)(?:\s+|(?<="))(\d+(?:-\d+)?)\s*$')
 
 
@@ -123,12 +126,14 @@ def parse_classification_table(page: str) -> list[ClassificationRow]:
     for line in lines[header_i + 2:]:
         if not line.strip():
             continue
-        pl =line[cols[3]:cols[4]].strip()
         title = line[cols[0]:cols[1]].strip()
         section = line[cols[1]:cols[2]].strip()
-        desc = line[cols[2]:cols[3]].strip()
-        tail = _TAIL_RE.match(line[cols[4]:])
-        if not _PL_RE.match(pl) or not tail:
+        # Older tables (113th-117th Congress) let a field run into the next column: "nt repealed EG Act113-7",
+        # "(C)(ii)1966", pages "707,708". The law is the "C-N" token near its column; the page or pages end the line.
+        m = _PL_TOKEN.search(line, max(cols[2], cols[3] - 4))
+        tail = _TAIL_GLUED_RE.match(line[m.end():]) if m and m.start() <= cols[3] + 4 else None
+        if not tail:
             raise ValueError(f"unparsed classification line: {line!r}")
-        rows.append(ClassificationRow(title, section, desc, pl, tail.group(1).strip(), tail.group(2)))
+        desc = line[cols[2]:m.start()].strip()
+        rows.append(ClassificationRow(title, section, desc, m.group(1), tail.group(1).strip(), tail.group(2)))
     return rows
