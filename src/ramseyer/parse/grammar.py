@@ -168,6 +168,10 @@ LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {L
 _SN = r"\d[\w\u2013-]*+"           # possessive: no backtracking between the digits and the suffix
 SECTION_LIST = re.compile(rf"\b[Ss]ections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) {_SN}(?:{LABELS})?)+)"
                           r" of (?:such title|this title|title \d+,? United States Code)\b")
+# "(1) in each of sections 46101(a)(1), 46102(a), and 46110(a) by striking ...", under "Chapter 461 is amended—":
+# the title is the one in context (Pub. L. 115-254 div. K § 1991(f)).
+EACH_SECTIONS = re.compile(rf"^\s*[Ii]n (?:each of )?sections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) "
+                           rf"{_SN}(?:{LABELS})?)+),?\s*(?:by\s*)?$")
 # "Except as otherwise expressly provided, wherever in this title an amendment or repeal is expressed in terms of an
 # amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to that
 # section or other provision of the Social Security Act."
@@ -258,10 +262,11 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                             usc_parenthetical=m["paren"])
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
-    elif (m := SECTION_LIST.search(h)):
+    elif (m := SECTION_LIST.search(h)) or (m := EACH_SECTIONS.search(h)) and _usc_base(ctx) is not None:
         # "Sections 351(a), 352(a), and 353(b) of such title": the first here; parse_unit_text fans out the rest.
         tm = re.search(r"title (\d+)", m.group(0))
         base = (Target(kind="usc", title=tm.group(1)) if tm else
+                Target(kind="usc", title=_usc_base(ctx).title) if m.re is EACH_SECTIONS else
                 ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target)
         t = base.model_copy(deep=True)
         first = re.match(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?", m["list"])
@@ -721,7 +726,7 @@ def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
 
 def _section_list(head: str, ctx: Ctx) -> list[Ctx]:
     """"Sections 351(a), 352(a), 353(a), and 353(b) of such title are amended by ...": one target per section."""
-    m = SECTION_LIST.search(head)
+    m = SECTION_LIST.search(head) or EACH_SECTIONS.search(head)
     if not m or ctx.target.kind != "usc":
         return []
     out = []

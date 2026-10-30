@@ -136,3 +136,16 @@ def test_an_identical_edit_made_twice_by_one_bill_is_a_conflict():
                     "amended in subsection (g) by striking “(18 U.S.C. App.)” and inserting “(18 U.S.C. App.))”.", xml)
     assert [r.status for r in res] == ["CLEAN", "CONFLICT"]
     assert "(18 U.S.C. App.)), as applicable." in text
+
+
+def test_in_each_of_sections_takes_the_title_in_context():
+    # Pub. L. 115-254 div. K § 1991(f): "Chapter 461 is amended—(1) in each of sections 46101(a)(1), 46102(a), ...
+    # by striking ..." had no target; 49 U.S.C. 46102 and 46105 stayed CLEAN without the edits.
+    ins = parse_text("SEC. 2. X.\n(a) One.—Section 1 of title 99, United States Code, is amended by striking “a” and "
+                     "inserting “b”.\n(b) Chapter 1 amendments.—Chapter 1 is amended—\n(1) in each of sections 1(a), 2, "
+                     "and 3(b) by striking “Under Secretary,” each place it appears and inserting “Administrator,”;\n"
+                     "(2) in section 2, by striking “the Board” and inserting “the Council”.\n").instructions
+    listed = [i for i in ins if i.id.startswith("sec2.b.1")]
+    assert [(i.target.title, i.target.section, i.target.path) for i in listed] == \
+        [("99", "1", ["(a)"]), ("99", "2", []), ("99", "3", ["(b)"])]
+    assert all(i.occurrence == "each" for i in listed)
