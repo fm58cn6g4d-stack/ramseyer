@@ -90,12 +90,15 @@ class History:
                         (label, seq, p.congress, p.law, json.dumps(sorted(p.excluded)), p.reissue,
                          str(date) if date else None))
 
-    def flush_release_map(self) -> list[str]:
-        """Write the version -> release rows whose label's sequence is known. Returns labels still without one."""
+    def flush_release_map(self, commit: bool = True) -> list[str]:
+        """Write the version -> release rows whose label's sequence is known. Returns labels still without one.
+        The derived title_releases table is cleared, to be rebuilt from the full map on next use."""
         self.db.execute("INSERT OR IGNORE INTO version_releases SELECT p.vid, r.seq FROM pending_releases p "
                         "JOIN releases r ON r.label=p.label")
         self.db.execute("DELETE FROM pending_releases WHERE label IN (SELECT label FROM releases)")
-        self.db.commit()
+        self.db.execute("DELETE FROM title_releases")
+        if commit:
+            self.db.commit()
         return [l for (l,) in self.db.execute("SELECT DISTINCT label FROM pending_releases ORDER BY label")]
 
     def place_unsequenced(self, total: int) -> tuple[dict[str, int], list[int]]:
