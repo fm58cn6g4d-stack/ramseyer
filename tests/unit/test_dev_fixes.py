@@ -108,3 +108,18 @@ def test_the_section_heading_is_not_a_subsection_heading():
                     "heading, by striking “illness” and inserting “health”.", xml)
     assert "(b) Mental health awareness training grants Text b." in text
     assert text.startswith("§ 1. mental health awareness Training grants") and res[0].status == "WARN"
+
+
+def test_a_unit_added_at_the_end_of_a_unit_of_its_own_level_follows_its_siblings():
+    # Pub. L. 116-136 § 19002(a) (2 U.S.C. 2062): "Section 312(d)(3)(A) ... is amended— ... (2) by adding at the end
+    # the following new subparagraph: “(C) ...”" put (C) inside (A); OLRC put it after (B). WARN: drafted defectively.
+    xml = (f'<section xmlns="{NS}" identifier="/us/usc/t99/s1"><num value="1">§ 1.</num><heading> H</heading>'
+           '<subsection identifier="/us/usc/t99/s1/d"><num value="d">(d)</num><chapeau>The fund shall pay—</chapeau>'
+           '<paragraph identifier="/us/usc/t99/s1/d/1"><num value="1">(1)</num><content>salaries.</content></paragraph>'
+           '<paragraph identifier="/us/usc/t99/s1/d/2"><num value="2">(2)</num><content>reimbursements.</content>'
+           '</paragraph></subsection></section>')
+    text, res = run("Section 1(d)(1) of title 99, United States Code, is amended—\n(1) by striking the period at the end "
+                    "and inserting “, and other costs.”; and\n(2) by adding at the end the following new paragraph:\n"
+                    "“(3) Emergency expenses.”.", xml)
+    assert text.endswith("(1) salaries, and other costs. (2) reimbursements. (3) Emergency expenses.")
+    assert res[1].status == "WARN"

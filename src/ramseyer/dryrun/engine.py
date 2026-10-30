@@ -1294,6 +1294,15 @@ class Engine:
             text = " ".join(loose)
             replace_span(segs, len(linear(segs).rstrip()), len(linear(segs)), " " + text)
             return Result(ins.id, "CLEAN", "text added at the end")
+        sibling = None
+        if after_el is None and before_el is None and units and local(units[0]) == local(scope) and \
+                local(scope) in SUB and scope.getparent() is not None:
+            # "Section 312(d)(3)(A) is amended ... by adding at the end the following new subparagraph: “(C) ...”": a
+            # unit cannot hold one of its own level, so it goes after the last of its kind in the enclosing unit
+            # (as OLRC executed Pub. L. 116-136 § 19002(a), 2 U.S.C. 2062).
+            same = [c for c in scope.getparent() if local(c) == local(scope)]
+            after_el, sibling = same[-1], f"added after ({_num(same[-1])}) in the enclosing unit: the target is a " \
+                f"{local(scope)} and so is the new unit"
         if after_el is not None:
             parent, idx = after_el.getparent(), after_el.getparent().index(after_el) + 1
         elif before_el is not None:
@@ -1329,7 +1338,7 @@ class Engine:
         if gap:
             # "(d)" added after a last "(b)": a wrong section or unit is the likelier explanation (M6c benchmark).
             return Result(ins.id, "WARN", gap)
-        warn = None
+        warn = sibling
         if loose:
             warn = f"lead-in text before the new units not placed: “{' '.join(loose)[:80]}”"
         prev = parent[idx - 1] if idx > 0 else None
