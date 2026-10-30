@@ -14,7 +14,6 @@ Run:  .venv/bin/python scripts/history_govinfo_check.py      Writes var/history_
 from __future__ import annotations
 
 import collections
-import difflib
 import re
 import sqlite3
 import sys
@@ -39,16 +38,19 @@ def residue_kind(mine: str, theirs: str) -> str:
     """Name a content difference the converter's comparison leaves: 'order' when both hold the same lines in a different
     order (a continuation placed after another paragraph), 'footnote markers' when every difference is a run of one or
     two digits present in one text only (footnote reference numbers, placed differently or kept in one edition only),
-    else 'content'."""
+    else 'content'. Linear in the text length."""
     a, b = xhtml.body_words(mine), xhtml.body_words(theirs)
     if sorted(mine.split("\n")[1:]) == sorted(theirs.split("\n")[1:]):
         return "order"
-    x, y = xhtml.rendering_normalized(xhtml.comparable(a)), xhtml.rendering_normalized(xhtml.comparable(b))
-    ops = [o for o in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes() if o[0] != "equal"]
-    digits = lambda t: re.fullmatch(r"\d{1,2}", t) is not None
-    if ops and all((t == "delete" and digits(x[i1:i2])) or (t == "insert" and digits(y[j1:j2]))
-                   for t, i1, i2, j1, j2 in ops):
-        return "footnote markers"
+    x, y = (xhtml.rendering_normalized(xhtml.comparable(w)) for w in (a, b))
+    runs = lambda t: {len(re.sub(r"\d", "", t[:m.start()])): m.group() for m in re.finditer(r"\d+", t)}
+    if re.sub(r"\d", "", x) == re.sub(r"\d", "", y):
+        rx, ry = runs(x), runs(y)
+        # Different digits at one place ("paragraph (4)" / "(5)") are content; a short run in one text only is a marker.
+        if all(rx[k] == ry[k] for k in rx.keys() & ry.keys()) and all(len(v) <= 2 for v in
+                                                                        [rx[k] for k in rx.keys() - ry.keys()] +
+                                                                        [ry[k] for k in ry.keys() - rx.keys()]):
+            return "footnote markers"
     return "content"
 
 
