@@ -592,10 +592,21 @@ class Engine:
     # Act section label -> (Code section, " of this title" | " of title N"), for the Act being amended; or None.
     act_ref: Callable[[str], tuple[str, str, bool] | None] | None = None
     weak_refs: set[str] = field(default_factory=set)     # Act references translated on one witness
+    done: dict = field(default_factory=dict)              # an applied edit -> the instruction that made it
 
     def run(self, ins: Instruction, path: list[str]) -> Result:
         self.weak_refs = set()
+        key = (ins.op, tuple(path), ins.find, ins.replace, ins.new_text, ins.unit, ins.occurrence,
+               tuple(ins.target.qualifiers))
+        if ins.find and key in self.done:
+            # Two provisions of one bill making the identical edit (Pub. L. 115-254 div. B § 539(l) and div. K
+            # § 1991(f)(9)(C), 49 U.S.C. 46111): the second would apply it again to the first one's text.
+            r = Result(ins.id, "CONFLICT", f"instruction {self.done[key]} of this bill already made this same edit")
+            self.results.append(r)
+            return r
         r = self._run(ins, path)
+        if r.status in ("CLEAN", "WARN"):
+            self.done.setdefault(key, ins.id)
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":

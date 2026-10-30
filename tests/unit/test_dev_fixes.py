@@ -123,3 +123,16 @@ def test_a_unit_added_at_the_end_of_a_unit_of_its_own_level_follows_its_siblings
                     "“(3) Emergency expenses.”.", xml)
     assert text.endswith("(1) salaries, and other costs. (2) reimbursements. (3) Emergency expenses.")
     assert res[1].status == "WARN"
+
+
+def test_an_identical_edit_made_twice_by_one_bill_is_a_conflict():
+    # Pub. L. 115-254 div. B § 539(l) and div. K § 1991(f)(9)(C) both strike “(18 U.S.C. App.)” in 49 U.S.C.
+    # 46111(g)(2)(A) and insert “(18 U.S.C. App.))”; the second applied it again (“App.)))”), CLEAN.
+    xml = (f'<section xmlns="{NS}" identifier="/us/usc/t99/s1"><num value="1">§ 1.</num><heading> H</heading>'
+           '<subsection identifier="/us/usc/t99/s1/g"><num value="g">(g)</num><content>A notice (as defined in '
+           'section 1(a) of the Classified Act (18 U.S.C. App.), as applicable.</content></subsection></section>')
+    text, res = run("Section 1(g) of title 99, United States Code, is amended by striking “(18 U.S.C. App.)” and "
+                    "inserting “(18 U.S.C. App.))”.\nSEC. 3. MORE.\nSection 1 of title 99, United States Code, is "
+                    "amended in subsection (g) by striking “(18 U.S.C. App.)” and inserting “(18 U.S.C. App.))”.", xml)
+    assert [r.status for r in res] == ["CLEAN", "CONFLICT"]
+    assert "(18 U.S.C. App.)), as applicable." in text
