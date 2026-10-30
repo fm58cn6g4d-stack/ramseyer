@@ -65,3 +65,15 @@ def test_materialized_release_point_reads_like_an_index(tmp_path):
     kinds = dict(db.execute("SELECT identifier, kind FROM nodes WHERE rp=?", (rp,)).fetchall())
     assert kinds["/us/usc/t99/ch1"] == "chapter" and kinds["/us/usc/t99/s2"] == "section"
     assert materialize(h, "118-5", ["99"], tmp_path / "ix.sqlite", log=lambda s: None) == rp   # reused
+
+
+def test_a_label_never_first_or_last_is_placed_in_its_gap(tmp_path):
+    # 118-22u1 and 118-40 are in the dataset only inside release lists; their sequence comes from the order rule.
+    h = History(tmp_path / "h.sqlite")
+    r = row("1", "Lorem.", ["118-1", "118-5"])
+    r["releases"] = ["118-1", "118-5not3", "118-5"]
+    h.load_rows([r])
+    assert h.flush_release_map() == ["118-5not3"]
+    placed, empty = h.place_unsequenced(4)
+    assert placed == {"118-5not3": 2} and empty == [4]
+    assert "Lorem." in h.section_xml("/us/usc/t99/s1", "118-5not3")[0]

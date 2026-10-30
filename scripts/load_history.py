@@ -69,13 +69,16 @@ def main() -> int:
         if not a.keep_shards:
             local.unlink()
         print(f"{name}: {rows} versions ({time.monotonic() - t0:.0f}s)", flush=True)
+    newest = manifest["fingerprint"]["newest_release"]["seq"]
+    placed, empty = h.place_unsequenced(newest)
     unknown = h.flush_release_map()
     n_rel = h.db.execute("SELECT count(*) FROM releases").fetchone()[0]
     n_ver = h.db.execute("SELECT count(*) FROM versions").fetchone()[0]
     n_map = h.db.execute("SELECT count(*) FROM version_releases").fetchone()[0]
     fp = manifest["fingerprint"]["counts"]
     print(f"releases {n_rel}; versions {n_ver} (manifest {fp['section_versions']}); release map {n_map} "
-          f"(manifest {fp['map_rows']}); labels with no sequence: {unknown or 'none'}")
+          f"(manifest {fp['map_rows']}); placed by order: {placed or 'none'}; sequences with no rows: "
+          f"{empty or 'none'}; labels with no sequence: {unknown or 'none'}")
     return 0 if not unknown and n_ver == fp["section_versions"] else 1
 
 

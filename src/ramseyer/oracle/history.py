@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS versions (
 );
 CREATE TABLE IF NOT EXISTS version_releases (vid INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (seq, vid))
     WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS pending_releases (vid INTEGER NOT NULL, label TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS loaded_shards (name TEXT PRIMARY KEY, sha256 TEXT, rows INTEGER);
 CREATE INDEX IF NOT EXISTS versions_ident ON versions(identifier);
 """
@@ -52,7 +53,6 @@ class History:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.db = sqlite3.connect(path)
         self.db.executescript(SCHEMA)
-        self._pending: list[tuple[int, str]] = []        # (vid, label) until the label's sequence is known
 
     # ---- loading -------------------------------------------------------------------------------------------
     def load_rows(self, rows) -> int:
@@ -73,7 +73,8 @@ class History:
                  r["source_credit"], zlib.compress(r["xml"].encode("utf-8"), 6), r["first_release_seq"],
                  r["last_release_seq"]))
             vid = cur.lastrowid
-            self._pending.extend((vid, lab) for lab in r["releases"] or [])
+            # Held until the label's sequence is known (a label's sequence comes from rows where it is first or last).
+            self.db.executemany("INSERT INTO pending_releases VALUES (?,?)", [(vid, lab) for lab in r["releases"] or []])
             n += 1
         return n
 
@@ -84,14 +85,39 @@ class History:
                          str(date) if date else None))
 
     def flush_release_map(self) -> list[str]:
-        """Write the version -> release rows gathered so far. Returns release labels with no known sequence."""
-        seqs = dict(self.db.execute("SELECT label, seq FROM releases"))
-        unknown = sorted({lab for _, lab in self._pending if lab not in seqs})
-        self.db.executemany("INSERT OR IGNORE INTO version_releases VALUES (?,?)",
-                            [(vid, seqs[lab]) for vid, lab in self._pending if lab in seqs])
-        self._pending = [(vid, lab) for vid, lab in self._pending if lab not in seqs]
+        """Write the version -> release rows whose label's sequence is known. Returns labels still without one."""
+        self.db.execute("INSERT OR IGNORE INTO version_releases SELECT p.vid, r.seq FROM pending_releases p "
+                        "JOIN releases r ON r.label=p.label")
+        self.db.execute("DELETE FROM pending_releases WHERE label IN (SELECT label FROM releases)")
         self.db.commit()
-        return unknown
+        return [l for (l,) in self.db.execute("SELECT DISTINCT label FROM pending_releases ORDER BY label")]
+
+    def place_unsequenced(self, total: int) -> tuple[dict[str, int], list[int]]:
+        """Give a sequence to each label that is never a version's first or last release: the one gap in 1..total
+        whose neighbours bracket it under the label order rule (oracle/releases.py). Returns the placements and the
+        gaps left empty (release points with no section rows in the dataset)."""
+        known = dict(self.db.execute("SELECT seq, label FROM releases"))
+        gaps = sorted(set(range(1, total + 1)) - set(known))
+        placed: dict[str, int] = {}
+        for label in sorted(self.flush_release_map(), key=lambda l: rl.parse(l).order):
+            order = rl.parse(label).order
+            fits = []
+            for g in gaps:
+                before = max((s for s in known if s < g), default=None)
+                after = min((s for s in known if s > g), default=None)
+                if (before is None or rl.parse(known[before]).order < order) and \
+                        (after is None or order < rl.parse(known[after]).order):
+                    fits.append(g)
+            if len(fits) == 1:
+                g = fits[0]
+                p = rl.parse(label)
+                self.db.execute("INSERT INTO releases VALUES (?,?,?,?,?,?,?)",
+                                (label, g, p.congress, p.law, json.dumps(sorted(p.excluded)), p.reissue, None))
+                known[g] = label
+                gaps.remove(g)
+                placed[label] = g
+        self.flush_release_map()
+        return placed, gaps
 
     # ---- reading -------------------------------------------------------------------------------------------
     def releases(self) -> list[Release]:
