@@ -14,6 +14,8 @@ Run:  .venv/bin/python scripts/history_govinfo_check.py      Writes var/history_
 from __future__ import annotations
 
 import collections
+import difflib
+import re
 import sqlite3
 import sys
 from datetime import date
@@ -23,7 +25,7 @@ from lxml import etree
 from ramseyer import config
 from urllib.parse import urljoin
 
-from ramseyer.data import govinfo, olrc, uslm
+from ramseyer.data import govinfo, olrc, uslm, xhtml
 from ramseyer.data.http import Fetcher
 from ramseyer.data.indexer import text_of
 from ramseyer.oracle.harness import normalize
@@ -31,6 +33,23 @@ from ramseyer.oracle import releases as rl
 from ramseyer.oracle.history import History
 
 INDEXES = {2022: "govinfo_2023.sqlite", 2023: "govinfo.sqlite", 2024: "govinfo.sqlite"}
+
+
+def residue_kind(mine: str, theirs: str) -> str:
+    """Name a content difference the converter's comparison leaves: 'order' when both hold the same lines in a different
+    order (a continuation placed after another paragraph), 'footnote markers' when every difference is a run of one or
+    two digits present in one text only (footnote reference numbers, placed differently or kept in one edition only),
+    else 'content'."""
+    a, b = xhtml.body_words(mine), xhtml.body_words(theirs)
+    if sorted(mine.split("\n")[1:]) == sorted(theirs.split("\n")[1:]):
+        return "order"
+    x, y = xhtml.rendering_normalized(xhtml.comparable(a)), xhtml.rendering_normalized(xhtml.comparable(b))
+    ops = [o for o in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes() if o[0] != "equal"]
+    digits = lambda t: re.fullmatch(r"\d{1,2}", t) is not None
+    if ops and all((t == "delete" and digits(x[i1:i2])) or (t == "insert" and digits(y[j1:j2]))
+                   for t, i1, i2, j1, j2 in ops):
+        return "footnote markers"
+    return "content"
 
 
 def edition_sections(db: sqlite3.Connection, year: int):
@@ -59,7 +78,7 @@ def main() -> int:
              "| Edition | Sections | Matches at the chosen release point | Best match elsewhere (±2) | "
              "No match within ±2 |", "| --- | --- | --- | --- | --- |"]
     totals = collections.Counter()
-    examples, lines_rp = [], []
+    examples, lines_rp, content_examples = [], [], []
     for year, name in INDEXES.items():
         db = sqlite3.connect(cfg.var / "oracle" / name)
         through: dict[str, date | None] = {}
@@ -96,6 +115,15 @@ def main() -> int:
                 examples.append(f"{year} {ident}: matches a neighbour of {rel[i].label} (current through {d})")
             else:
                 c["none"] += 1
+                # What kind of difference: the converter's comparison (data/xhtml.py; scripts/xhtml_check.py).
+                xs = h.section_xml(ident, rel[i].label)
+                mine = text_of(uslm.to_v1(etree.fromstring(xs[0].encode()))) if xs else ""
+                kind, snippet = xhtml.compare(xhtml.body_words(mine), xhtml.body_words(text or ""))
+                if kind == "content":
+                    kind = residue_kind(mine, text or "")
+                c[f"none: {kind}"] += 1
+                if kind == "content":
+                    content_examples.append(f"{year} {ident} at {rel[i].label}: {snippet}")
         for d, i in chosen.items():
             lines_rp.append(f"{year}: current through {d} -> {rel[i].label if i is not None else 'none'}")
         totals.update(c)
@@ -104,7 +132,11 @@ def main() -> int:
     lines += ["", f"Total: {totals['chosen']} of {totals['sections']} at the chosen release point; "
               f"{totals['neighbour']} better matched by a neighbour; {totals['none']} by none within ±2 "
               f"(converter or editorial differences; scripts/xhtml_check.py measures the converter).", ""]
+    lines += ["No match within ±2, by the converter's comparison of the section body (data/xhtml.py): "
+              + ", ".join(f"{k[6:]} {v}" for k, v in sorted(totals.items()) if k.startswith("none: ")), ""]
     lines += ["Release points chosen:", *[f"- {x}" for x in lines_rp], ""]
+    if content_examples:
+        lines += ["## Content differences", ""] + [f"- {e}" for e in content_examples] + [""]
     if examples:
         lines += ["## Better matched by a neighbouring release point", ""] + [f"- {e}" for e in examples[:40]]
     (cfg.var / "history_govinfo_check.md").write_text("\n".join(lines) + "\n")

@@ -138,8 +138,10 @@ def main() -> int:
                                                                           resolver.positive))
     elif args.set.startswith("history_"):
         # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
+        # One cache directory per set: a set may need more titles at a release point than another set built there.
         open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
-                                    {rp.label: rp.titles for rp in corpus.release_points}, db, log=lambda s: None)
+                                    {rp.label: rp.titles for rp in corpus.release_points}, db / args.set,
+                                    log=lambda s: None)
     else:
         open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
     statuses = collections.Counter()
@@ -148,7 +150,9 @@ def main() -> int:
     missing_status: list[str] = []
 
     pop, cmap = resolver.popular, resolver.classification
-    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(store.index(label, db), pop, cmap))
+    # History sets keep release points in ReleaseIndexes (db is its cache directory, not a file).
+    before_index = open_index if args.set.startswith("history_") else (lambda label: store.index(label, db))
+    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(before_index(label), pop, cmap))
 
     def predictor(law, before):
         print(f"{time.strftime('%H:%M:%S')} {law.pl} ({len(law.targets)} targets)", file=sys.stderr, flush=True)
@@ -186,8 +190,13 @@ def main() -> int:
     # edition carries the other laws' changes too.
     touched_path = manifest.with_name(manifest.stem + "_touched.json")
     touched = json.loads(touched_path.read_text()) if touched_path.exists() else {}
+    # History sets scope the list per law, to the law's own window (laws span 2013-2026); GovInfo sets share one.
+    by_law = touched.get("by_law") if isinstance(touched, dict) else None
+
+    def is_touched(o) -> bool:
+        return o.identifier in (by_law.get(o.pl, ()) if by_law is not None else touched)
     ungradable = [o for o in rep.outcomes if o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
-                  and o.identifier in touched]
+                  and is_touched(o)]
     for o in ungradable:
         o.after_differs = None
         o.stage = "ungradable"
