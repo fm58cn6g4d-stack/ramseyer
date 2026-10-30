@@ -81,8 +81,28 @@ class Seg:
 
 # ---- quotes --------------------------------------------------------------------------------
 def nested_to_double(s: str) -> str:
-    """Bills quote inside quotes with ‘ ’; the Code prints those as “ ”. Apostrophes (applicant’s) stay."""
-    return re.sub(r"(?<![\w])‘((?:[^‘’]|’(?=\w))*?)’(?![\w])", "“\\1”", s)
+    """Bills quote inside quotes with ‘ ’; the Code prints those as “ ”. Apostrophes (applicant’s) stay.
+
+    A quotation closes at the first ’ not followed by a letter, except that a plural possessive (“Victims’ ” followed
+    by a space) is skipped when a later ’ before the next ‘ is followed by closing punctuation: ‘Special Victims’
+    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not."""
+    out, i = [], 0
+    for m in re.finditer(r"(?<![\w])‘", s):
+        if m.start() < i:
+            continue
+        rest = s[m.end():]
+        nxt = rest.find("‘")
+        span = rest if nxt < 0 else rest[:nxt]
+        closes = [c.start() for c in re.finditer(r"’(?!\w)", span)]
+        if not closes:
+            continue
+        end = closes[0]
+        if span[end - 1:end] == "s" and span[end + 1:end + 2] == " ":
+            later = [c for c in closes[1:] if re.match(r"’(?:[)\].,;:”—]|$)", span[c:])]
+            end = later[0] if later else end
+        out.append(s[i:m.start()] + "“" + span[:end] + "”")
+        i = m.end() + end + 1
+    return "".join(out) + s[i:]
 
 
 def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
@@ -425,6 +445,8 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
             new = new[1:]
         if new[0] in CLOSE_PUNCT and left.endswith(" ") and not hay[a:a + 1].isspace():
             a -= 1
+        elif new == "\u2014" and left.endswith(" ") and not hay[a:a + 1].isspace():
+            a -= 1                              # "striking “as follows:” and inserting an em dash": "made—"
         if new.endswith(" ") and right.startswith(" "):
             new = new[:-1]
         if new.endswith(" ") and rc and rc in CLOSE_PUNCT:
@@ -442,6 +464,13 @@ def block_lines(block: str) -> list[str]:
         lines.append(s)
     if lines:
         lines[-1] = re.sub(r"”[\s.;,:]*(?:and|or)?[\s.;,:]*$", "", lines[-1])
+    # Inner quotation marks are ‘ ’ in a bill, so a ” still unmatched on a line closes the block a second time: a
+    # drafting slip OLRC drops (“... Hawaii.”.” in the middle of a block, Pub. L. 116-315 § 7002; “... general.”;”;”,
+    # Pub. L. 117-263 § 502).
+    for i, x in enumerate(lines):
+        while x.count("”") > x.count("“") and re.search(r"”[\s.;,:]*$", x):
+            x = re.sub(r"”[\s.;,:]*$", "", x).rstrip()
+        lines[i] = x
     return [nested_to_double(x) for x in lines if x]
 
 

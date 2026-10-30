@@ -36,3 +36,30 @@ def test_the_period_at_the_end_of_the_first_sentence():
                     "first sentence and inserting the following: “, or semiannually.”.")
     assert res[0].status == "CLEAN"
     assert "review each term, or semiannually. Reviews shall" in text and "keep records." in text
+
+
+def test_a_plural_possessive_inside_a_nested_quotation():
+    # Pub. L. 113-66 § 1716 (10 U.S.C. 1044e): “(to be known as ‘Special Victims’ Counsel’)” became
+    # “Special Victims” Counsel’).
+    from ramseyer.dryrun.engine import nested_to_double
+    assert nested_to_double("(to be known as ‘Special Victims’ Counsel’) for") == \
+        "(to be known as “Special Victims’ Counsel”) for"
+    assert nested_to_double("the term ‘State’ includes the Indians’ lands") == \
+        "the term “State” includes the Indians’ lands"
+
+
+def test_a_closing_quotation_mark_repeated_by_the_drafter_is_dropped():
+    # Pub. L. 116-315 § 7002 closes a quoted block twice in its middle (“... Hawaii.”.” then “(6) ...”); Pub. L.
+    # 117-263 § 502 ends one “... general.”;”;”. OLRC drops the extra marks.
+    text, _ = run("Section 1 of title 99, United States Code, is amended by adding at the end the following:\n"
+                  "“(c) Definitions.—In this section:\n“(1) The term ‘alpha’ means the alpha of the State.”.\n"
+                  "“(2) The term ‘beta’ means beta.”;”;")
+    assert "the alpha of the State. (2) The term “beta” means beta." in text and "”" not in text.split("(c)")[1] \
+        .replace("“alpha”", "").replace("“beta”", "")
+
+
+def test_an_inserted_em_dash_takes_no_space_before_it():
+    # Pub. L. 117-263 § 502(1)(A): “by striking ‘as follows:’ and inserting an em dash” (10 U.S.C. 525): “made—”.
+    text, res = run("Section 1(a) of title 99, United States Code, is amended by striking “shall review” and inserting "
+                    "an em dash.")
+    assert "The determiner— each term" in text
