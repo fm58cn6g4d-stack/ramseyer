@@ -84,13 +84,20 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
         changed = normalize(bt) != normalize(at) or bs != as_
         out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_, "changed": changed,
                       "rows": [row.description],
-                      "pending": not changed and at is not None and pending_note(law, before, after, ident)}
+                      "pending": at is not None and pending_note(law, before, after, ident, changed)}
     return out
 
 
-def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> bool:
-    """OLRC did not execute the law's amendment: a delayed effective date set it out in a new note instead
-    ("..., provided that, effective one year after ..., this section is amended as follows: ...")."""
+DELAYED_NOTE = re.compile(r"Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"
+                          r"Items?)\b")
+
+
+def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str, changed: bool = False) -> bool:
+    """OLRC did not execute (all of) the law's amendment: a delayed effective date set it out in a new note instead.
+    OLRC heads such a note "Amendment of Subsection (a)" (or Section, Paragraph, ...), and it says so even when the
+    law's other amendments to the section were executed, so the section is not gradable either way. A note without
+    that heading counts only when the text did not change ("..., provided that, effective one year after ..., this
+    section is amended as follows: ...")."""
     try:
         a = after.by_identifier(ident)
     except LookupError_:
@@ -101,7 +108,8 @@ def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> boo
     except LookupError_:
         b_notes = set()
     cite = "Pub. L. " + law.pl.replace("-", "\u2013")
-    return any(cite in t and re.search(r"effective .{0,160}amended", t, re.S)
+    return any(cite in t and (DELAYED_NOTE.match(t) and cite in t[:300] or
+                              not changed and re.search(r"effective .{0,160}amended", t, re.S))
                for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (a.id,)) if t not in b_notes)
 
 

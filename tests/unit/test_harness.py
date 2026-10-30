@@ -111,3 +111,26 @@ def test_a_line_cut_short_by_an_interruption_is_graded_again(setup, tmp_path):
     ck.write_text('{"key": "k"}\n{"pl": "1-2", "outc')
     m = harness.evaluate(corpus, p, "t", open_index, labels={}, checkpoint=ck, key="k").metrics
     assert calls == ["1-2"] and m["missed"] == 2
+
+
+def test_a_section_with_a_delayed_amendment_note_is_pending_even_when_other_changes_were_executed(tmp_path):
+    # OLRC executes a law's immediate amendments and sets out its delayed ones in an "Amendment of ..." note
+    # (M6e dev: 36 sections), so R_after is not the law's full effect there and the section is not graded.
+    note = ('<notes><note topic="amendments"><heading>Amendment of Subsection (b)</heading><p>Pub. L. 1–2, § 2, '
+            'provided that, applicable to plan years beginning after 2030, subsection (b) is amended.</p></note>'
+            '</notes>')
+    db = tmp_path / "o.sqlite"
+    ix = Indexer(db)
+    for label, body in (("1-1", sec("2", "Beta gamma.")), ("1-2", sec("2", "Beta delta.").replace(
+            "</section>", note + "</section>"))):
+        z = tmp_path / f"{label}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("usc99.xml", doc(body))
+        ix.mark_complete(ix.load_release_point(z, label, None, "t", log=lambda s: None))
+    law = CorpusLaw(pl="1-2", name="t", bill="1 hr 1", enrolled_url="x", enrolled_sha256="x", rp_before="1-1",
+                    rp_after="1-2", titles=["99"], reason="t",
+                    rows=[ClassifiedRow(title="99", section="2", description="", law_section="1")])
+    t = harness.truth(law, Index(db, "1-1"), Index(db, "1-2"))
+    assert t["/us/usc/t99/s2"]["changed"] and t["/us/usc/t99/s2"]["pending"]
+    other = law.model_copy(update={"pl": "1-3"})                       # a note citing another law does not count
+    assert not harness.truth(other, Index(db, "1-1"), Index(db, "1-2"))["/us/usc/t99/s2"]["pending"]
