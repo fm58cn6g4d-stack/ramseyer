@@ -20,11 +20,33 @@ from ramseyer.parse.normalize import normalize
 from ramseyer.parse.segment import Segmenter, walk
 
 # NOT_EXECUTED: the instruction reached no section text (a note, uncodified Act text, an unresolved target); it is
-# reported with the reason, never dropped.
+# reported with the reason, never dropped. ALREADY_EXECUTED: current law already reads as the instruction would
+# leave it at the place it names (an insertion already next to its anchor, or a replacement that contains the old
+# text already around it); the text is left as it is.
 Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "STALE_BASELINE", "CONFLICT",
-                 "UNPARSED", "NOT_APPLICABLE", "NOT_EXECUTED"]
-SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "AMBIGUOUS", "STALE_BASELINE", "CONFLICT", "NOT_FOUND",
-            "TARGET_MISSING", "NOT_EXECUTED", "UNPARSED"]
+                 "UNPARSED", "NOT_APPLICABLE", "NOT_EXECUTED", "ALREADY_EXECUTED"]
+SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "ALREADY_EXECUTED", "AMBIGUOUS", "STALE_BASELINE", "CONFLICT",
+            "NOT_FOUND", "TARGET_MISSING", "NOT_EXECUTED", "UNPARSED"]
+# Why an instruction could not be carried out, in the House Comparative Print Suite's four notification categories
+# (records/landscape-2026-10.md): an error in drafting, in the current-law data, or in the system (an instruction
+# ramseyer does not execute), or the amendment is already executed into current law. The category is the likely
+# cause for the status; the detail line says what was seen.
+CATEGORY = {
+    "AMBIGUOUS": "drafting", "NOT_FOUND": "drafting", "TARGET_MISSING": "drafting", "CONFLICT": "drafting",
+    "STALE_BASELINE": "current-law data",
+    "UNPARSED": "system", "NOT_EXECUTED": "system",
+    "ALREADY_EXECUTED": "already executed",
+}
+MIN_EXECUTED = 4          # non-space characters an insertion needs before its presence counts as already executed
+
+
+def category(status: str) -> str | None:
+    """The failure category of a status; None for CLEAN, WARN and NOT_APPLICABLE (carried out, or nothing to do)."""
+    return CATEGORY.get(status)
+
+
+def _squash(text: str) -> str:
+    return "".join(text.split())
 NS = f"{{{USLM}}}"
 STRUCTURAL = re.compile(r"^\u201c?\(\w{1,6}\)\s|\u2014\u201c?\(\w{1,6}\)|\.\u2014")
 ACT_REF = re.compile(r"\b(?:[Ss]ection|[Tt]itle|[Ss]ubtitle|[Cc]hapter|[Ss]ubchapter|[Pp]art) (?:\d+[A-Za-z]?|[IVXL]+|[A-Z])"
@@ -666,17 +688,22 @@ class Engine:
             return None, None, [], "TARGET_MISSING", f"no {qnote} in the unit"
         segs = Working.segments(target_scope)
         hay = linear(segs)
-        allowed = self._allowed(segs, ins, find)
-        for q in ins.target.qualifiers:
-            m = re.match(r"(first|second|third|fourth|last) sentence", q)
-            if m:
-                allowed = self._sentence_range(hay, m.group(1), allowed)
+        allowed = self._ranges(ins, segs, hay, find)
         hits, how = find_all(hay, find, allowed)
         if positional and hits:
             end = max(b for _, b in allowed) if allowed else len(hay)
             tail_ok = [h for h in hits if not hay[h[1]:end].strip(" \n\t")]
             hits = tail_ok[-1:] if tail_ok else []
         return segs, hay, hits, how, None
+
+    def _ranges(self, ins, segs, hay, find):
+        """The ranges of the unit's text an instruction may edit: its part (heading, matter preceding ...) and sentence."""
+        allowed = self._allowed(segs, ins, find)
+        for q in ins.target.qualifiers:
+            m = re.match(r"(first|second|third|fourth|last) sentence", q)
+            if m:
+                allowed = self._sentence_range(hay, m.group(1), allowed)
+        return allowed
 
     def _choose(self, ins, hits):
         if ins.occurrence == "each":
@@ -689,6 +716,105 @@ class Engine:
         if len(hits) > 1:
             return hits[:1], f"{len(hits)} occurrences and no 'each place it appears'; applied to the first"
         return hits, None
+
+    @staticmethod
+    def _is_marker(seg) -> bool:
+        node = seg.node
+        if seg.attr != "text" or not isinstance(node.tag, str):
+            return False
+        return (local(node) == "ref" and "footnoteRef" in (node.get("class") or "")) or \
+            (local(node) == "sup" and (node.text or "").strip().isdigit())
+
+    def _clear_markers_in(self, ins, scope, find) -> bool:
+        """If `find` occurs, once footnote markers are skipped, in the part of the unit the instruction may edit,
+        remove the markers inside the occurrence it edits (and their footnote notes). Only when that occurrence is
+        unambiguous: one occurrence (or "each place"), and no "second place" or later. Returns True when any marker
+        was removed; nothing outside the edited occurrence is touched."""
+        if scope is None or not find:
+            return False
+        if ins.occurrence.startswith("nth:") and ins.occurrence != "nth:1":
+            return False
+        target_scope, _ = self._qualified_scope(scope, ins)
+        if target_scope is None:
+            return False
+        segs = Working.segments(target_scope)
+        allowed = self._ranges(ins, segs, linear(segs), find)
+        kept, index = [], []
+        for sg in segs:
+            txt = getattr(sg.node, sg.attr) or ""
+            if self._is_marker(sg):
+                while kept and kept[-1] in "\u202f ":       # the thin space set before a marker goes with it
+                    kept.pop()
+                    index.pop()
+                continue
+            kept.extend(txt)
+            index.extend(range(sg.start, sg.start + len(txt)))
+        hay2 = "".join(kept)
+        hits, _ = find_all(hay2, find, [(0, len(hay2))])
+        if not hits:
+            return False
+        spans = [(index[a], index[b - 1] + 1) for a, b in hits if b > a]
+        spans = [(lo, hi) for lo, hi in spans if any(a <= lo and hi <= b for a, b in allowed)]
+        if not spans or (len(spans) > 1 and ins.occurrence != "each"):
+            return False
+        removed = False
+        for sg in segs:
+            if self._is_marker(sg) and any(lo <= sg.start <= hi for lo, hi in spans):
+                ref = sg.node
+                if local(ref) == "ref":
+                    note = ref.getnext()
+                    if note is not None and local(note) == "note" and note.get("id") == ref.get("idref"):
+                        _remove_keep_tail(note)
+                _remove_keep_tail(ref)
+                removed = True
+        return removed
+
+    def _baseline_hay(self, path) -> str:
+        """The unit's text as it stood before this bill (the working copy carries the bill's earlier edits)."""
+        root = self.work.original if self.work.original is not None else self.work.el
+        unit = self.work.unit(path, root=root) if path else root
+        return linear(Working.segments(unit)) if unit is not None else ""
+
+    def _already_there(self, ins, scope, path, find, new_text):
+        """A note for NOT_FOUND when the struck text is absent but its replacement already occurs in the unit.
+
+        Not ALREADY_EXECUTED: with the struck text gone there is no place to check, and the replacement occurs by
+        chance far too often (a deletion's replacement is part of the struck text, "and $13,300,000" -> "$13,300,000";
+        a common word, "contract"). Measured on the drafting-error benchmark (records/milestones.md, M6d)."""
+        if len(_squash(new_text)) < MIN_EXECUTED:
+            return None
+        _, _, hits, _, err = self._locate(ins, scope, new_text)
+        if err or not hits:
+            return None
+        return Result(ins.id, "NOT_FOUND", f"quoted text is absent from the target: “{find[:80]}”; its replacement "
+                      f"“{new_text[:60]}” already occurs in the unit (an earlier execution, or chance)",
+                      matches=len(hits))
+
+    @staticmethod
+    def _in_place(hay, a, b, piece, join):
+        """True when the edit at hay[a:b] would leave the text as it already reads: an insertion already next to its
+        anchor, or a replacement whose new text, containing the old, already surrounds the match."""
+        # Compared with whitespace collapsed, and only as whole words: "program" is not in place before "programming".
+        def flat(t):
+            return " ".join(t.split())
+        old = hay[a:b]
+        if join == "after":
+            added = flat(piece[len(old):])
+            tail = flat(hay[b:b + len(added) + 40])
+            return len(_squash(added)) >= MIN_EXECUTED and tail.startswith(added) and \
+                (len(tail) == len(added) or not tail[len(added)].isalnum())
+        if join == "before":
+            added = flat(piece[:len(piece) - len(old)])
+            head = flat(hay[max(0, a - len(added) - 40):a])
+            return len(_squash(added)) >= MIN_EXECUTED and head.endswith(added) and \
+                (len(head) == len(added) or not head[-len(added) - 1].isalnum())
+        k = piece.find(old) if old else -1
+        if k < 0 or len(_squash(piece)) - len(_squash(old)) < MIN_EXECUTED:
+            return False
+        lo, hi = a - k, a - k + len(piece)
+        if lo < 0 or hi > len(hay) or flat(hay[lo:hi]) != flat(piece):
+            return False
+        return (lo == 0 or not hay[lo - 1].isalnum()) and (hi == len(hay) or not hay[hi].isalnum())
 
     def _status_for_missing(self, ins, find, path):
         """NOT_FOUND, or CONFLICT when the text existed at the baseline and an earlier instruction removed it."""
@@ -739,12 +865,28 @@ class Engine:
                     segs, hay, hits, how = segs2, hay2, hits2, f"with “this Act” as “this {unit}”"
                     make_new = (lambda mk, u: lambda old: mk(old).replace("this Act", f"this {u}"))(make_new, unit)
                     break
+        if not hits and self._clear_markers_in(ins, scope, find):
+            # The quote runs across a footnote marker (OLRC's "So in original" on the words a correction fixes:
+            # "the the¹ Secretary", 10 U.S.C. 14504(b)); the marker goes with the words, as OLRC removes it.
+            segs, hay, hits, how, err = self._locate(ins, scope, find, positional)
+            how = "across a footnote marker, removed with the words"
         if not hits:
             st, why = self._status_for_missing(ins, find, path)
-            return Result(ins.id, st, f"{why}: “{find[:80]}”")
+            done = self._already_there(ins, scope, path, find, make_new(find)) if join == "replace" and \
+                st == "NOT_FOUND" else None
+            return done or Result(ins.id, st, f"{why}: “{find[:80]}”")
         chosen, warn = self._choose(ins, hits)
         if not chosen:
             return Result(ins.id, "NOT_FOUND", warn or "occurrence not found", matches=len(hits))
+        if all(self._in_place(hay, a, b, make_new(hay[a:b]), join) for a, b in chosen):
+            old = hay[chosen[0][0]:chosen[0][1]]
+            piece = make_new(old)
+            shown = piece[len(old):] if join == "after" else piece[:len(piece) - len(old)] if join == "before" else piece
+            if _squash(piece) in _squash(self._baseline_hay(path)):
+                return Result(ins.id, "ALREADY_EXECUTED", f"current law already reads as amended here: "
+                              f"“{shown.strip()[:80]}”", matches=len(hits))
+            return Result(ins.id, "CONFLICT", f"an earlier instruction in this bill already made this change: "
+                          f"“{shown.strip()[:80]}”", matches=len(hits))
         before = hay[chosen[0][0]:chosen[0][1]]
         for a, b in sorted(chosen, reverse=True):
             if join == "replace":

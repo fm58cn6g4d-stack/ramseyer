@@ -118,6 +118,7 @@ def main() -> int:
     misses = collections.defaultdict(list)
     reasons = collections.defaultdict(collections.Counter)
     controls = 0
+    wrong_category: list[str] = []
     for law, before, ins in sample:
         base = run_bill([ins], resolver, before).traces[0].result
         controls += base is not None and base.status == "CLEAN"
@@ -127,6 +128,9 @@ def main() -> int:
             if r is not None and r.status != "CLEAN":
                 tally[kind][1] += 1
                 reasons[kind][r.status] += 1
+                if r.status == "ALREADY_EXECUTED":     # an injected error is a drafting error, never already executed
+                    wrong_category.append(f"{kind}: {law.pl} {ins.id} {ins.op}: find={mut.find!r:.70} "
+                                          f"new={(mut.replace or mut.new_text or '')!r:.70} — {r.detail[:120]}")
             else:
                 misses[kind].append(f"{law.pl} {ins.id} {ins.op} {ins.unit or ''}: {mut.target.cite_norm or mut.target.cite_raw} "
                                     f"{''.join(mut.target.path)} find={mut.find!r:.60} occ={mut.occurrence}")
@@ -143,6 +147,8 @@ def main() -> int:
     lines += ["", "## Missed (still CLEAN), first 10 per kind", ""]
     for kind, ms in sorted(misses.items()):
         lines += [f"### {kind}", ""] + [f"- {m}" for m in ms[:10]] + [""]
+    lines += ["", f"Injected errors reported as ALREADY_EXECUTED (detected, but in the wrong category): "
+                  f"{len(wrong_category)}", *[f"- {w}" for w in wrong_category]]
     (cfg.var / "m6c_errors.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:16]))
     return 0

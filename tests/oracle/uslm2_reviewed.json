@@ -1,0 +1,14 @@
+{
+  "_about": "Differences between OLRC's USLM 2.0.12 sample titles (converted 2023-06-29) and the 1.0 release point 119-134 that scripts/uslm2_check.py cannot explain mechanically. The same check proves (fidelity row) that the 2.x index holds exactly the characters of the raw 2.x files, so each difference below is in OLRC's published data, not in uslm.to_v1. Reviewed 2026-10-30. Two kinds: 'same credit, text changed' (to confirm against the release history in M6e: a delayed amendment OLRC credits before executing it, or a later execution) and 'OLRC editorial change' (a correction, a heading revision or a bracketed note).",
+  "/us/usc/t1/s112a": {"kind": "same credit, text changed", "reason": "Subsection (b) rewritten between the two files; both credits already list Pub. L. 117-263 § 5947. Most likely a delayed amendment executed after June 2023; to confirm in M6e."},
+  "/us/usc/t1/s112b": {"kind": "same credit, text changed", "reason": "Heading and text rewritten between the two files; both credits list Pub. L. 117-263 § 5947(a)(1). Most likely a delayed amendment executed after June 2023; to confirm in M6e."},
+  "/us/usc/t16/s8018": {"kind": "same credit, text changed", "reason": "2023 file has '(a) In General' and subsections; 2026 has an undivided section with paragraphs (1) and (2). Same credit (Pub. L. 117-263 § 11339(a)); later editorial reorganization or execution."},
+  "/us/usc/t49/s329": {"kind": "same credit, text changed", "reason": "Subsection (b) text differs ('except that in no case shall the Secretary require' in 2023; 'except that, if the Secretary requires air carriers to provide flight-specific' in 2026, with new (b)(1)(A)-(B)). Credits identical through Pub. L. 108-176; to be traced in M6e."},
+  "/us/usc/t16/s1274": {"kind": "OLRC editorial change", "reason": "'between the the dam' in 2023 corrected to 'between the dam' in 2026."},
+  "/us/usc/t16/s1421f–1": {"kind": "OLRC editorial change", "reason": "Section heading recased: 'Marine mammal rescue and response grant program ...' (2023) to 'Marine Mammal Rescue and Response Grant Program ...' (2026)."},
+  "/us/usc/t16/s1421f–2": {"kind": "OLRC editorial change", "reason": "Section heading gains '(Health MAP)' in 2026."},
+  "/us/usc/t16/s1468": {"kind": "OLRC editorial change", "reason": "Section heading 'Regional Ocean Partnerships.' (2023) loses its trailing period in 2026."},
+  "/us/usc/t16/s410aaa–75": {"kind": "OLRC editorial change", "reason": "Bracketed editorial insertion '[, 1996a]' after '42 U.S.C. 1996' added in 2026."},
+  "/us/usc/t16/s460nnn–51": {"kind": "OLRC editorial change", "reason": "The 2023 file places a footnote marker inside a word ('adv1isory'); 2026 has 'advisory' with the marker elsewhere."},
+  "/us/usc/t16/s6592": {"kind": "OLRC editorial change", "reason": "Bracketed reference '[42 U.S.C. 4321]' (2023) becomes '[42 U.S.C. 4321 et seq.]' (2026)."}
+}

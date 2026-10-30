@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 
 from ramseyer.data import olrc
 from ramseyer.data.http import Fetcher
+from ramseyer.oracle import releases
 from ramseyer.oracle.corpus import ClassifiedRow
 
 
@@ -21,18 +22,17 @@ def num(label: str) -> int:
 @dataclass
 class Discovery:
     rps: dict                       # label -> (ReleasePoint, page url)
-    plain: list[str]                # release points without a "not" exception, in law order
+    plain: list[str]                # release points without a "not" exception, in law order (informational)
     by_law: dict                    # public law -> [ClassifiedRow]
     cands: list[tuple]              # (pl, (before, after), non-note rows), in law order
 
     def window(self, pl: str) -> tuple[str, str] | None:
-        excepted = [l for l in self.rps if l.endswith(f"not{num(pl)}") and l.startswith("119-")]
-        if excepted:          # e.g. 119-73not60 held 119-60 back; 119-73 is the first to include it
-            return excepted[0], excepted[0].split("not")[0]
-        after = next((l for l in self.plain if num(l) >= num(pl)), None)
-        if after is None or self.plain.index(after) == 0:
-            return None
-        return self.plain[self.plain.index(after) - 1], after
+        """(R_before, R_after): the first release point incorporating the law and the one published before it.
+
+        Incorporated-set rule (oracle/releases.py, M6d): 119-73not60 holds 119-60 back, so 119-60 enters at 119-73;
+        119-102not101 already incorporates 119-102. Replaced the rule that matched only a label ending
+        "not<law>" and otherwise took plain labels around the law's number (scripts/release_windows_check.py)."""
+        return releases.window(self.rps, pl)
 
 
 def discover(f: Fetcher, base: str, include_current: bool = False) -> Discovery:
@@ -58,7 +58,7 @@ def discover(f: Fetcher, base: str, include_current: bool = False) -> Discovery:
             continue
         w = d.window(pl)
         targets = [r for r in rs if not r.is_note]
-        if not w or not targets or (num(pl) <= num(plain[0]) and "not" not in w[0]):
+        if not w or not targets:
             continue
         d.cands.append((pl, w, targets))
     d.cands.sort(key=lambda c: num(c[0]))

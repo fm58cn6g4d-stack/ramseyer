@@ -22,7 +22,7 @@ from ramseyer.resolve.resolver import Resolution, Resolver
 TEXT_OPS = ("STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH")
 RESTATEMENT = 10        # more new sections than this from one instruction: a restatement (codification)
 STAGE = {"UNPARSED": "parser", "TARGET_MISSING": "engine", "NOT_FOUND": "engine", "AMBIGUOUS": "engine",
-         "CONFLICT": "engine", "STALE_BASELINE": "engine", "WARN": "engine"}
+         "CONFLICT": "engine", "STALE_BASELINE": "engine", "WARN": "engine", "ALREADY_EXECUTED": "engine"}
 
 
 @dataclass
