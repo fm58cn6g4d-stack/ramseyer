@@ -649,3 +649,86 @@ The sequence check on added labels (F11) cost nothing on the tuning set but did 
 ## Order of work revised (2026-10-29)
 
 Espen approved the revised order in `records/handoff-2026-10-29.md`; `docs/00-build-plan.md` holds the milestone table. After M6c: M6d foundations (USLM 1.x and 2.x, the four failure categories including already executed, incorporated-set release-point windows), M6e oracle rebuild on dreamproit/uscode, M8a Act-text layer (Statute Compilations), M8 comparative print with two displays, then M7, M9 to M12, and M13 bill and amendment comparison. M6b stays open: the sealed 2023 set measured 2.07% substantive false-clean against the 1% target.
+
+## M6d: Foundations (2026-10-30) — gate PASS
+
+Gate: `scripts/m6d_gate.py` -> `var/m6d_gate.md`. Three parts, each measured on real data before it was relied on.
+
+### USLM 1.x and 2.x
+
+**What changed:** `uslm.to_v1` reads a Code title in either namespace and hands the rest of ramseyer one form (1.0). Every 2.x element moves to the 1.0 namespace under its own name, and the four constructs 1.0 writes differently are rewritten:
+- inline `<footnote>` becomes a footnote note, which operative text skips;
+- `<list>`/`<listItem>`/`<listContent>` become `<p role="listItem">`;
+- a `<crossHeading>`, or a `<heading>` loose in running text or before a unit's number, becomes `<p>`;
+- an XHTML `<caption>` becomes the table's first header row.
+
+The indexer applies it on load and logs a `uslm_schema` issue for every converted title; an unknown namespace is logged and not indexed.
+
+**Check** (`scripts/uslm2_check.py`): OLRC's USLM 2.0.12 sample titles 1, 16 and 49 (converted 2023-06-29; aih/uscode-redesign `samples/uslm2`) indexed through the seam and compared with release point 119-134.
+
+| Measure | Result |
+| --- | --- |
+| Fidelity: indexed text holds exactly the raw 2.x characters | 6,417 of 6,417 sections |
+| Sections in both, with identical source credits (compared) | 6,132 |
+| … identical in text, heading, structure and status | 4,431 |
+| … text differs only in Act-style headings ("(a) In General.—") | 1,602 |
+| … only in layout, footnote markers or the case of a status line | 88 |
+| … subunit identifiers differ, as OLRC published them in the 2.x file | 16 |
+| … differences in OLRC's published data, reviewed one by one | 11 (`tests/oracle/uslm2_reviewed.json`) |
+
+The 11 reviewed:
+- 7 are OLRC editorial changes between 2023 and 2026, such as "the the" corrected, a heading recased, or a bracketed note added.
+- 4 have the same source credit but different text (1 U.S.C. 112a, 112b; 16 U.S.C. 8018; 49 U.S.C. 329). The first two are most likely delayed amendments that OLRC credited before executing them. All four are to be traced in the release history (M6e).
+
+The 22 duplicate identifiers the 2.x index reports are the 20 that 1.0 has, plus 2 in 16 U.S.C. 1535 (an identifier as published).
+
+### Release-point windows
+
+**What changed:** `oracle/releases.py` reads labels as sets of laws: incorporated(RP, L) = L ≤ (RP congress, RP law) and L not excluded ("not" parts; "uN" re-issues follow their original). A law's window is the first release point that incorporates it and the one published before. This replaces the rule that special-cased a label ending "not<law>" (aih/uscode-redesign ADR-0074).
+
+**Check** (`scripts/release_windows_check.py`):
+- All 24 labels on OLRC's prior-release-points page parse, and the order rule reproduces OLRC's publication order.
+- Of 88 classified 119th Congress laws, one window changes: 119-102 now runs 119-100 -> 119-102not101, instead of -> 119-102, which also took in 119-101.
+- The tuning corpus keeps its pinned window for 119-102: 119-101 touched only Title 12, so the 16 U.S.C. 2201 target was not contaminated.
+- The 385 labels of the full 2013–2026 history (with 17 "u1" labels and labels with several "not" parts) are covered by unit tests on their shapes. They are checked against real data when M6e loads them.
+
+### Failure categories and already-executed amendments
+
+**Categories:** every non-CLEAN status maps to one of the House Comparative Print Suite's four notification categories (`engine.category`), reported by `scripts/m6_gate.py`:
+- drafting: NOT_FOUND, TARGET_MISSING, AMBIGUOUS, CONFLICT;
+- current-law data: STALE_BASELINE;
+- system: UNPARSED, NOT_EXECUTED;
+- already executed: ALREADY_EXECUTED.
+
+**ALREADY_EXECUTED** is given only where the matched text shows the place: an insertion already next to its anchor, or a replacement that contains the old text and already stands around the match. The engine no longer applies such an edit a second time; it had done so and reported CLEAN. A change that only an earlier instruction of the same bill made is a CONFLICT.
+
+**What measuring it found** (each version run on the tuning gate and the drafting-error benchmark):
+1. The first version also used ALREADY_EXECUTED when the struck text was missing and its replacement occurred in the unit. On the tuning corpus 6 instructions got it. Checked against R_before and R_after:
+   - 2 were bill-internal (now CONFLICT);
+   - 3 were struck words that **are** in R_before but split by OLRC's "So in original" footnote markers ("the the¹ Secretary", "and¹ 14504", "grand² children");
+   - 1 was plausibly executed (10 U.S.C. 710a(a)(2)(A), unchanged across Pub. L. 119-60).
+2. On the benchmark, that rule called 8 injected drafting errors "already executed". A deletion's replacement is part of the struck text ("and $13,300,000" -> "$13,300,000"), and common words recur ("contract"). Without the struck text there is no place to check. That case is NOT_FOUND again, with a note when the replacement occurs in the unit. The benchmark now lists any injected error called ALREADY_EXECUTED: 0.
+3. **Matching across footnote markers:** a quote that occurs once markers are skipped now matches, and the markers (with their notes) go with the words, as OLRC removes them.
+
+On real data ALREADY_EXECUTED is currently given nowhere; its located forms are covered by unit tests.
+
+### Measured, same code (80701d4)
+
+| Set | CLEAN | Substantive false-clean | Change from M6c |
+| --- | --- | --- | --- |
+| Tuning corpus | 373 of 1,295 (28.8%) | 0 | +10 CLEAN, all right (footnote markers) |
+| Tuning, resolved against R_before | 374 | 1 (14 U.S.C. 319, as before) | +10 CLEAN |
+| GovInfo 2024 dev half | 119 | 0 | +1 |
+| GovInfo 2024 test half (measured only) | 326 | 5 (1.53%) | +20 CLEAN, same 5 wrong |
+| **Sealed 2023 set, measured once** | 249 of 729 (34.2%) | **5 (2.01%, 0.86%–4.61%)** | +7 CLEAN, no new wrong; all 5 in the FY2024 NDAA |
+| Drafting-error benchmark | — | 94.4% of 787 injected errors detected | was 93.5% |
+
+M6b's 1% target on unseen law is still not met: the five NDAA cases remain. M6e rebuilds the oracle across 2013–2026, which will tell whether they are an NDAA pattern or chance.
+
+**Commands:**
+- `.venv/bin/python scripts/m6d_gate.py`
+- `.venv/bin/python scripts/uslm2_check.py`
+- `.venv/bin/python scripts/release_windows_check.py`
+
+They are listed here until CLAUDE.md's command list (tier 3) is updated.
+
