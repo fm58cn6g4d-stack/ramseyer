@@ -92,19 +92,27 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
 PL_CITE = re.compile(r"Pub\. L\. (\d+)[–-](\d+)")
 
 
+AMENDMENT_ENTRY = re.compile(r"(?<=\.)\s+(?=(?:Subsecs?\.|Pars?\.|Subpars?\.|Cls?\.|Pub\. L\.|\d{4}\u2014))")
+
+
 def other_laws(law: CorpusLaw, before: Index, after: Index, ident: str) -> list[str]:
     """Laws other than this one that OLRC's amendment notes credit with changing the section between R_before and
     R_after: R_after then carries their changes too (a delayed amendment of an earlier law taking effect in the
-    window, as the FY2021 NDAA's title XVIII did on Jan. 1, 2022), so the section cannot grade this law alone."""
-    def cited(ix: Index) -> set[str]:
+    window, as the FY2021 NDAA's title XVIII did on Jan. 1, 2022), so the section cannot grade this law alone.
+    Entries of the notes are compared, not the laws they cite: an earlier law may have amended the section before
+    R_before too (Pub. L. 116-283 § 1081 in 2021, then § 1883 on Jan. 1, 2022)."""
+    def entries(ix: Index) -> set[str]:
         try:
             sid = ix.by_identifier(ident).id
         except LookupError_:
             return set()
-        return {f"{c}-{n}" for (t,) in ix.db.execute(
-            "SELECT text FROM notes WHERE section_id=? AND note_type='amendments'", (sid,))
-            for c, n in PL_CITE.findall(t)}
-    return sorted(cited(after) - cited(before) - {law.pl})
+        out = set()
+        for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? AND note_type='amendments'", (sid,)):
+            out |= {" ".join(e.split()) for e in AMENDMENT_ENTRY.split(t)}
+        return out
+    new = entries(after) - entries(before)
+    # The law an entry starts with is the one that acted; laws it mentions later ("... added by Pub. L. 116-92") did not.
+    return sorted({f"{m.group(1)}-{m.group(2)}" for e in new if (m := PL_CITE.match(e))} - {law.pl})
 
 
 DELAYED_NOTE = re.compile(r"Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"

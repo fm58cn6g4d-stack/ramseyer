@@ -103,3 +103,25 @@ def test_a_probable_intent_note_excuses_only_the_differences_it_quotes():
     pred = sec(sub("a", "130 percent of the amount") + sub("b", "The board shall act."))
     after = sec(sub("a", "150 percent of the amount") + sub("b", "The board may act."))
     assert kind(pred, after, Context(pl="1-2", new_notes=[note])) is None
+
+
+def test_a_supplied_heading_is_found_on_a_unit_the_engine_built_without_an_identifier():
+    # Units built from bill text carry no identifier (Pub. L. 116-260 div. Q § 224, 15 U.S.C. 1062(b)).
+    pred = sec('<subsection><num value="b">(b)</num><content>The applicant shall reply.</content></subsection>')
+    after = sec(sub("b", "The applicant shall reply.", heading="Refusal of registration"))
+    assert kind(pred, after, Context(pl="1-2", positive_law=False)) == "editorial"
+
+
+def test_bracketed_code_citations_are_olrc_s():
+    # OLRC adds and drops "[30 U.S.C. 1101 et seq.]" after an Act's public law number (42 U.S.C. 5905).
+    pred = sec(sub("a", "the Placeholder Act (Public Law 93–410) [30 U.S.C. 1101 et seq.], to accelerate"))
+    after = sec(sub("a", "the Placeholder Act (Public Law 93–410), to accelerate"))
+    assert kind(pred, after, Context(pl="1-2")) == "editorial"
+
+
+def test_an_act_reference_resolving_to_a_subsection():
+    # "section 1860D–4(o) of the Social Security Act" resolves to …/s1395w–104/o (42 U.S.C. 300jj).
+    pred = sec(sub("a", "of paragraph (2)(B) of section 1860D–4(o) of the Placeholder Act at a time"))
+    after = sec(sub("a", "of paragraph (2)(B) of section 1395w–104(o) of this title at a time"))
+    ctx = Context(pl="1-2", title="42", resolve=lambda cite: "/us/usc/t42/s1395w–104/o")
+    assert kind(pred, after, ctx) == "editorial"

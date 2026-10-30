@@ -77,6 +77,18 @@ def _drop(el) -> None:
     parent.remove(el)
 
 
+def _chain(u, root) -> tuple[str, ...]:
+    """A unit's numbers from the section down ("b", "1", ...)."""
+    out = []
+    for e in [u, *u.iterancestors()]:
+        if _local(e) in UNIT and e is not root:
+            num = next((c for c in e if _local(c) == "num"), None)
+            out.append((num.get("value") or "".join(num.itertext()).strip("() .§")) if num is not None else "")
+        if e is root:
+            break
+    return tuple(reversed(out))
+
+
 def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
     """Both sections as comparable text: footnote markers removed, heading case and closing punctuation ("—", ".—")
     set aside, and, in a title that is not positive law, the catchline (unless the law amends a heading) and any
@@ -85,7 +97,9 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
     for el in (pred_el, after_el):
         _strip_footnotes(el)
     if ctx is not None and ctx.positive_law is False:
-        pred_units = {u.get("identifier"): u for u in pred_el.iter() if _local(u) in UNIT and u.get("identifier")}
+        # Units are paired by their chain of numbers from the section: units the engine built from bill text carry
+        # no identifier (Pub. L. 116-260 div. Q § 224, 15 U.S.C. 1062(b)).
+        pred_units = {_chain(u, pred_el): u for u in pred_el.iter() if _local(u) in UNIT}
         for u in list(after_el.iter()):
             if _local(u) not in UNIT:
                 continue
@@ -99,7 +113,7 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
                     if ph is not None:
                         _drop(ph)
                 continue
-            mine = pred_units.get(u.get("identifier"))
+            mine = pred_units.get(_chain(u, after_el))
             mh = _heading(mine) if mine is not None else None
             if mine is not None and (mh is None or not "".join(mh.itertext()).strip()):
                 _drop(h)                             # a heading OLRC supplied (the law's text has none)
@@ -112,7 +126,10 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
             for c in list(h):
                 h.remove(c)
             h.text = words
-        out.append(re.sub(r"\s+", " ", normalize(text_of(el))).strip())
+        text = re.sub(r"\s+", " ", normalize(text_of(el))).strip()
+        # Bracketed Code citations ("(Public Law 93–410) [30 U.S.C. 1101 et seq.]") are OLRC's, never the law's.
+        text = re.sub(r"\s?\[[^\[\]]*U\.S\.C\.[^\[\]]*\]", "", text)
+        out.append(text)
     return out[0], out[1]
 
 
@@ -127,7 +144,7 @@ def _pattern(pred: str, ctx: Context | None) -> re.Pattern:
             if any(s < m.end() and m.start() < e for s, e, _ in spans):
                 continue
             code = ctx.resolve(f"Section {m.group(1)}{m.group(2)} of {m.group(3)}")
-            g = re.match(r"^/us/usc/t(\w+)/s([^/]+)$", code or "")
+            g = re.match(r"^/us/usc/t(\w+)/s([^/]+)", code or "")   # a subsection resolves too ("…/s1395w–104/o")
             if not g:
                 continue
             t, s = g.groups()
@@ -188,8 +205,9 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
     if ctx is not None and _probable_intent(pred, after, ctx):
         return "editorial: executed to reflect the probable intent of Congress (OLRC note)"
     if ctx is not None:                                 # "(f) Repealed. Pub. L. 113–76, ..., 128 Stat. 424"
+        # OLRC may set the placeholder as the unit's heading, which texts() lower-cases.
         after = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?", "",
-                       after)
+                       after, flags=re.I)
         after = re.sub(r"\s+", " ", after).strip()
     if _pattern(pred, ctx).fullmatch(after):
         return "editorial"
