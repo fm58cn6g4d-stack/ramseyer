@@ -30,7 +30,7 @@ def main() -> int:
     md = (cfg.var / "uslm2_check.md").read_text()
     fid = re.search(r"Fidelity[^|]*\| (\d+) of (\d+)", md)
     reviewed = re.search(r"Reviewed publication differences[^:]*: (\d+)", md)
-    checks.append(("USLM 2.x seam: exact characters, every difference explained or reviewed", code == 0,
+    checks.append(("USLM 2.x seam: same non-whitespace characters, every difference explained or reviewed", code == 0,
                    f"fidelity {fid.group(1)} of {fid.group(2)} sections; reviewed publication differences "
                    f"{reviewed.group(1) if reviewed else '?'}; details in var/uslm2_check.md"))
     code, out = run("release_windows_check.py")

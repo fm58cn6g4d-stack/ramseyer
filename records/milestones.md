@@ -668,7 +668,7 @@ The indexer applies it on load and logs a `uslm_schema` issue for every converte
 
 | Measure | Result |
 | --- | --- |
-| Fidelity: indexed text holds exactly the raw 2.x characters | 6,417 of 6,417 sections |
+| Fidelity: indexed text holds exactly the raw 2.x non-whitespace characters, in order | 6,417 of 6,417 sections |
 | Sections in both, with identical source credits (compared) | 6,132 |
 | … identical in text, heading, structure and status | 4,431 |
 | … text differs only in Act-style headings ("(a) In General.—") | 1,602 |
