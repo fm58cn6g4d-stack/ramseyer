@@ -85,3 +85,13 @@ def test_an_unapplied_each_place_strike_keeps_a_section_with_those_words_from_cl
     work = Working(XML.replace("this\nchapter", "this subpart"), "/us/usc/t99/s1", positive_law=True)
     assert unapplied_mentions("/us/usc/t99/s1", ins, set(), work)
     assert not unapplied_mentions("/us/usc/t99/s1", ins, set(), Working(XML, "/us/usc/t99/s1", positive_law=True))
+
+
+def test_lead_in_text_before_new_units_is_kept():
+    # Pub. L. 113-76 div. G § 416 (20 U.S.C. 954): "by adding at the end the following: “Whenever a State agency
+    # requests ..., the Chairperson shall—“(i) ...; and “(ii) ...”" lost its lead-in, CLEAN.
+    text, res = run("Section 1(a) of title 99, United States Code, is amended by adding at the end the following: "
+                    "“Whenever a member so requests, the board shall—\n“(1) give consideration to the request; and\n"
+                    "“(2) ensure that it is not repeated.”.")
+    assert res[0].status == "CLEAN"
+    assert "keep records. Whenever a member so requests, the board shall— (1) give consideration" in text

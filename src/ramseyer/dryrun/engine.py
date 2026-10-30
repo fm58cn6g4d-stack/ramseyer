@@ -1295,6 +1295,12 @@ class Engine:
             if kids:
                 idx = scope.index(kids[-1]) + 1
             else:
+                if loose:
+                    # "adding at the end the following: “Whenever ..., the Chairperson shall—“(i) ...”": the lead-in
+                    # ends the unit's text and introduces the new units (Pub. L. 113-76 div. G § 416, 20 U.S.C. 954).
+                    segs = Working.segments(scope)
+                    replace_span(segs, len(linear(segs).rstrip()), len(linear(segs)), " " + " ".join(loose))
+                    loose = []
                 # The unit had only content: it becomes a chapeau over the new units.
                 content = scope.find(NS + "content")
                 if content is not None:
@@ -1315,10 +1321,12 @@ class Engine:
             # "(d)" added after a last "(b)": a wrong section or unit is the likelier explanation (M6c benchmark).
             return Result(ins.id, "WARN", gap)
         warn = None
+        if loose:
+            warn = f"lead-in text before the new units not placed: “{' '.join(loose)[:80]}”"
         prev = parent[idx - 1] if idx > 0 else None
         if prev is not None and local(prev) in SUB and units and local(units[0]) in SUB:
             tail = text_of(prev).rstrip()
-            if tail.endswith(".") and not tail.endswith("”."):
+            if tail.endswith(".") and not tail.endswith("”.") and warn is None:
                 warn = "the preceding unit ends with a period; a conjunction or semicolon amendment may be missing"
         return Result(ins.id, "WARN" if warn else "CLEAN", warn or f"added {len(units)} unit(s)")
 
