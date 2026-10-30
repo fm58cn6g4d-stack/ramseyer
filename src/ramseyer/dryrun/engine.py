@@ -688,17 +688,22 @@ class Engine:
             return None, None, [], "TARGET_MISSING", f"no {qnote} in the unit"
         segs = Working.segments(target_scope)
         hay = linear(segs)
-        allowed = self._allowed(segs, ins, find)
-        for q in ins.target.qualifiers:
-            m = re.match(r"(first|second|third|fourth|last) sentence", q)
-            if m:
-                allowed = self._sentence_range(hay, m.group(1), allowed)
+        allowed = self._ranges(ins, segs, hay, find)
         hits, how = find_all(hay, find, allowed)
         if positional and hits:
             end = max(b for _, b in allowed) if allowed else len(hay)
             tail_ok = [h for h in hits if not hay[h[1]:end].strip(" \n\t")]
             hits = tail_ok[-1:] if tail_ok else []
         return segs, hay, hits, how, None
+
+    def _ranges(self, ins, segs, hay, find):
+        """The ranges of the unit's text an instruction may edit: its part (heading, matter preceding ...) and sentence."""
+        allowed = self._allowed(segs, ins, find)
+        for q in ins.target.qualifiers:
+            m = re.match(r"(first|second|third|fourth|last) sentence", q)
+            if m:
+                allowed = self._sentence_range(hay, m.group(1), allowed)
+        return allowed
 
     def _choose(self, ins, hits):
         if ins.occurrence == "each":
@@ -720,12 +725,20 @@ class Engine:
         return (local(node) == "ref" and "footnoteRef" in (node.get("class") or "")) or \
             (local(node) == "sup" and (node.text or "").strip().isdigit())
 
-    def _clear_markers_in(self, scope, find) -> bool:
-        """If `find` occurs in the unit once footnote markers are skipped, remove the markers inside each occurrence
-        (and their footnote notes). Returns True when any marker was removed."""
+    def _clear_markers_in(self, ins, scope, find) -> bool:
+        """If `find` occurs, once footnote markers are skipped, in the part of the unit the instruction may edit,
+        remove the markers inside the occurrence it edits (and their footnote notes). Only when that occurrence is
+        unambiguous: one occurrence (or "each place"), and no "second place" or later. Returns True when any marker
+        was removed; nothing outside the edited occurrence is touched."""
         if scope is None or not find:
             return False
-        segs = Working.segments(scope)
+        if ins.occurrence.startswith("nth:") and ins.occurrence != "nth:1":
+            return False
+        target_scope, _ = self._qualified_scope(scope, ins)
+        if target_scope is None:
+            return False
+        segs = Working.segments(target_scope)
+        allowed = self._ranges(ins, segs, linear(segs), find)
         kept, index = [], []
         for sg in segs:
             txt = getattr(sg.node, sg.attr) or ""
@@ -741,6 +754,9 @@ class Engine:
         if not hits:
             return False
         spans = [(index[a], index[b - 1] + 1) for a, b in hits if b > a]
+        spans = [(lo, hi) for lo, hi in spans if any(a <= lo and hi <= b for a, b in allowed)]
+        if not spans or (len(spans) > 1 and ins.occurrence != "each"):
+            return False
         removed = False
         for sg in segs:
             if self._is_marker(sg) and any(lo <= sg.start <= hi for lo, hi in spans):
@@ -778,19 +794,27 @@ class Engine:
     def _in_place(hay, a, b, piece, join):
         """True when the edit at hay[a:b] would leave the text as it already reads: an insertion already next to its
         anchor, or a replacement whose new text, containing the old, already surrounds the match."""
+        # Compared with whitespace collapsed, and only as whole words: "program" is not in place before "programming".
+        def flat(t):
+            return " ".join(t.split())
         old = hay[a:b]
         if join == "after":
-            added = piece[len(old):]
-            return len(_squash(added)) >= MIN_EXECUTED and \
-                _squash(hay[b:b + len(added) + 40]).startswith(_squash(added))
+            added = flat(piece[len(old):])
+            tail = flat(hay[b:b + len(added) + 40])
+            return len(_squash(added)) >= MIN_EXECUTED and tail.startswith(added) and \
+                (len(tail) == len(added) or not tail[len(added)].isalnum())
         if join == "before":
-            added = piece[:len(piece) - len(old)]
-            return len(_squash(added)) >= MIN_EXECUTED and \
-                _squash(hay[max(0, a - len(added) - 40):a]).endswith(_squash(added))
+            added = flat(piece[:len(piece) - len(old)])
+            head = flat(hay[max(0, a - len(added) - 40):a])
+            return len(_squash(added)) >= MIN_EXECUTED and head.endswith(added) and \
+                (len(head) == len(added) or not head[-len(added) - 1].isalnum())
         k = piece.find(old) if old else -1
         if k < 0 or len(_squash(piece)) - len(_squash(old)) < MIN_EXECUTED:
             return False
-        return _squash(hay[max(0, a - k):a - k + len(piece)]) == _squash(piece)
+        lo, hi = a - k, a - k + len(piece)
+        if lo < 0 or hi > len(hay) or flat(hay[lo:hi]) != flat(piece):
+            return False
+        return (lo == 0 or not hay[lo - 1].isalnum()) and (hi == len(hay) or not hay[hi].isalnum())
 
     def _status_for_missing(self, ins, find, path):
         """NOT_FOUND, or CONFLICT when the text existed at the baseline and an earlier instruction removed it."""
@@ -841,7 +865,7 @@ class Engine:
                     segs, hay, hits, how = segs2, hay2, hits2, f"with “this Act” as “this {unit}”"
                     make_new = (lambda mk, u: lambda old: mk(old).replace("this Act", f"this {u}"))(make_new, unit)
                     break
-        if not hits and self._clear_markers_in(scope, find):
+        if not hits and self._clear_markers_in(ins, scope, find):
             # The quote runs across a footnote marker (OLRC's "So in original" on the words a correction fixes:
             # "the the¹ Secretary", 10 U.S.C. 14504(b)); the marker goes with the words, as OLRC removes it.
             segs, hay, hits, how, err = self._locate(ins, scope, find, positional)

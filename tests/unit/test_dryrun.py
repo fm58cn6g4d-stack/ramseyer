@@ -264,3 +264,34 @@ def test_a_correction_matches_across_a_footnote_marker_and_removes_it():
     res = Engine(work).run(ins[0], list(ins[0].target.path))
     assert res.status == "CLEAN", res.detail
     assert "notify the board." in work.render() and "So in original" not in work.render()
+
+
+def test_a_longer_word_is_not_an_insertion_in_place():
+    # Inserting "program" after "alpha" in "alpha programming" is a real insertion (Codex, PR #3).
+    xml = XML.replace("the alpha program.", "the alpha programming.")
+    ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection "
+                     "(a) by inserting “program” after “alpha”.\n").instructions
+    work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+    res = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert res.status == "CLEAN", res.detail
+    assert "alpha program programming" in work.render()
+
+
+def test_markers_are_removed_only_in_the_edited_occurrence():
+    # Two footnoted occurrences and an edit of the first: the second keeps its marker; "the second place" is not
+    # matched across markers at all (Codex, PR #3).
+    fn = '<ref class="footnoteRef" idref="fn{n}">{n}</ref>'
+    xml = XML.replace("file a report;", f"file a the{fn.format(n=1)} report;").replace(
+        "keep a record; and", f"keep a the{fn.format(n=2)} report; and")
+    def go(draft):
+        ins = parse_text("SEC. 2. AMENDMENTS.\n" + draft + "\n").instructions
+        work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+        return Engine(work).run(ins[0], list(ins[0].target.path)), work
+    res, work = go("Section 1 of title 99, United States Code, is amended in subsection (b)(1) by striking “a the "
+                   "report” and inserting “a report”.")
+    assert res.status == "CLEAN", res.detail
+    assert work.el.find(".//{*}ref[@idref='fn2']") is not None and work.el.find(".//{*}ref[@idref='fn1']") is None
+    res, work = go("Section 1 of title 99, United States Code, is amended in subsection (b) by striking “a the "
+                   "report” the second place it appears and inserting “a report”.")
+    assert res.status != "CLEAN"
+    assert work.el.find(".//{*}ref[@idref='fn1']") is not None and work.el.find(".//{*}ref[@idref='fn2']") is not None
