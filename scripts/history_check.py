@@ -78,10 +78,16 @@ def main() -> int:
         rp_h = materialize(h, label, titles, CHECK, log=lambda s: examples.append(("load", label, s)))
         chk = sqlite3.connect(CHECK)
         so, sh = sections(oracle, rp_o), sections(chk, rp_h)
+        incomplete = {d for (d,) in chk.execute("SELECT detail FROM load_issues WHERE rp=? AND kind='history_incomplete'",
+                                                (rp_h,))}
         c = collections.Counter()
         for ident in so.keys() & sh.keys():
             o, x = so[ident], sh[ident]
             diff = [k for k, i in (("text", 0), ("heading", 1), ("status", 2), ("structure", 3)) if o[i] != x[i]]
+            if diff and ident in incomplete:
+                c["incomplete in the source data"] += 1
+                examples.append(("incomplete in the source data (not graded)", label, ident))
+                continue
             c["identical" if not diff else "different"] += 1
             for k in diff:
                 c[k] += 1
@@ -94,17 +100,19 @@ def main() -> int:
         totals.update(c)
         rows.append(f"| {label} | {', '.join(titles)} | {len(so)} / {len(sh)} | {c['identical']} | {c['text']} | "
                     f"{c['heading']} | {c['status']} | {c['structure']} | {c['only_olrc']} | {c['only_history']} |")
-    compared = totals["identical"] + totals["different"]
+    compared = totals["identical"] + totals["different"] + totals["incomplete in the source data"]
     lines += [f"## Sections: history vs OLRC's zips ({len(shared)} release points)", "", *rows, "",
               f"Total: {totals['identical']} of {compared} sections identical "
               f"({totals['identical'] / max(compared, 1):.2%}); text {totals['text']}, heading {totals['heading']}, "
-              f"status {totals['status']}, structure {totals['structure']}; only in OLRC {totals['only_olrc']}, "
+              f"status {totals['status']}, structure {totals['structure']}; incomplete in the source data and marked "
+              f"not gradable {totals['incomplete in the source data']}; only in OLRC {totals['only_olrc']}, "
               f"only in history {totals['only_history']}.", ""]
     if examples:
         lines += [f"## First {a.show} differences", ""] + [f"- {k} @ {l}: `{i}`" for k, l, i in examples[:a.show]]
     (cfg.var / "history_check.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines[:40]))
-    return 0 if not bad and not disorder and compared and totals["different"] == 0 else 1
+    return 0 if (not bad and not disorder and compared and totals["different"] == 0 and not totals["only_olrc"]
+                 and not totals["only_history"]) else 1
 
 
 if __name__ == "__main__":

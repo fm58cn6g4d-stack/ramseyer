@@ -87,3 +87,17 @@ def test_a_title_not_loaded_at_a_release_point_carries_forward(tmp_path):
     h.flush_release_map()
     assert "Lorem." in h.section_xml("/us/usc/t99/s1", "118-9")[0]
     assert h.section_xml("/us/usc/t99/s1", "118-9") == h.section_xml("/us/usc/t99/s1", "118-5")
+
+
+def test_a_section_split_out_of_another_is_kept_out_and_its_parent_marked(tmp_path):
+    # 25 U.S.C. 5329's model agreement ("SECTION 1.", /us/usc/t25/s1) is a separate row whose parent is a section.
+    h = History(tmp_path / "h.sqlite")
+    h.load_rows([row("1", "Lorem.", ["118-1"]), row("1", "Nested agreement.", ["118-1"], parent="/us/usc/t99/s2"),
+                 row("2", "Host.", ["118-1"], seq=2)])
+    h.flush_release_map()
+    doc, n, notes = title_document(h, "99", "118-1")
+    assert n == 2 and b"Nested agreement" not in doc
+    rp = materialize(h, "118-1", ["99"], tmp_path / "ix.sqlite", log=lambda s: None)
+    db = sqlite3.connect(tmp_path / "ix.sqlite")
+    assert db.execute("SELECT detail FROM load_issues WHERE rp=? AND kind='history_incomplete'", (rp,)).fetchall() == \
+        [("/us/usc/t99/s2",)]

@@ -222,6 +222,12 @@ def title_document(history: History, title: str, label: str) -> tuple[bytes, int
         return el
 
     for ident, parent, _, pos, xml in history.title_sections(title, label):
+        if parent and re.search(r"/s\d[^/]*$", parent):
+            # A section published inside another (the model agreement's "SECTION 1." in 25 U.S.C. 450l, later 5329,
+            # identifier /us/usc/t25/s1). OLRC keeps it in its section; the dataset splits it out and leaves the
+            # parent's own text incomplete. Kept out, and the parent marked so it is not graded.
+            notes.append(f"incomplete: {parent} (a section nested in it, {ident}, is split out in the source data)")
+            continue
         el = uslm.to_v1(etree.fromstring(xml.encode("utf-8")))
         container(parent or base).append(el)
         positive = positive if pos is None else pos
@@ -247,6 +253,7 @@ def materialize(history: History, label: str, titles: list[str], db_path: Path, 
     work = db_path.parent / "materialize"
     work.mkdir(parents=True, exist_ok=True)
     zp = work / f"{label}.zip"
+    incomplete: list[tuple[str, str]] = []
     with zipfile.ZipFile(zp, "w", zipfile.ZIP_DEFLATED) as zf:
         for t in titles:
             doc, n, notes = title_document(history, t, label)
@@ -254,7 +261,11 @@ def materialize(history: History, label: str, titles: list[str], db_path: Path, 
                 zf.writestr(f"usc{t}.xml", doc)
             for note in notes:
                 log(f"{label} title {t}: {note}")
+                if note.startswith("incomplete: "):
+                    incomplete.append((t, note))
     rp = ix.load_release_point(zp, label, None, f"dreamproit/uscode history ({label})", log=lambda s: None)
+    ix.db.executemany("INSERT INTO load_issues(rp, title, kind, detail) VALUES (?,?,?,?)",
+                      [(rp, t, "history_incomplete", note.split(" ", 2)[1]) for t, note in incomplete])
     ix.mark_complete(rp)
     zp.unlink()
     return rp
