@@ -732,3 +732,44 @@ M6b's 1% target on unseen law is still not met: the five NDAA cases remain. M6e 
 
 They are listed here until CLAUDE.md's command list (tier 3) is updated.
 
+## M6e: Oracle rebuild (in progress)
+
+### Step 1: the release-point history (2026-10-30)
+
+**What it is:** `oracle/history.py` keeps the dreamproit/uscode `versions` config in one SQLite store under `var/history/`:
+- every distinct text of every section, as published, 2013 to 2026 (USLM XML, zlib-compressed);
+- the release points;
+- which release points published each text.
+
+It can materialize any release point's titles as an ordinary ramseyer index, so the dry-run and the harness read it like an index built from OLRC's zip. USLM 2.x rows go through the M6d seam.
+
+**Loading** (`scripts/load_history.py`; about 10 minutes; 2.6 GB):
+- 20 shards, each checked against the dataset manifest's SHA-256, loaded, then deleted.
+- 489,738 versions and 5,466,652 version-to-release rows, both equal to the manifest's counts; 381 release points, 113-21 to 119-102not101.
+
+**Three facts about the dataset, each found by checking and now handled:**
+1. Two labels (118-22u1, 118-40) are never a version's first or last release, so the dataset gives them no sequence number of their own. Each was placed in the one gap of the sequence its neighbours bracket under the M6d order rule (314, 319). Sequence 77, between 114-219 and 114-221, is a release point with no section rows.
+2. A title is loaded at a release point only where OLRC updated it, about 8 titles per release point. A title at a release point is therefore its text at the latest release point at or before it that loaded the title. Without this rule, whole titles were missing from 8 of the 12 release points compared below.
+3. One row is a section published inside another: the model agreement's "SECTION 1." (identifier /us/usc/t25/s1) inside 25 U.S.C. 450l, later 5329. The dataset splits it out and leaves the parent without its own subsections. It is left out, as OLRC keeps it, and the parent is logged as `history_incomplete` so it is not graded.
+
+**Check** (`scripts/history_check.py`) against the 12 release points indexed straight from OLRC's zips (`var/oracle/oracle.sqlite`), same titles:
+
+| Measure | Result |
+| --- | --- |
+| Sections compared | 175,781 |
+| Identical in text, heading, status and subunit identifiers | 175,779 |
+| Incomplete in the source data, not graded | 2 (25 U.S.C. 5329 at 119-87 and 119-88) |
+| Only in OLRC's zips / only in the history | 0 / 0 |
+| History labels that parse; publication order reproduced by the M6d rule | 381 of 381; yes (16 with a `u` re-issue, 24 with several excluded laws) |
+
+**Next steps:**
+- **Step 2:** the oracle on every law from 113-21 on, with exact before and after release points under the M6d window rule, and a new sealed sample stratified by Congress, committee and title.
+- **Step 3:** GPO's tagging as a second reader, draft versions of enacted laws, and Act text in Code notes.
+
+**To watch** (from the M6d review): an end-insertion now removes the footnote marker after the period. Check that against R_after on the wider data.
+
+**Commands:**
+- `uv pip install -p .venv/bin/python -e '.[dev,history]'`
+- `.venv/bin/python scripts/load_history.py`
+- `.venv/bin/python scripts/history_check.py`
+
