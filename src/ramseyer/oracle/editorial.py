@@ -10,6 +10,7 @@ amend that heading, a placeholder only when it cites this law. Anything else sta
 from __future__ import annotations
 
 import copy
+import difflib
 import re
 from dataclasses import dataclass, field
 from typing import Callable
@@ -104,14 +105,13 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
                 _drop(h)                             # a heading OLRC supplied (the law's text has none)
     out = []
     for el in (pred_el, after_el):
-        for h in el.iter("{*}heading"):
-            for n in h.iter():
-                n.text = n.text.lower() if n.text else n.text
-                if n is not h and n.tail:
-                    n.tail = n.tail.lower()
-            last = h if len(h) == 0 else h[-1]
-            attr = "text" if last is h else "tail"
-            setattr(last, attr, re.sub(r"[\s.—–-]+$", "", getattr(last, attr) or ""))
+        for h in list(el.iter("{*}heading")):
+            # One text node: the heading's words in lower case, closing punctuation dropped wherever the markup put
+            # it ("<inline>Definitions.—</inline>").
+            words = re.sub(r"[\s.—–-]+$", "", "".join(h.itertext())).lower()
+            for c in list(h):
+                h.remove(c)
+            h.text = words
         out.append(re.sub(r"\s+", " ", normalize(text_of(el))).strip())
     return out[0], out[1]
 
@@ -159,6 +159,24 @@ def _footnote_digits(pred: str, after: str) -> bool:
     return bool(only) and all(len(d) <= 2 and attached for d, attached in only)
 
 
+def _probable_intent(pred: str, after: str, ctx: Context) -> bool:
+    """OLRC's note says it executed this law "to reflect the probable intent of Congress", and every passage in which
+    the prediction differs from R_after is quoted in such a note (“150 percent” for “130 percent”): the note
+    explains those differences, and only those."""
+    notes = [normalize(n) for n in ctx.new_notes if ctx.cite in n and "probable intent" in n]
+    if not notes:
+        return False
+    a, b = pred.split(), after.split()
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        for words in (a[i1:i2], b[j1:j2]):
+            piece = " ".join(words).strip(".,;:")
+            if piece and not any(piece in n for n in notes):
+                return False
+    return True
+
+
 def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | None:
     """Why the prediction differs from R_after only editorially, or None when the difference is substantive."""
     if pred_el is None or after_xml is None:
@@ -167,7 +185,7 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
     pred, after = texts(pred_el, after_el, ctx)
     if pred == after:
         return "editorial"
-    if ctx is not None and any(ctx.cite in n and "probable intent" in n for n in ctx.new_notes):
+    if ctx is not None and _probable_intent(pred, after, ctx):
         return "editorial: executed to reflect the probable intent of Congress (OLRC note)"
     if ctx is not None:                                 # "(f) Repealed. Pub. L. 113–76, ..., 128 Stat. 424"
         after = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?", "",

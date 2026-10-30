@@ -79,12 +79,14 @@ def unapplied_mentions(ident: str, instructions: list[Instruction], applied: set
         if named or cited:
             out.append(f"instruction {ins.id} was not applied and names section {num}: “{text[:100]}”")
         elif here and ins.find and (any(q.startswith("blanket") for q in ins.target.qualifiers) or
-                                    ins.occurrence == "each" and len(ins.find.split()) >= 2) and \
+                                    ins.occurrence == "each" and ins.target.kind == "unknown" and
+                                    len(ins.find.split()) >= 2) and \
                 fold(ins.find, True)[0] in here:
             # "each covered defense law ... is amended by striking the term “program executive officer” ...": an
-            # instruction with no single target whose struck words are in this section (10 U.S.C. 4025). So too an
-            # unresolved one striking words "each place it appears" ("Part E of title III is amended by striking
-            # “this subpart” each place it appears", Pub. L. 114-144 § 4(m), 42 U.S.C. 3030s-1).
+            # instruction with no single target whose struck words are in this section (10 U.S.C. 4025). So too one
+            # naming no target that strikes words "each place it appears" ("Part E of title III is amended by
+            # striking “this subpart” each place it appears", Pub. L. 114-144 § 4(m), 42 U.S.C. 3030s-1); not one
+            # whose named target merely failed to resolve (Pub. L. 119-60: "reserve component" is everywhere).
             out.append(f"instruction {ins.id} was not applied and strikes “{ins.find[:60]}”, which this section "
                        "contains")
     return out

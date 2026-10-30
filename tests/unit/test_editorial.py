@@ -95,3 +95,11 @@ def test_an_olrc_probable_intent_execution_of_this_law():
             "was executed in the one place to reflect the probable intent of Congress.")
     assert kind(pred, after, Context(pl="1-2", new_notes=[note])).startswith("editorial: executed")
     assert kind(pred, after, Context(pl="1-3", new_notes=[note])) is None
+
+
+def test_a_probable_intent_note_excuses_only_the_differences_it_quotes():
+    note = ("Amendments 2022—Pub. L. 1–2, which directed substitution of “150 percent” for “130 percent” both places, "
+            "was executed in the one place to reflect the probable intent of Congress.")
+    pred = sec(sub("a", "130 percent of the amount") + sub("b", "The board shall act."))
+    after = sec(sub("a", "150 percent of the amount") + sub("b", "The board may act."))
+    assert kind(pred, after, Context(pl="1-2", new_notes=[note])) is None
