@@ -95,3 +95,16 @@ def test_lead_in_text_before_new_units_is_kept():
                     "“(2) ensure that it is not repeated.”.")
     assert res[0].status == "CLEAN"
     assert "keep records. Whenever a member so requests, the board shall— (1) give consideration" in text
+
+
+def test_the_section_heading_is_not_a_subsection_heading():
+    # Pub. L. 114-255 § 9010 (42 U.S.C. 290bb-41): "in the section heading, by inserting “mental health awareness”
+    # before “training”" went into subsection (b)'s heading, which already held "training".
+    xml = (f'<section xmlns="{NS}" identifier="/us/usc/t99/s1"><num value="1">§ 1.</num><heading> Training grants'
+           '</heading><subsection identifier="/us/usc/t99/s1/b"><num value="b">(b)</num><heading> Mental illness '
+           'awareness training grants</heading><content>Text b.</content></subsection></section>')
+    text, res = run("Section 1 of title 99, United States Code, is amended—\n(1) in the section heading, by inserting "
+                    "“mental health awareness” before “training”; and\n(2) in subsection (b)—\n(A) in the subsection "
+                    "heading, by striking “illness” and inserting “health”.", xml)
+    assert "(b) Mental health awareness training grants Text b." in text
+    assert text.startswith("§ 1. mental health awareness Training grants") and res[0].status == "WARN"

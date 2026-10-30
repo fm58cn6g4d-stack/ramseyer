@@ -647,7 +647,16 @@ class Engine:
             kinds.add("num")
         if "each place, headings included" in ins.flags:
             kinds.add("heading")
-        ranges = [(s.start, s.start + len(getattr(s.node, s.attr) or "")) for s in segs if s.kind in kinds]
+        own = None
+        if kinds == {"heading"}:
+            # "in the section heading" / "in the subsection heading": the unit's own heading, which comes first, not
+            # the headings of its subunits (Pub. L. 114-255 § 9010, 42 U.S.C. 290bb-41).
+            def heading_of(seg):
+                owner = seg.node if seg.attr == "text" else seg.node.getparent()
+                return next((a for a in [owner, *owner.iterancestors()] if local(a) == "heading"), None)
+            own = next((heading_of(s) for s in segs if s.kind == "heading"), None)
+        ranges = [(s.start, s.start + len(getattr(s.node, s.attr) or "")) for s in segs if s.kind in kinds
+                  and (own is None or s.kind != "heading" or heading_of(s) is own)]
         merged: list[tuple[int, int]] = []
         for a, b in ranges:
             if merged and merged[-1][1] == a:
