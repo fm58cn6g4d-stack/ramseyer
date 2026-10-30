@@ -295,3 +295,29 @@ def test_markers_are_removed_only_in_the_edited_occurrence():
                    "report” the second place it appears and inserting “a report”.")
     assert res.status != "CLEAN"
     assert work.el.find(".//{*}ref[@idref='fn1']") is not None and work.el.find(".//{*}ref[@idref='fn2']") is not None
+
+
+def test_the_period_at_the_end_matches_before_a_footnote_marker():
+    # "striking the period at the end": only the final period, though a marker follows it (Pub. L. 119-60
+    # § 8431(b)(1)(B) on 43 U.S.C. 1474d). An earlier footnoted period is untouched (review of PR #3).
+    xml = XML.replace("notify the board.", 'notify the board.<ref class="footnoteRef" idref="fn1">1</ref>'
+                      '<note type="footnote" id="fn1">So in original.</note>').replace(
+        "keep a record; and", 'keep a record.<ref class="footnoteRef" idref="fn2">2</ref> and')
+    ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection "
+                     "(b)(3) by striking the period at the end and inserting “; and”.\n").instructions
+    work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+    res = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert res.status == "CLEAN", res.detail
+    assert "notify the board; and" in work.render()
+    assert work.el.find(".//{*}ref[@idref='fn2']") is not None
+
+
+def test_an_exponent_is_not_a_footnote_marker_without_footnotes():
+    # A digit <sup> counts as a marker only in a section that has footnotes; "10<sup>3</sup>" may be an exponent.
+    xml = XML.replace("file a report;", "file a report of 10<sup>3</sup> pages;")
+    ins = parse_text("SEC. 2. AMENDMENTS.\nSection 1 of title 99, United States Code, is amended in subsection "
+                     "(b)(1) by striking “10 pages” and inserting “ten pages”.\n").instructions
+    work = Working(xml, "/us/usc/t99/s1", positive_law=True)
+    res = Engine(work).run(ins[0], list(ins[0].target.path))
+    assert res.status == "NOT_FOUND", res.detail
+    assert work.el.find(".//{*}sup") is not None
