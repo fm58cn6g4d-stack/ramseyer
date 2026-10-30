@@ -230,6 +230,12 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
     h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
+    # "The second sentence of paragraph (1) of section 3(a) of the ... Act is amended": the target is the paragraph,
+    # restricted to that sentence (Pub. L. 114-94 § 78001(a)).
+    sentence = re.match(r"^\s*[Tt]he (?P<n>first|second|third|fourth|last) sentence of ", h)
+    if sentence:
+        h = h[sentence.end():]
+        h = h[:1].upper() + h[1:]
     if TOC_HEAD.search(h):
         ctx.toc = True
     m = USC_SECTION.search(h)
@@ -381,6 +387,8 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                 ctx.qualifiers.append(q)
             if rx is HEADING_QUAL and m["fu"]:          # "the subsection heading for subsection (c)"
                 _set_path(ctx, m["fu"], m["fl"])
+    if sentence and f"{sentence['n']} sentence" not in ctx.qualifiers:
+        ctx.qualifiers.append(f"{sentence['n']} sentence")
     for m in DEFINING.finditer(h):
         # "in the paragraph defining the term “State”": the engine finds the unit that defines the term.
         term = quotes[int(m["q"])] if quotes and int(m["q"]) < len(quotes) else None

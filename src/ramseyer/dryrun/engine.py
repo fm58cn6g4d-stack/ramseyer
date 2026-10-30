@@ -699,10 +699,14 @@ class Engine:
     def _ranges(self, ins, segs, hay, find):
         """The ranges of the unit's text an instruction may edit: its part (heading, matter preceding ...) and sentence."""
         allowed = self._allowed(segs, ins, find)
-        for q in ins.target.qualifiers:
-            m = re.match(r"(first|second|third|fourth|last) sentence", q)
-            if m:
-                allowed = self._sentence_range(hay, m.group(1), allowed)
+        # "in the second sentence" (a target qualifier), or "the period at the end of the first sentence" (a
+        # positional flag on the operation, Pub. L. 116-136 § 19006(a)).
+        named = [m.group(1) for q in ins.target.qualifiers if (m := re.match(r"(first|second|third|fourth|last) "
+                                                                              r"sentence", q))]
+        named += [m.group(1) for f in ins.flags if f.startswith(("positional", "anchor is positional"))
+                  and (m := re.search(r"\b(first|second|third|fourth|last) sentence\b", f))]
+        for n in named[:1]:
+            allowed = self._sentence_range(hay, n, allowed)
         return allowed
 
     def _choose(self, ins, hits):
