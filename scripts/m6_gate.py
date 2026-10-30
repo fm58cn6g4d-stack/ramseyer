@@ -151,6 +151,7 @@ def main() -> int:
     before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(store.index(label, db), pop, cmap))
 
     def predictor(law, before):
+        print(f"{time.strftime('%H:%M:%S')} {law.pl} ({len(law.targets)} targets)", file=sys.stderr, flush=True)
         instructions = parse_text(render(f.get(law.enrolled_url).path)).instructions
         # --resolve-before: resolve against the Code as it stood before the law (red team F15), as a drafter would.
         res = before_resolver(law.rp_before) if args.resolve_before else resolver
