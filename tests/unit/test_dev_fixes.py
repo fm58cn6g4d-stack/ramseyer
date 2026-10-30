@@ -149,3 +149,12 @@ def test_in_each_of_sections_takes_the_title_in_context():
     assert [(i.target.title, i.target.section, i.target.path) for i in listed] == \
         [("99", "1", ["(a)"]), ("99", "2", []), ("99", "3", ["(b)"])]
     assert all(i.occurrence == "each" for i in listed)
+
+
+def test_a_code_parenthetical_without_a_space_is_not_a_label():
+    # Pub. L. 114-255 § 3101(a)(2)(C): "Section 505–1(h)(21 U.S.C. 355–1(h)) is amended—" had no target, so 21 U.S.C.
+    # 355-1 stayed CLEAN without its edits.
+    ins = parse_text("SEC. 2. X.\nSection 505–1(h)(21 U.S.C. 355–1(h)) of the Placeholder Act is amended in "
+                     "paragraph (8) by striking “and (7).” and inserting “and (7)”.\n").instructions
+    assert (ins[0].target.section, ins[0].target.usc_parenthetical, ins[0].target.path) == \
+        ("505–1", "21 U.S.C. 355–1(h)", ["(h)", "(8)"])

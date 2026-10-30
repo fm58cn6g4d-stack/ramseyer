@@ -235,6 +235,9 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     """Update ctx from a head phrase (target and location). Returns flags."""
     flags: list[str] = []
     h = usc_variants(head)
+    # "Section 505–1(h)(21 U.S.C. 355–1(h)) is amended": no space before the Code parenthetical (Pub. L. 114-255
+    # § 3101(a)(2)(C)); it is not a label.
+    h = re.sub(r"\)\((\d+ U\.S\.C\. )", r") (\1", h)
     h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
