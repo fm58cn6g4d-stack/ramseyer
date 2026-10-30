@@ -203,6 +203,11 @@ def _unquote(s: str | None, quotes: list[str] | None) -> str | None:
 
 # "Such subchapter is further amended" (no number): the Code unit named last, in this bill section or an earlier one.
 SUCH_BARE_UNIT = re.compile(r"^[Ss]uch (?P<u>chapter|subchapter|part|subpart|subtitle) (?:is|are) (?:further )?amended")
+# "Such subsection is further amended" after "Subsection (a) of section 1562 of title 38 ... is amended": the
+# section's own unit named last (Pub. L. 116-315 § 2003(b)(1)).
+SUCH_OWN_UNIT = re.compile(r"^[Ss]uch (?P<u>subsection|paragraph|subparagraph|clause) (?:is|are) (?:further )?amended")
+OWN_LABEL = {"subsection": r"\([a-z]+\)", "paragraph": r"\(\d+[A-Za-z]?\)", "subparagraph": r"\([A-Z]+\)",
+             "clause": r"\([ivxl]+\)"}
 SUCH_UNIT = re.compile(r"(?:\b[Ss]uch (?P<u1>chapter|subchapter|part|subpart) (?P<x1>[\w]+)|"
                        r"\b(?P<u2>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart) (?P<x2>[\w]+) of (?:such|this) title)")
 
@@ -318,6 +323,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^The ", "", m["act"]), quotes),
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
+    elif (m := SUCH_OWN_UNIT.match(h.strip())) and (last := ctx.memory.get("last")) is not None and \
+            last.section and (depth := ["subsection", "paragraph", "subparagraph", "clause"].index(m["u"])) < \
+            len(last.path) and re.fullmatch(OWN_LABEL[m["u"]], last.path[depth]):
+        ctx.target = last.model_copy(deep=True)
+        ctx.target.path = []
+        ctx.path = [(i, lab) for i, lab in enumerate(last.path[:depth + 1])]
+        ctx.qualifiers, ctx.is_target_set = [], True
+        flags.append(f"such {m['u']}: {last.cite_raw}")
     elif (m := SUCH_BARE_UNIT.match(h.strip())) and (prior := _named_unit(ctx, m["u"])) is not None:
         ctx.target = prior.model_copy(deep=True)
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], list(prior.qualifiers), True

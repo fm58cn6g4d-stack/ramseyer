@@ -63,3 +63,25 @@ def test_an_inserted_em_dash_takes_no_space_before_it():
     text, res = run("Section 1(a) of title 99, United States Code, is amended by striking “shall review” and inserting "
                     "an em dash.")
     assert "The determiner— each term" in text
+
+
+def test_such_subsection_is_the_subsection_named_last():
+    # Pub. L. 116-315 § 2003(b)(1) (38 U.S.C. 1562): "Such subsection is further amended—(A) by inserting “(1)”
+    # after “(a)”; and (B) by adding at the end ..." had no target, and the section stayed CLEAN without them.
+    text, res = run("Subsection (b) of section 1 of title 99, United States Code, is amended by striking “rules” and "
+                    "inserting “orders”.\n(b) Spouses.—\n(1) Benefit.—Such subsection is further amended—\n"
+                    "(A) by inserting “(1)” after “(b)”; and\n(B) by adding at the end the following new paragraph:\n"
+                    "“(2) The board shall pay.”.")
+    assert [r.status for r in res] == ["CLEAN", "CLEAN", "CLEAN"]
+    assert text.endswith("(b) (1) The board may issue orders to carry out this chapter. (2) The board shall pay.")
+
+
+def test_an_unapplied_each_place_strike_keeps_a_section_with_those_words_from_clean():
+    # Pub. L. 114-144 § 4(m): "Part E of title III is amended by striking “this subpart” each place it appears"
+    # (the Older Americans Act, named only earlier in the section) resolves nowhere; 42 U.S.C. 3030s-1 holds the words.
+    from ramseyer.dryrun.verify import unapplied_mentions
+    ins = parse_text("SEC. 4. X.\n(m) Conforming.—Part E of title III is amended by striking “this subpart” each place "
+                     "it appears and inserting “this part”.\n").instructions
+    work = Working(XML.replace("this\nchapter", "this subpart"), "/us/usc/t99/s1", positive_law=True)
+    assert unapplied_mentions("/us/usc/t99/s1", ins, set(), work)
+    assert not unapplied_mentions("/us/usc/t99/s1", ins, set(), Working(XML, "/us/usc/t99/s1", positive_law=True))
