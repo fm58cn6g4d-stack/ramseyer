@@ -8,7 +8,9 @@ dates from OLRC's classification tables; a currency date alone is not enough, si
 a date can hold a law back, as 117-362not263not328 does the FY2023 NDAA). The section's history text there
 (carry-forward rule included) is compared with the edition's, and so are the two release points before and after,
 so a wrongly chosen release point shows up as a better match next to it. The converter's own differences
-(scripts/xhtml_check.py) set the floor.
+(scripts/xhtml_check.py) set the floor. Sections matching no release point within ±2 are classified (converter
+rendering, line order, footnote markers, content), and each content difference is looked up in every history version
+of the section: GovInfo text the history holds only at a later release point is what stale history would look like.
 Run:  .venv/bin/python scripts/history_govinfo_check.py      Writes var/history_govinfo_check.md.
 """
 from __future__ import annotations
@@ -17,6 +19,7 @@ import collections
 import re
 import sqlite3
 import sys
+import zlib
 from datetime import date
 
 from lxml import etree
@@ -52,6 +55,22 @@ def residue_kind(mine: str, theirs: str) -> str:
                                                                         [ry[k] for k in ry.keys() - rx.keys()]):
             return "footnote markers"
     return "content"
+
+
+def elsewhere(h: History, identifier: str, theirs: str, seq: int) -> str:
+    """Where in the history a content difference's GovInfo text is found: 'at a later release point' (first match),
+    'at an earlier release point', or 'at no release point' (a difference between the two publications)."""
+    found = []
+    for first, last, x in h.db.execute(
+            "SELECT min(m.seq), max(m.seq), v.xml_zlib FROM versions v JOIN version_releases m ON m.vid=v.vid "
+            "WHERE v.identifier=? GROUP BY v.vid ORDER BY 1", (identifier,)):
+        mine = text_of(uslm.to_v1(etree.fromstring(zlib.decompress(x))))
+        kind, _ = xhtml.compare(xhtml.body_words(mine), xhtml.body_words(theirs))
+        if kind != "content" or residue_kind(mine, theirs) != "content":
+            found.append((first, last))
+    if any(first > seq for first, _ in found):
+        return "at a later release point"
+    return "at an earlier release point" if found else "at no release point"
 
 
 def edition_sections(db: sqlite3.Connection, year: int):
@@ -125,7 +144,10 @@ def main() -> int:
                     kind = residue_kind(mine, text or "")
                 c[f"none: {kind}"] += 1
                 if kind == "content":
-                    content_examples.append(f"{year} {ident} at {rel[i].label}: {snippet}")
+                    # Stale history would match a later version; a GovInfo edition ahead of or behind OLRC does too.
+                    where = elsewhere(h, ident, text or "", rel[i].seq)
+                    c[f"content: {where}"] += 1
+                    content_examples.append(f"{year} {ident} at {rel[i].label} ({where}): {snippet}")
         for d, i in chosen.items():
             lines_rp.append(f"{year}: current through {d} -> {rel[i].label if i is not None else 'none'}")
         totals.update(c)
@@ -136,6 +158,8 @@ def main() -> int:
               f"(converter or editorial differences; scripts/xhtml_check.py measures the converter).", ""]
     lines += ["No match within ±2, by the converter's comparison of the section body (data/xhtml.py): "
               + ", ".join(f"{k[6:]} {v}" for k, v in sorted(totals.items()) if k.startswith("none: ")), ""]
+    lines += ["Content differences, by where the history holds the GovInfo text: "
+              + ", ".join(f"{k[9:]} {v}" for k, v in sorted(totals.items()) if k.startswith("content: ")), ""]
     lines += ["Release points chosen:", *[f"- {x}" for x in lines_rp], ""]
     if content_examples:
         lines += ["## Content differences", ""] + [f"- {e}" for e in content_examples] + [""]

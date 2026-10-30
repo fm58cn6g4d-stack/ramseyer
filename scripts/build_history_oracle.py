@@ -36,7 +36,7 @@ from ramseyer.oracle.history import History
 
 SETS = ("dev", "test", "sealed")
 OTHER_SETS = ["corpus.json", "heldout.json", "heldout_govinfo.json", "heldout_govinfo_2023.json"]
-NDAA = re.compile(r"National Defense Authorization Act", re.I)
+NDAA = re.compile(r"National\s+Defense\s+Authorization\s+Act", re.I)    # titles can break across lines
 SELECTION = (
     "Every public law of the 113th-119th Congresses with at least one non-note row in OLRC's classification tables "
     "and a release-point window in the dreamproit/uscode history (113-21 on; window by the incorporated-set rule), not "
