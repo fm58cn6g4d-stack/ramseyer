@@ -123,3 +123,35 @@ def test_title_release_map_follows_later_loads(tmp_path):
     h.flush_release_map()
     assert h.title_seq("99", "118-9") == h.seq("118-9")
     assert "Lorem ipsum." in h.section_xml("/us/usc/t99/s1", "118-9")[0]
+
+
+def test_a_cached_release_point_with_fewer_titles_is_rebuilt(tmp_path):
+    # A release point built for one set must not serve a set that needs more titles there (Codex, PR #6).
+    from ramseyer.oracle.history import ReleaseIndexes
+    h = History(tmp_path / "h.sqlite")
+    other = row("2", "Other title.", ["118-1"])
+    other.update(identifier="/us/usc/t98/s2", title="98")
+    other["xml"] = other["xml"].replace("/us/usc/t99/s2", "/us/usc/t98/s2")
+    h.load_rows([row("1", "Lorem.", ["118-1"]), other])
+    h.flush_release_map()
+    ReleaseIndexes(h, {"118-1": ["99"]}, tmp_path / "cache", log=lambda s: None)("118-1")
+    ix = ReleaseIndexes(h, {"118-1": ["98", "99"]}, tmp_path / "cache", log=lambda s: None)("118-1")
+    assert {t for (t,) in ix.db.execute("SELECT title FROM titles")} == {"98", "99"}
+
+
+def test_an_interrupted_materialization_is_rebuilt(tmp_path):
+    # A run killed before the full-text step leaves a release point with nodes but no FTS rows; dropping it must
+    # not ask FTS5 to delete rows it never indexed ("database disk image is malformed").
+    h = history(tmp_path)
+    path = tmp_path / "ix.sqlite"
+    materialize(h, "118-5", ["99"], path, log=lambda s: None)
+    db = sqlite3.connect(path)
+    db.execute("INSERT INTO fts_nodes(fts_nodes) VALUES ('delete-all')")
+    db.execute("UPDATE release_points SET complete=0")
+    db.commit()
+    db.close()
+    rp = materialize(h, "118-5", ["99"], path, log=lambda s: None)
+    db = sqlite3.connect(path)
+    db.execute("INSERT INTO fts_nodes(fts_nodes) VALUES ('integrity-check')")
+    hits = db.execute("SELECT rowid FROM fts_nodes WHERE fts_nodes MATCH 'dolor'").fetchall()
+    assert hits == db.execute("SELECT id FROM nodes WHERE rp=? AND identifier='/us/usc/t99/s1'", (rp,)).fetchall()

@@ -804,14 +804,14 @@ The sections with no match anywhere nearby are converter and editorial differenc
 
 **The sets** (`scripts/build_history_oracle.py`, seed `m6e-2026-10-30`):
 - Who is in: every law of the 113th–119th Congresses with a non-note classification row and a window in the history (978), less the laws already in another oracle set, with 39 set aside with reasons.
-- How the split is made: a seeded hash, balanced within strata: each Congress, and the National Defense Authorization Acts of all Congresses as one stratum. A first build stratified NDAAs per Congress and put 5 in dev and 1 in sealed.
-- Which targets are graded: a target another law in the same window also changes is not graded (listed in the set's `_touched.json`); old windows often carry several laws.
+- How the split is made: within strata (each Congress, and the National Defense Authorization Acts of all Congresses as one stratum), by the best balanced of 1,000 seeded draws (see the follow-up below).
+- Which targets are graded: a target another law in the same window also changes is not graded (listed per law in the set's `_touched.json`); old windows often carry several laws.
 
 | Set | Laws | Graded targets | NDAAs | Use |
 | --- | --- | --- | --- | --- |
-| dev | 287 | 14,333 | 113-66, 115-232, 117-263 | may be tuned on |
-| test | 283 | 5,640 | 114-92, 115-91, 116-92 | measured only |
-| sealed | 277 | 12,314 | 113-291, 114-328, 116-283, 117-81 | measured once per round, never inspected |
+| dev | 286 | 9,589 | 113-66, 113-291, 117-81, 117-263 | may be tuned on |
+| test | 280 | 11,342 | 114-92, 114-328, 116-283 | measured only |
+| sealed | 281 | 11,356 | 115-91, 115-232, 116-92 | measured once per round, never inspected |
 
 **Running a set:** `scripts/m6_gate.py --set history_dev` (or `history_test`, `history_sealed`). Release points are materialized from the history on demand, keeping 4 on disk (`oracle.history.ReleaseIndexes`). The dev set takes about 4 hours. Its first measurement follows in its own PR.
 
@@ -820,3 +820,49 @@ The sections with no match anywhere nearby are converter and editorial differenc
 - `.venv/bin/python scripts/build_history_oracle.py`
 - `.venv/bin/python scripts/m6_gate.py --set history_dev`
 
+### Step 2, follow-up (review of PR #6)
+
+**Fixes from the review** (Codex and the reviewer session):
+- Touched sections are scoped to each law's own window (`{"by_law": ...}`), so a section another law changes in a different window stays gradable.
+- `--resolve-before` on a history set resolves against the history's own release points.
+- The release-point cache is per set, and a cached release point is rebuilt when it lacks a title asked for.
+
+**Balance across the sets:**
+- Committees: one plain seeded draw was within chance (median share deviation 0.08; 45% of 500 random assignments were worse).
+- Titles: not within chance (2% of random assignments were worse). Dev held 15 of 22 Title 30 laws, 19 of 30 Title 43 laws and 12 of 18 Title 51 laws.
+- A law has several titles and committees, so they cannot be strata. The split is now seeded rerandomization: of 1,000 stratified draws, the one with the least title and committee imbalance (chi-square over groups of 10 or more laws) is kept. Median title deviation went from 0.12 to 0.06, the worst from 0.35 to 0.20; committees from 0.08 to 0.07.
+- The FY2021 NDAA's title breaks across a line ("National\nDefense"), so it had fallen outside the NDAA stratum. All 10 NDAAs are now in it, 4/3/3.
+- The split changed before any set was measured. A stopped dev run on the first split had printed per-law progress lines, but nothing was tuned on them.
+
+**Older release points, the sections matching no release point within ±2** (`scripts/history_govinfo_check.py`, 223 of 2,894):
+
+| Class | Sections | What it is |
+| --- | --- | --- |
+| equal / rendering | 36 / 40 | the body matches, or differs only in presentation (converter's comparison) |
+| footnote markers | 35 | the only differences are 1–2 digit footnote numbers, placed differently or in one edition only |
+| order | 4 | the same lines in a different order: the XHTML places a continuation after the next paragraph (5 U.S.C. 419(d)) |
+| content, at a later release point | 37 | GovInfo already carries text the history has only later, e.g. 10 U.S.C. 865 (in the history from 118-47, though Title 10 was reloaded at 118-34): amendments OLRC executes on their effective date, and corrections ("Decemeber", quotation marks) |
+| content, at an earlier release point | 1 | 50 U.S.C. 3341: GovInfo still has the older text |
+| content, at no release point | 70 | the two publications differ: tables and formulas, bracketed citations, heading layout, capitalization |
+
+Stale history would show as GovInfo text found at a later release point together with matches at a neighbour. Only 1 section of 2,894 matches a neighbour better, and the 37 later matches are spread from weeks to months later, not one release point off. Where OLRC's own zips exist (the 119th Congress), the history is identical to them.
+
+
+### Step 2: first dev measurement (2026-10-30, 7ab7de6)
+
+`scripts/m6_gate.py --set history_dev`: 286 laws from 2013–2026, 2 h 45 min. The gate now writes each graded law to `var/m6e_dev_checkpoint.jsonl` and resumes after an interruption. Two earlier runs were lost to container restarts; the second graded all 286 laws but held every law's run in memory and reopened each mismatch's R_after in the report step. On the tuning set the change leaves the report, traces and baseline byte-identical.
+
+| | Tuning (2025–26) | History dev (2013–26) |
+| --- | --- | --- |
+| Targets | 1,295 | 7,612 |
+| Matched / mismatched / missed | 573 / 343 / 379 | 2,322 / 2,020 / 3,270 |
+| CLEAN | 373 (28.8% of targets) | 1,555 (20.4%) |
+| CLEAN and wrong in substance | 0 | 120 (7.77%; 95% interval 6.54–9.20%), plus 1 of 3 off target |
+| NDAAs / other laws | 0% / 0% | 5.46% / 9.22% |
+
+Every parsed instruction has a status (23,040). The false-clean check FAILS on dev. The 120 are spread over the 113th–117th Congresses (20, 20, 16, 34, 30). A first pass shows three kinds, not yet counted by hand:
+- OLRC editorial conventions the detector does not know: references rewritten to Code citations ("section 101" to "section 1021 of this title"), "Repealed" placeholders for struck subdivisions, "(e)(1)" against "(e) (1)", heading capitals, and enactment dates the date rule misses.
+- Engine errors: a missing "and" when a list item is inserted, designations built differently from OLRC's structure, apostrophes inside nested quotations.
+- Unclear until read against the enrolled text.
+
+Next: classify all 120 by hand (dev may be inspected), teach the editorial detector only conventions confirmed against the enrolled text and OLRC's notes, fix the engine errors, rerun dev, then measure test once.

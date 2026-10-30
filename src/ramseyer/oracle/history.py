@@ -295,8 +295,8 @@ class ReleaseIndexes:
             self.open.move_to_end(label)
             return self.open[label]
         path = self._path(label)
-        if not path.exists():
-            materialize(self.history, label, self.titles.get(label, []), path, log=self.log)
+        # materialize reuses a complete file that holds the titles, and rebuilds an interrupted or narrower one.
+        materialize(self.history, label, self.titles.get(label, []), path, log=self.log)
         ix = Index(path, label)
         self.open[label] = ix
         while len(self.open) > self.keep:

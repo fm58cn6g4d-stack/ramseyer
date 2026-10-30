@@ -5,11 +5,14 @@ For each law of the 113th-119th Congresses with at least one non-note row in OLR
   - window: the first release point incorporating it and the one before (oracle/releases.py, M6d), from the history's
     381 release points;
   - targets: its non-note rows; a target another law in the same window also changes is not graded (it goes to the
-    set's touched list, as the GovInfo sets do), since R_after carries both changes;
+    set's touched list, per law: {"by_law": {law: [sections]}}, scoped to that law's window), since R_after carries
+    both changes;
   - enrolled text: the enrolled bill's Formatted XML from Congress.gov.
 Laws already in another set (the tuning corpus, the M6b held-out sets, the GovInfo sets) are left out. Each remaining
 law goes to one set by a seeded hash, balanced within strata: each Congress, and the National Defense Authorization
-Acts of all Congresses as one stratum (they dominate the errors so far). Committees and titles are recorded for the report.
+Acts of all Congresses as one stratum (they dominate the errors so far). Titles and committees overlap (a law has several),
+so they are balanced by seeded rerandomization instead: of 1,000 seeded stratified draws, the one with the least title
+and committee imbalance is kept (one plain draw left Titles 30, 43 and 51 mostly in dev, p = 0.02 against chance).
 Run:  .venv/bin/python scripts/build_history_oracle.py [--seed N] [--limit N]
 """
 from __future__ import annotations
@@ -33,12 +36,13 @@ from ramseyer.oracle.history import History
 
 SETS = ("dev", "test", "sealed")
 OTHER_SETS = ["corpus.json", "heldout.json", "heldout_govinfo.json", "heldout_govinfo_2023.json"]
-NDAA = re.compile(r"National Defense Authorization Act", re.I)
+NDAA = re.compile(r"National\s+Defense\s+Authorization\s+Act", re.I)    # titles can break across lines
 SELECTION = (
     "Every public law of the 113th-119th Congresses with at least one non-note row in OLRC's classification tables "
     "and a release-point window in the dreamproit/uscode history (113-21 on; window by the incorporated-set rule), not "
     "already in another oracle set; assigned to dev, test or sealed by a seeded hash, balanced within strata of "
-    "Congress, with the National Defense Authorization Acts of all Congresses as one stratum. Targets another law in the same window also changes are "
+    "Congress, with the National Defense Authorization Acts of all Congresses as one stratum, and the best balanced by "
+    "title and committee of --draws seeded draws kept. Targets another law in the same window also changes are "
     "not graded (listed in the set's touched file).")
 
 
@@ -55,9 +59,42 @@ def classification(f: Fetcher, base: str) -> dict[str, list[ClassifiedRow]]:
     return by_law
 
 
+def imbalance(assign: dict[str, str], groups: dict[str, list[tuple[str, str]]], minimum: int = 10) -> float:
+    """Chi-square of the set counts against an even split, summed over every title and committee with at least
+    `minimum` laws (a law counts once per title it changes and once per committee)."""
+    counts = collections.defaultdict(collections.Counter)
+    for pl, s in assign.items():
+        for g in set(groups.get(pl, ())):
+            counts[g][s] += 1
+    total = 0.0
+    for c in counts.values():
+        n = sum(c.values())
+        if n >= minimum:
+            total += sum((c[s] - n / len(SETS)) ** 2 / (n / len(SETS)) for s in SETS)
+    return total
+
+
+def rerandomize(strata: dict, groups: dict[str, list[tuple[str, str]]], seed: str, draws: int):
+    """Seeded rerandomization: each draw orders every stratum by a hash of (seed, draw, law) and deals its laws to the
+    sets in turn, so each Congress (and the NDAA stratum) stays split evenly; the draw with the least title and
+    committee imbalance is kept. Deterministic for a seed; fixed before any set is measured."""
+    best = None
+    for d in range(draws):
+        assign = {}
+        for key in sorted(strata):
+            ordered = sorted(strata[key], key=lambda pl: hashlib.sha256(f"{seed} {d} {pl}".encode()).hexdigest())
+            for k, pl in enumerate(ordered):
+                assign[pl] = SETS[k % len(SETS)]
+        score = imbalance(assign, groups)
+        if best is None or score < best[1]:
+            best = (assign, score)
+    return best
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--seed", default="m6e-2026-10-30")
+    ap.add_argument("--draws", type=int, default=1000, help="seeded assignments to draw; the best balanced is kept")
     ap.add_argument("--limit", type=int, default=0, help="build only the first N candidate laws (a trial run)")
     a = ap.parse_args()
     cfg = config.load()
@@ -90,7 +127,7 @@ def main() -> int:
     if a.limit:
         cands = cands[:a.limit]
 
-    laws, touched = {s: [] for s in SETS}, {s: set() for s in SETS}
+    laws, touched = {s: [] for s in SETS}, {s: {} for s in SETS}
     strata = collections.defaultdict(list)
     meta = {}
     for i, pl in enumerate(cands):
@@ -119,11 +156,10 @@ def main() -> int:
         if i % 50 == 0:
             print(f"{i}/{len(cands)} laws read ({time.monotonic() - t0:.0f}s)", flush=True)
 
-    assign = {}
-    for key in sorted(strata):
-        ordered = sorted(strata[key], key=lambda pl: hashlib.sha256(f"{a.seed} {pl}".encode()).hexdigest())
-        for k, pl in enumerate(ordered):
-            assign[pl] = SETS[k % len(SETS)]
+    groups = {pl: [("title", r.title.lower()) for r in by_law[pl] if not r.is_note] + [("committee", x) for x in m[3]]
+              for pl, m in meta.items()}
+    assign, score = rerandomize(strata, groups, a.seed, a.draws)
+    print(f"assignment: best of {a.draws} seeded draws, imbalance {score:.1f}")
 
     for pl, s in sorted(assign.items(), key=lambda x: releases.law_number(x[0])):
         bill, url, digest, committees, name = meta[pl]
@@ -132,7 +168,7 @@ def main() -> int:
         shared = {r.identifier for o in others for r in by_law[o] if not r.is_note}
         rows = [r for r in by_law[pl] if r.is_note or r.identifier not in shared]
         clash = sorted({r.identifier for r in by_law[pl] if not r.is_note and r.identifier in shared})
-        touched[s] |= shared
+        touched[s][pl] = sorted(shared)            # scoped to this law's window (the gate reads it per law)
         if not any(not r.is_note for r in rows):
             hard.append({"pl": pl, "set": s, "reason": "every target is also changed by another law in the window "
                          f"{before} -> {after}"})
@@ -158,10 +194,11 @@ def main() -> int:
                         laws=[law for law, _ in laws[s]], hard_cases=[h for h in hard if h.get("set") in (s, None)])
         path = MANIFEST.with_name(f"history_{s}.json")
         corpus.save(path)
-        path.with_name(path.stem + "_touched.json").write_text(json.dumps(sorted(touched[s]), indent=0) + "\n")
+        path.with_name(path.stem + "_touched.json").write_text(
+            json.dumps({"by_law": {pl: t for pl, t in touched[s].items() if t}}, indent=0) + "\n")
         n_t = sum(len(law.targets) for law, _ in laws[s])
         print(f"{s}: {len(laws[s])} laws, {n_t} graded targets, {len(refs)} release points, "
-              f"{len(touched[s])} sections not gradable -> {path.name}")
+              f"{sum(len(t) for t in touched[s].values())} law/section pairs not gradable -> {path.name}")
     print(f"set aside: {len(hard)}; done in {time.monotonic() - t0:.0f}s")
     return 0
 

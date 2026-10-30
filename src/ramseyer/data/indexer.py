@@ -203,9 +203,14 @@ class Indexer:
         # quadratic on a full release point.
         self.db.execute("PRAGMA foreign_keys = OFF")
         ids = "SELECT id FROM nodes WHERE rp=?"
-        self.db.execute("INSERT INTO fts_nodes(fts_nodes, rowid, heading, text_plain) SELECT 'delete', id, "
-                        "coalesce(heading,''), text_plain FROM nodes WHERE rp=? AND kind IN "
-                        "('section','courtRule','reorganizationPlan')", (rp,))
+        # A complete release point has its sections in the full-text index. An interrupted load may not: FTS5 reports
+        # deleting rows it never indexed as a malformed database, so that index is rebuilt from nodes instead.
+        complete = self.db.execute("SELECT complete FROM release_points WHERE id=?", (rp,)).fetchone()
+        indexed = bool(complete and complete[0])
+        if indexed:
+            self.db.execute("INSERT INTO fts_nodes(fts_nodes, rowid, heading, text_plain) SELECT 'delete', id, "
+                            "coalesce(heading,''), text_plain FROM nodes WHERE rp=? AND kind IN "
+                            "('section','courtRule','reorganizationPlan')", (rp,))
         for table, col in [("definitions", "section_id"), ("source_credits", "section_id"),
                            ("notes", "section_id"), ("section_xml", "node_id")]:
             self.db.execute(f"DELETE FROM {table} WHERE {col} IN ({ids})", (rp,))
@@ -213,6 +218,8 @@ class Indexer:
             self.db.execute(f"DELETE FROM {table} WHERE rp=?", (rp,))
         self.db.execute("DELETE FROM nodes WHERE rp=?", (rp,))
         self.db.execute("DELETE FROM release_points WHERE id=?", (rp,))
+        if not indexed:
+            self.db.execute("INSERT INTO fts_nodes(fts_nodes) VALUES ('rebuild')")
         self.db.commit()
         self.db.execute("PRAGMA foreign_keys = ON")
 

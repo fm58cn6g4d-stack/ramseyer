@@ -5,7 +5,8 @@ Each law's enrolled text is parsed (M4), every target resolved against the pinne
 section dry-run on its text at the law's R_before release point. The harness compares the result with R_after.
 
 Run:  .venv/bin/python scripts/m6_gate.py [--law 119-118] [--show 30]
-Writes var/m6_gate.md, var/m6_report.json and tests/oracle/m6_baseline.json.
+Writes var/m6_gate.md, var/m6_report.json and tests/oracle/m6_baseline.json. Each graded law is appended to
+var/<tag>_checkpoint.jsonl; an interrupted run started again with the same code and inputs resumes from it.
 With --set govinfo (M6b): 2024 laws on GovInfo's 2023/2024 Code editions (tests/oracle/heldout_govinfo.json,
 built by scripts/build_govinfo_heldout.py); writes var/m6b_govinfo_gate.md and tests/oracle/m6b_govinfo_baseline.json.
 With --heldout (M6b): the held-out laws (tests/oracle/heldout.json, built by scripts/build_heldout.py); writes
@@ -14,13 +15,15 @@ var/m6b_gate.md, var/m6b_report.json and tests/oracle/m6b_baseline.json.
 from __future__ import annotations
 
 import argparse
-import copy
-import re
 import collections
+import copy
+import hashlib
 import json
+import re
 import sys
 import time
 from functools import lru_cache
+from pathlib import Path
 
 from lxml import etree
 
@@ -40,6 +43,8 @@ from ramseyer.resolve import popular
 from ramseyer.resolve.actcode import classification_map
 from ramseyer.resolve.resolver import Resolver, classification_rows
 
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src" / "ramseyer"
 HELDOUT = MANIFEST.with_name("heldout.json")
 HELDOUT_DB = store.ORACLE_DB.with_name("heldout.sqlite")
 SETS = {   # name: (manifest, oracle db, output tag, heading)
@@ -138,8 +143,10 @@ def main() -> int:
                                                                           resolver.positive))
     elif args.set.startswith("history_"):
         # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
+        # One cache directory per set: a set may need more titles at a release point than another set built there.
         open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
-                                    {rp.label: rp.titles for rp in corpus.release_points}, db, log=lambda s: None)
+                                    {rp.label: rp.titles for rp in corpus.release_points}, db / args.set,
+                                    log=lambda s: None)
     else:
         open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
     statuses = collections.Counter()
@@ -148,7 +155,9 @@ def main() -> int:
     missing_status: list[str] = []
 
     pop, cmap = resolver.popular, resolver.classification
-    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(store.index(label, db), pop, cmap))
+    # History sets keep release points in ReleaseIndexes (db is its cache directory, not a file).
+    before_index = open_index if args.set.startswith("history_") else (lambda label: store.index(label, db))
+    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(before_index(label), pop, cmap))
 
     def predictor(law, before):
         print(f"{time.strftime('%H:%M:%S')} {law.pl} ({len(law.targets)} targets)", file=sys.stderr, flush=True)
@@ -156,38 +165,90 @@ def main() -> int:
         # --resolve-before: resolve against the Code as it stood before the law (red team F15), as a drafter would.
         res = before_resolver(law.rp_before) if args.resolve_before else resolver
         run = run_bill(instructions, res, before)
-        runs[law.pl] = run
-        with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
-        missing_status.extend(f"{law.pl} {i.id}" for i in instructions if i.id not in with_status)
-        for tr in run.traces:
-            statuses[tr.result.status if tr.result else f"unattributed:{tr.resolution.outcome}"] += 1
+        runs[law.pl] = (run, instructions)
         return run.predictions
 
-    rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None)
-    m = rep.metrics
-    mism = [o for o in rep.outcomes if o.outcome == "mismatch"]
-    # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..." and
-    # removes or adds footnote markers. Counted separately; they remain mismatches in the match rate.
-    editorial = 0
-    detected_ids: set[tuple[str, str]] = set()
-    for o in mism:
-        law = corpus.law(o.pl)
-        work = runs[o.pl].working.get(o.identifier)
-        try:
-            ix = open_index(law.rp_after)
-            after_xml = ix.section_xml(ix.by_identifier(o.identifier))
-        except LookupError_:
-            after_xml = None
-        if work is not None and not work.removed and editorial_equal(work.el, after_xml):
-            o.stage = "editorial"
-            detected_ids.add((o.pl, o.identifier))
-            editorial += 1
     # Off-target CLEAN predictions are graded only on sections no law in the window touched: elsewhere the next
     # edition carries the other laws' changes too.
     touched_path = manifest.with_name(manifest.stem + "_touched.json")
     touched = json.loads(touched_path.read_text()) if touched_path.exists() else {}
+    # History sets scope the list per law, to the law's own window (laws span 2013-2026); GovInfo sets share one.
+    by_law = touched.get("by_law") if isinstance(touched, dict) else None
+
+    def is_touched(o) -> bool:
+        return o.identifier in (by_law.get(o.pl, ()) if by_law is not None else touched)
+    labels = json.loads(harness.LABELS.read_text()) if harness.LABELS.exists() else {}
+
+    def after_law(law, outs, before, after) -> dict:
+        """Everything the report needs from this law's run, taken while its release points are open; the run is
+        then let go (a set of hundreds of laws does not fit in memory, and reopening release points is slow)."""
+        run, instructions = runs.pop(law.pl)
+
+        def editorial_at_after(ident) -> bool:
+            # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..."
+            # and removes or adds footnote markers.
+            work = run.working.get(ident)
+            try:
+                after_xml = after.section_xml(after.by_identifier(ident))
+            except LookupError_:
+                after_xml = None
+            return work is not None and not work.removed and editorial_equal(work.el, after_xml)
+        with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
+        law_labels = {}
+        for o in outs:
+            key = f"{o.pl} {o.identifier}"
+            if o.outcome == "mismatch" and key in labels:
+                work = run.working.get(o.identifier)
+                pred = work.render() if work is not None else None
+                try:
+                    after_text = harness.section_text(after, o.identifier)[0]
+                except LookupError_:
+                    after_text = None
+                law_labels[key] = {"applies": harness.label_stage(labels[key], pred, after_text) is not None,
+                                   "pred": harness.text_hash(pred), "after": harness.text_hash(after_text)}
+        return {
+            "editorial": [o.identifier for o in outs if o.outcome == "mismatch" and editorial_at_after(o.identifier)],
+            "off_editorial": [o.identifier for o in outs if o.outcome in ("extra", "unexpected_change")
+                              and o.status == "CLEAN" and o.after_differs is not False and not is_touched(o)
+                              and editorial_at_after(o.identifier)],
+            "missing_status": [f"{law.pl} {i.id}" for i in instructions if i.id not in with_status],
+            "statuses": dict(collections.Counter(tr.result.status if tr.result else
+                                                 f"unattributed:{tr.resolution.outcome}" for tr in run.traces)),
+            "labels": law_labels,
+            "traces": [{"pl": law.pl, "section": tr.section, "id": tr.instruction.id, "op": tr.instruction.op,
+                        "unit": tr.instruction.unit, "find": tr.instruction.find, "new": tr.instruction.new_text,
+                        "replace": tr.instruction.replace, "flags": tr.instruction.flags,
+                        "resolution": tr.resolution.outcome, "path": list(tr.resolution.path),
+                        "status": tr.result.status if tr.result else None,
+                        "detail": tr.result.detail if tr.result else None,
+                        "before": tr.result.before_span if tr.result else None,
+                        "after": tr.result.after_span if tr.result else None} for tr in run.traces],
+        }
+
+    # A run is checkpointed law by law and resumes after an interruption, as long as nothing it depends on changed.
+    digest = hashlib.sha256()
+    for path in sorted(SRC.rglob("*.py")) + [Path(__file__), manifest, touched_path, harness.LABELS]:
+        if path.exists():
+            digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
+    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law]).encode())
+    extras: dict[str, dict] = {}
+    rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None, after_law=after_law,
+                           checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras)
+    for x in extras.values():
+        statuses.update(x["statuses"])
+        missing_status.extend(x["missing_status"])
+    m = rep.metrics
+    mism = [o for o in rep.outcomes if o.outcome == "mismatch"]
+    # Editorial-only differences are counted separately; they remain mismatches in the match rate.
+    editorial = 0
+    detected_ids: set[tuple[str, str]] = set()
+    for o in mism:
+        if o.identifier in extras[o.pl]["editorial"]:
+            o.stage = "editorial"
+            detected_ids.add((o.pl, o.identifier))
+            editorial += 1
     ungradable = [o for o in rep.outcomes if o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
-                  and o.identifier in touched]
+                  and is_touched(o)]
     for o in ungradable:
         o.after_differs = None
         o.stage = "ungradable"
@@ -196,40 +257,25 @@ def main() -> int:
            and o.after_differs is not False and o.stage != "ungradable"]
     off_sub = 0
     for o in off:
-        law = corpus.law(o.pl)
-        work = runs[o.pl].working.get(o.identifier)
-        try:
-            ix = open_index(law.rp_after)
-            after_xml = ix.section_xml(ix.by_identifier(o.identifier))
-        except LookupError_:
-            after_xml = None
-        if not (work is not None and not work.removed and editorial_equal(work.el, after_xml)):
+        if o.identifier not in extras[o.pl]["off_editorial"]:
             off_sub += 1
             o.stage = "unclassified"
         else:
             o.stage = "editorial"
     graded = m["matched"] + m["mismatched"]
     clean_mism = [o for o in mism if o.status == "CLEAN"]
-    labels = json.loads(harness.LABELS.read_text()) if harness.LABELS.exists() else {}
     # Hand labels bind to the exact texts they were checked against; list the ones that no longer apply.
     label_rows = []
     for o in mism:
         key = f"{o.pl} {o.identifier}"
         if key not in labels:
             continue
-        work = runs[o.pl].working.get(o.identifier)
-        pred = work.render() if work is not None else None
-        try:
-            after = harness.section_text(open_index(corpus.law(o.pl).rp_after), o.identifier)[0]
-        except LookupError_:
-            after = None
-        lab = labels[key]
-        applies = harness.label_stage(lab, pred, after) is not None
-        label_rows.append(f"- {key}: {'applies' if applies else 'EXPIRED'}: {o.detail[:200]}")
-        if args.refresh_labels and not applies:
+        seen = extras[o.pl]["labels"][key]
+        label_rows.append(f"- {key}: {'applies' if seen['applies'] else 'EXPIRED'}: {o.detail[:200]}")
+        if args.refresh_labels and not seen["applies"]:
+            lab = labels[key]
             reason = lab.get("reason", "") if isinstance(lab, dict) else ""
-            labels[key] = {"stage": "editorial", "reason": reason, "pred": harness.text_hash(pred),
-                           "after": harness.text_hash(after)}
+            labels[key] = {"stage": "editorial", "reason": reason, "pred": seen["pred"], "after": seen["after"]}
     if args.refresh_labels:
         harness.LABELS.write_text(json.dumps(labels, indent=1, ensure_ascii=False) + "\n")
     labelled = sum(1 for o in clean_mism if f"{o.pl} {o.identifier}" in labels and o.stage == "editorial"
@@ -318,15 +364,9 @@ def main() -> int:
     (cfg.var / f"{tag}_gate.md").write_text("\n".join(lines) + "\n")
     (cfg.var / f"{tag}_report.json").write_text(rep.model_dump_json(indent=1))
     with open(cfg.var / f"{tag}_traces.jsonl", "w") as fh:      # per-instruction trace, for diagnosis
-        for pl, run in runs.items():
-            for tr in run.traces:
-                i, r = tr.instruction, tr.result
-                fh.write(json.dumps({"pl": pl, "section": tr.section, "id": i.id, "op": i.op, "unit": i.unit,
-                                     "find": i.find, "new": i.new_text, "replace": i.replace, "flags": i.flags,
-                                     "resolution": tr.resolution.outcome, "path": list(tr.resolution.path),
-                                     "status": r.status if r else None, "detail": r.detail if r else None,
-                                     "before": r.before_span if r else None, "after": r.after_span if r else None},
-                                    ensure_ascii=False) + "\n")
+        for law in corpus.laws:
+            for t in extras[law.pl]["traces"]:
+                fh.write(json.dumps(t, ensure_ascii=False) + "\n")
     if not args.law:
         MANIFEST.with_name(f"{tag}_baseline.json").write_text(json.dumps({"predictor": "ramseyer M6", "metrics": m}, indent=1) + "\n")
     print("\n".join(lines))

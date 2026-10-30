@@ -135,9 +135,19 @@ def _block(qb, lines: list[str]) -> None:
     lines.extend(inner)
 
 
+def _body(root, xml_path):
+    """A bill's <legis-body>, or a joint resolution's <resolution-body> (H.J. Res. 124, 113th Congress)."""
+    body = root.find(".//legis-body")
+    if body is None:
+        body = root.find(".//resolution-body")
+    if body is None:
+        raise ValueError(f"{xml_path}: no <legis-body> or <resolution-body>")
+    return body
+
+
 def render(xml_path) -> str:
     root = etree.parse(str(xml_path)).getroot()
-    body = root.find(".//legis-body")
+    body = _body(root, xml_path)
     lines: list[str] = []
     for c in body:
         if isinstance(c.tag, str):
@@ -158,7 +168,7 @@ def _loc(el) -> str:
 def xml_counts(xml_path) -> dict[str, int]:
     """Instructions per bill location, read from markup: <quote> and <quoted-block> content excluded."""
     root = etree.parse(str(xml_path)).getroot()
-    body = root.find(".//legis-body")
+    body = _body(root, xml_path)
     counts: dict[str, int] = {}
     for el in body.iter():
         if not isinstance(el.tag, str) or el.tag not in STRUCT:

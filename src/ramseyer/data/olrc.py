@@ -80,7 +80,7 @@ class ClassificationRow:
 _PL_RE = re.compile(r"^\d+-\d+$")
 # Stat page or range ("762-764"). A quoted new-section number can run straight into the
 # page column with no space: '7201(c)(1) "Subchapter I"1677'.
-_PL_TOKEN = re.compile(r"(\d+-\d+)(?=\s)")
+_PL_TOKEN = re.compile(r"(?<!\d)(\d+-\d+)(?=\s)")
 # The law's section, then its Statutes at Large page(s), separated by spaces or glued after ")", '"', "]" or a letter.
 _TAIL_GLUED_RE = re.compile(r'^(.*?)(?:\s+|(?<=[)"\]A-Za-z]))(\d+(?:-\d+)?(?:,\s?\d+(?:-\d+)?)*)\s*$')
 _TAIL_RE = re.compile(r'^(.*?)(?:\s+|(?<="))(\d+(?:-\d+)?)\s*$')
