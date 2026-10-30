@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import copy
 import hashlib
 import json
 import re
@@ -26,19 +25,17 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
-from lxml import etree
-
 from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index, LookupError_
-from ramseyer.data.indexer import text_of
 from ramseyer.dryrun.engine import category
 from ramseyer.dryrun.predict import run_bill
-from ramseyer.oracle import harness, store
+from ramseyer.oracle import editorial, harness, store
 from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
 from ramseyer.oracle.history import History, ReleaseIndexes
 from ramseyer.oracle.corpus import MANIFEST, Corpus
 from ramseyer.parse import parse_text
+from ramseyer.parse.grammar import Ctx, apply_head, lift_quotes
 from ramseyer.parse.xmltext import render
 from ramseyer.resolve import popular
 from ramseyer.resolve.actcode import classification_map
@@ -76,44 +73,6 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     c = (p + z * z / (2 * n)) / (1 + z * z / n)
     h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / (1 + z * z / n)
     return max(0.0, c - h), min(1.0, c + h)
-
-
-DATE_PHRASE = re.compile(r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph)|the [A-Z][\w ,.\u2019'()-]*?Act(?: of \d{4})?(?: for Fiscal Year \d{4})?)")
-DATE = r"(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}"
-
-
-def _text(el) -> str:
-    """Section text with footnote reference markers removed (OLRC adds and removes footnotes editorially)."""
-    el = copy.deepcopy(el)
-    marks = el.xpath(".//*[local-name()='ref'][@class='footnoteRef'] | .//*[local-name()='note'][@type='footnote']"
-                     " | .//*[local-name()='sup'][re:test(., '^\\s*\\d+\\s*$')]",
-                     namespaces={"re": "http://exslt.org/regular-expressions"})
-    for ref in marks:
-        parent, tail = ref.getparent(), ref.tail or ""
-        prev = ref.getprevious()
-        if prev is not None:
-            prev.tail = (prev.tail or "").rstrip("\u202f\u00a0 ") + tail
-        else:
-            parent.text = (parent.text or "").rstrip("\u202f\u00a0 ") + tail
-        parent.remove(ref)
-    for h in el.iter("{*}heading"):     # heading case is OLRC's editorial choice (records/milestones.md, M6)
-        for n in h.iter():
-            n.text = n.text.lower() if n.text else n.text
-            if n is not h and n.tail:
-                n.tail = n.tail.lower()
-    return re.sub(r"\s+", " ", harness.normalize(text_of(el)))
-
-
-def editorial_equal(pred_el, after_xml: str | None) -> bool:
-    """True when the prediction equals R_after except for OLRC's editorial work: footnote markers, the letter
-    case of headings, and the enactment date set in place of "the date of the enactment of this Act" (any date
-    is accepted there)."""
-    if pred_el is None or after_xml is None:
-        return False
-    pred, after = _text(pred_el), _text(etree.fromstring(after_xml.encode("utf-8")))
-    parts = DATE_PHRASE.split(pred)
-    rx = f"(?:{DATE}|{DATE_PHRASE.pattern})".join(re.escape(p) for p in parts)
-    return re.fullmatch(rx, after) is not None
 
 
 def data_fingerprint(cfg, set_name: str, db: Path) -> dict:
@@ -210,15 +169,49 @@ def main() -> int:
         then let go (a set of hundreds of laws does not fit in memory, and reopening release points is slow)."""
         run, instructions = runs.pop(law.pl)
 
-        def editorial_at_after(ident) -> bool:
-            # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..."
-            # and removes or adds footnote markers.
+        after_resolver = lru_cache(maxsize=1)(lambda: Resolver(after, pop, cmap))
+
+        def resolve_at_after(cite: str) -> str | None:
+            ctx = Ctx()
+            head, quotes, _ = lift_quotes(cite)
+            apply_head(head, ctx, quotes)
+            try:
+                res = after_resolver().resolve(ctx.target_out())
+                return after_resolver().ix._node(res.node_id).identifier if res.node_id else None
+            except Exception:                        # an unresolvable citation is simply not accepted
+                return None
+
+        def notes(ix, ident) -> list[str]:
+            try:
+                sid = ix.by_identifier(ident).id
+            except LookupError_:
+                return []
+            return [t for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? ORDER BY id", (sid,))]
+
+        def editorial_kind(ident) -> str | None:
+            """Why the prediction differs from R_after only editorially (oracle/editorial.py), or None."""
             work = run.working.get(ident)
             try:
                 after_xml = after.section_xml(after.by_identifier(ident))
             except LookupError_:
                 after_xml = None
-            return work is not None and not work.removed and editorial_equal(work.el, after_xml)
+            if work is None or work.removed:
+                return None
+            title = re.match(r"^/us/usc/t(\w+)/", ident)
+            pos = after.db.execute("SELECT positive_law FROM titles WHERE rp=? AND title=?",
+                                   (after.rp_id, title.group(1) if title else "")).fetchone()
+            ctx = editorial.Context(
+                pl=law.pl, positive_law=None if pos is None or pos[0] is None else bool(pos[0]),
+                heading_amended=any(tr.section == ident and tr.instruction.op == "AMEND_HEADING" for tr in run.traces),
+                new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
+                resolve=resolve_at_after, title=title.group(1) if title else "")
+            return editorial.kind(work.el, after_xml, ctx)
+        kinds = {o.identifier: editorial_kind(o.identifier) for o in outs
+                 if o.outcome == "mismatch" or (o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
+                                                and o.after_differs is not False and not is_touched(o))}
+
+        def editorial_at_after(ident) -> bool:
+            return kinds.get(ident) is not None
         with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
         if args.dump:
             with open(cfg.var / f"{tag}_dump.jsonl", "a") as fh:
@@ -227,19 +220,13 @@ def main() -> int:
                         continue
                     work = run.working.get(o.identifier)
 
-                    def notes(ix):
-                        try:
-                            sid = ix.by_identifier(o.identifier).id
-                        except LookupError_:
-                            return []
-                        return [t for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? ORDER BY id",
-                                                            (sid,))]
                     fh.write(json.dumps({
                         "pl": law.pl, "identifier": o.identifier, "rp_before": law.rp_before,
                         "rp_after": law.rp_after, "predicted": work.render() if work is not None else None,
                         "before": harness.section_text(before, o.identifier)[0],
                         "after": harness.section_text(after, o.identifier)[0],
-                        "new_notes": [t for t in notes(after) if t not in set(notes(before))],
+                        "new_notes": [t for t in notes(after, o.identifier)
+                                      if t not in set(notes(before, o.identifier))],
                         "instructions": [{"id": tr.instruction.id, "op": tr.instruction.op,
                                           "find": tr.instruction.find, "new": tr.instruction.new_text,
                                           "path": list(tr.resolution.path),
@@ -260,7 +247,8 @@ def main() -> int:
                 law_labels[key] = {"applies": harness.label_stage(labels[key], pred, after_text) is not None,
                                    "pred": harness.text_hash(pred), "after": harness.text_hash(after_text)}
         return {
-            "editorial": [o.identifier for o in outs if o.outcome == "mismatch" and editorial_at_after(o.identifier)],
+            "editorial": {o.identifier: kinds[o.identifier] for o in outs if o.outcome == "mismatch"
+                          and editorial_at_after(o.identifier)},
             "off_editorial": [o.identifier for o in outs if o.outcome in ("extra", "unexpected_change")
                               and o.status == "CLEAN" and o.after_differs is not False and not is_touched(o)
                               and editorial_at_after(o.identifier)],
@@ -301,8 +289,10 @@ def main() -> int:
     # Editorial-only differences are counted separately; they remain mismatches in the match rate.
     editorial = 0
     detected_ids: set[tuple[str, str]] = set()
+    editorial_kinds = collections.Counter()
     for o in mism:
         if o.identifier in extras[o.pl]["editorial"]:
+            editorial_kinds[extras[o.pl]["editorial"][o.identifier]] += 1
             o.stage = "editorial"
             detected_ids.add((o.pl, o.identifier))
             editorial += 1
@@ -411,6 +401,8 @@ def main() -> int:
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
               "", "Failure categories (Comparative Print Suite): " + ", ".join(f"{k} {v}" for k, v in cats.most_common()),
               "", "Mismatches by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
+              "", "Editorial or whitespace-only mismatches by kind (oracle/editorial.py): "
+              + (", ".join(f"{k} {v}" for k, v in editorial_kinds.most_common()) or "none"),
               *(["", "Halves:", *halves] if halves else []),
               "", "## Strata", "", *strata, "", "## CLEAN and wrong per law", "",
               "| Law | Targets | CLEAN | Wrong | Rate | 95% interval |", "| --- | --- | --- | --- | --- | --- |", *per_law,
