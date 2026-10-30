@@ -847,3 +847,22 @@ The sections with no match anywhere nearby are converter and editorial differenc
 
 Stale history would show as GovInfo text found at a later release point together with matches at a neighbour. Only 1 section of 2,894 matches a neighbour better, and the 37 later matches are spread from weeks to months later, not one release point off. Where OLRC's own zips exist (the 119th Congress), the history is identical to them.
 
+
+### Step 2: first dev measurement (2026-10-30, 7ab7de6)
+
+`scripts/m6_gate.py --set history_dev`: 286 laws from 2013–2026, 2 h 45 min. The gate now writes each graded law to `var/m6e_dev_checkpoint.jsonl` and resumes after an interruption. Two earlier runs were lost to container restarts; the second graded all 286 laws but held every law's run in memory and reopened each mismatch's R_after in the report step. On the tuning set the change leaves the report, traces and baseline byte-identical.
+
+| | Tuning (2025–26) | History dev (2013–26) |
+| --- | --- | --- |
+| Targets | 1,295 | 7,612 |
+| Matched / mismatched / missed | 573 / 343 / 379 | 2,322 / 2,020 / 3,270 |
+| CLEAN | 373 (28.8% of targets) | 1,555 (20.4%) |
+| CLEAN and wrong in substance | 0 | 120 (7.77%; 95% interval 6.54–9.20%), plus 1 of 3 off target |
+| NDAAs / other laws | 0% / 0% | 5.46% / 9.22% |
+
+Every parsed instruction has a status (23,040). The false-clean check FAILS on dev. The 120 are spread over the 113th–117th Congresses (20, 20, 16, 34, 30). A first pass shows three kinds, not yet counted by hand:
+- OLRC editorial conventions the detector does not know: references rewritten to Code citations ("section 101" to "section 1021 of this title"), "Repealed" placeholders for struck subdivisions, "(e)(1)" against "(e) (1)", heading capitals, and enactment dates the date rule misses.
+- Engine errors: a missing "and" when a list item is inserted, designations built differently from OLRC's structure, apostrophes inside nested quotations.
+- Unclear until read against the enrolled text.
+
+Next: classify all 120 by hand (dev may be inspected), teach the editorial detector only conventions confirmed against the enrolled text and OLRC's notes, fix the engine errors, rerun dev, then measure test once.
