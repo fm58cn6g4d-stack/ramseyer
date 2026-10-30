@@ -142,7 +142,13 @@ def main() -> int:
     pop, cmap = resolver.popular, resolver.classification
     # History sets keep release points in ReleaseIndexes (db is its cache directory, not a file).
     before_index = open_index if args.set.startswith("history_") else (lambda label: store.index(label, db))
-    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(before_index(label), pop, cmap))
+    def make_before_resolver(label):
+        r = Resolver(before_index(label), pop, cmap)
+        # Positive-law status comes from the pinned index: the release-point history marks no title positive law,
+        # and no title's status changed within the sets' windows (title 54 did not exist before it was enacted).
+        r.positive = set(resolver.positive)
+        return r
+    before_resolver = lru_cache(maxsize=2)(make_before_resolver)
 
     def predictor(law, before):
         print(f"{time.strftime('%H:%M:%S')} {law.pl} ({len(law.targets)} targets)", file=sys.stderr, flush=True)
@@ -203,10 +209,8 @@ def main() -> int:
             if work is None or work.removed:
                 return None
             title = re.match(r"^/us/usc/t(\w+)/", ident)
-            pos = after.db.execute("SELECT positive_law FROM titles WHERE rp=? AND title=?",
-                                   (after.rp_id, title.group(1) if title else "")).fetchone()
             ctx = editorial.Context(
-                pl=law.pl, positive_law=None if pos is None or pos[0] is None else bool(pos[0]),
+                pl=law.pl, positive_law=(title.group(1) in resolver.positive) if title else None,   # as above
                 heading_amended=any(tr.section == ident and tr.instruction.op == "AMEND_HEADING" for tr in run.traces),
                 new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
                 resolve=resolve_at_after, title=title.group(1) if title else "")
