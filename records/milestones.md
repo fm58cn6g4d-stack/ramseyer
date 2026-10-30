@@ -773,3 +773,50 @@ It can materialize any release point's titles as an ordinary ramseyer index, so 
 - `.venv/bin/python scripts/load_history.py`
 - `.venv/bin/python scripts/history_check.py`
 
+### Step 1, follow-up (review of PR #5)
+
+**Loader:** each shard now loads in one transaction with its completion marker, and writing release rows clears the derived title-to-release map.
+
+**`scripts/history_check.py`** now also compares notes (type, heading, text) and source credits. Same result: 175,779 of 175,781 identical in text, heading, status, subunit identifiers, notes and credits; the other 2 are 25 U.S.C. 5329. Not compared: references, chapter-level structure and notes, and section order within a title.
+
+**Older release points** (`scripts/history_govinfo_check.py`):
+- OLRC's zips cover only the 119th Congress, so the history, carry-forward rule included, is spot-checked against GovInfo's 2022–2024 editions (OLRC's XHTML, converted by `data/xhtml_uslm.py`).
+- Each edition's release point is the first one that incorporates every law enacted by the edition's "current through" date.
+
+| Edition | Release point chosen | Sections | Match there | A neighbour (±2) matches better | No match within ±2 |
+| --- | --- | --- | --- | --- | --- |
+| 2022 (current through 2023-01-05) | 118-3 | 534 | 490 (91.8%) | 0 | 44 |
+| 2023 (2024-01-03) | 118-34 | 1,050 | 979 (93.2%) | 0 | 71 |
+| 2024 (2025-01-06) | 119-1 | 1,310 | 1,201 (91.7%) | 1 (42 U.S.C. 1396a) | 108 |
+
+The sections with no match anywhere nearby are converter and editorial differences (the converter's own check is `scripts/xhtml_check.py`).
+
+**A bug in the M6d window rule, found by this check:**
+- "118-2not263not328" holds back 117-263 (the FY2023 NDAA) and 117-328 at the start of the 118th Congress. The rule read both as 118th Congress laws.
+- Now an excluded number above the label's own law belongs to the previous Congress (`releases.Label.excluded_laws`).
+- Two labels in the history are like this (118-2not263not328, 118-3not328); none of OLRC's current labels are, so nothing merged before is affected.
+
+### Step 2: the oracle sets on the history (2026-10-30)
+
+**Classification tables:** OLRC still publishes them for the 113th–118th Congresses. The older ones let a field run into the next column ("nt repealed EG Act113-7", "(C)(ii)1966") and list several pages ("707,708"). The parser now reads the law as the "C-N" token near its column and the trailing page or pages, glued or not. Every table from the 113th to the 119th Congress parses.
+- On the 119th tables, 61 rows change, all corrections: a row listing two pages had the first page in the law section.
+- Tuning gate unchanged: 373 CLEAN, 0 wrong.
+
+**The sets** (`scripts/build_history_oracle.py`, seed `m6e-2026-10-30`):
+- Who is in: every law of the 113th–119th Congresses with a non-note classification row and a window in the history (978), less the laws already in another oracle set, with 39 set aside with reasons.
+- How the split is made: a seeded hash, balanced within strata: each Congress, and the National Defense Authorization Acts of all Congresses as one stratum. A first build stratified NDAAs per Congress and put 5 in dev and 1 in sealed.
+- Which targets are graded: a target another law in the same window also changes is not graded (listed in the set's `_touched.json`); old windows often carry several laws.
+
+| Set | Laws | Graded targets | NDAAs | Use |
+| --- | --- | --- | --- | --- |
+| dev | 287 | 14,333 | 113-66, 115-232, 117-263 | may be tuned on |
+| test | 283 | 5,640 | 114-92, 115-91, 116-92 | measured only |
+| sealed | 277 | 12,314 | 113-291, 114-328, 116-283, 117-81 | measured once per round, never inspected |
+
+**Running a set:** `scripts/m6_gate.py --set history_dev` (or `history_test`, `history_sealed`). Release points are materialized from the history on demand, keeping 4 on disk (`oracle.history.ReleaseIndexes`). The dev set takes about 4 hours. Its first measurement follows in its own PR.
+
+**Commands (step 2):**
+- `.venv/bin/python scripts/history_govinfo_check.py`
+- `.venv/bin/python scripts/build_history_oracle.py`
+- `.venv/bin/python scripts/m6_gate.py --set history_dev`
+
