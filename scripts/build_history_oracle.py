@@ -8,8 +8,8 @@ For each law of the 113th-119th Congresses with at least one non-note row in OLR
     set's touched list, as the GovInfo sets do), since R_after carries both changes;
   - enrolled text: the enrolled bill's Formatted XML from Congress.gov.
 Laws already in another set (the tuning corpus, the M6b held-out sets, the GovInfo sets) are left out. Each remaining
-law goes to one set by a seeded hash, balanced within strata: Congress, and the National Defense Authorization Acts
-apart (they dominate the errors so far). Committees and titles are recorded for the report.
+law goes to one set by a seeded hash, balanced within strata: each Congress, and the National Defense Authorization
+Acts of all Congresses as one stratum (they dominate the errors so far). Committees and titles are recorded for the report.
 Run:  .venv/bin/python scripts/build_history_oracle.py [--seed N] [--limit N]
 """
 from __future__ import annotations
@@ -38,7 +38,7 @@ SELECTION = (
     "Every public law of the 113th-119th Congresses with at least one non-note row in OLRC's classification tables "
     "and a release-point window in the dreamproit/uscode history (113-21 on; window by the incorporated-set rule), not "
     "already in another oracle set; assigned to dev, test or sealed by a seeded hash, balanced within strata of "
-    "Congress and of National Defense Authorization Acts. Targets another law in the same window also changes are "
+    "Congress, with the National Defense Authorization Acts of all Congresses as one stratum. Targets another law in the same window also changes are "
     "not graded (listed in the set's touched file).")
 
 
@@ -114,7 +114,8 @@ def main() -> int:
         committees = sorted({x.get("name", "") for x in cm.get("committees", [])})
         name = bill.get("title") or ""
         meta[pl] = (bill, urls[0], sha256(resp.path), committees, name)
-        strata[(c, bool(NDAA.search(name)))].append(pl)
+        # NDAAs form one stratum across Congresses (one or two a Congress would all start at "dev").
+        strata[("NDAA", 0) if NDAA.search(name) else ("Congress", c)].append(pl)
         if i % 50 == 0:
             print(f"{i}/{len(cands)} laws read ({time.monotonic() - t0:.0f}s)", flush=True)
 
