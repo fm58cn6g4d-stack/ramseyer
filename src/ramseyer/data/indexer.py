@@ -12,7 +12,9 @@ from pathlib import Path
 
 from lxml import etree
 
-USLM = "http://xml.house.gov/schemas/uslm/1.0"
+from ramseyer.data import uslm
+
+USLM = uslm.USLM_NS
 SCHEMA = Path(__file__).with_name("schema.sql")
 
 HIER = {"title", "subtitle", "chapter", "subchapter", "part", "subpart", "division", "subdivision",
@@ -135,10 +137,15 @@ class Indexer:
                     continue
                 t0 = time.monotonic()
                 with zf.open(member) as fh:
-                    tree = etree.parse(fh)
-                load = self._load_title(tree.getroot(), rp, code)
+                    raw = etree.parse(fh).getroot()
+                # USLM 2.x titles are converted to the 1.0 form here; nothing downstream sees 2.x.
+                root = uslm.to_v1(raw)
+                load = self._load_title(root, rp, code)
+                if uslm.schema_version(raw) != "1":
+                    load.issues.append((rp, code, "uslm_schema", f"title read as USLM {uslm.schema_version(raw) or 'unknown'} "
+                                        f"({etree.QName(raw).namespace}); converted to 1.0" if uslm.schema_version(raw) else
+                                        f"unrecognized root namespace {etree.QName(raw).namespace}"))
                 self._write(load, rp)
-                root = tree.getroot()
                 pos = root.xpath("string(//*[local-name()='meta']/*[local-name()='property'][@role='is-positive-law'])")
                 pub = root.xpath("string(//*[local-name()='meta']/*[local-name()='docPublicationName'])")
                 self.db.execute("INSERT INTO titles VALUES (?,?,?,?,?,?,?,?)",
@@ -147,7 +154,7 @@ class Indexer:
                 self.db.commit()
                 log(f"title {code:>3}: {load.sections:5d} sections, {len(load.nodes):7d} nodes, "
                     f"{len(load.refs):7d} refs  ({time.monotonic() - t0:.1f}s)")
-                del tree
+                del raw, root
         self._resolve_refs(rp)
         self._resolve_definition_scopes(rp)
         self.db.execute("INSERT INTO fts_nodes(rowid, heading, text_plain) SELECT id, coalesce(heading,''), "
