@@ -6,6 +6,8 @@ except 60; "116-344not283u1" is a re-issue (u1) of 116-344 still without Pub. L.
 
     incorporated(RP, L) = L <= (RP.congress, RP.law) and L not in RP.excluded
 
+where an excluded number above RP's own law belongs to the previous Congress ("118-2not263not328").
+
 and the laws entering between two release points are those the later one incorporates and the earlier does not.
 """
 from __future__ import annotations
@@ -21,12 +23,18 @@ class Label:
     raw: str
     congress: int
     law: int
-    excluded: frozenset[int]          # law numbers of the same Congress held back
+    excluded: frozenset[int]          # law numbers held back, as printed (see excluded_laws)
     reissue: int                      # the N of a "uN" suffix; 0 for none
 
+    @property
+    def excluded_laws(self) -> frozenset[tuple[int, int]]:
+        """The held-back laws as (congress, law). A number above the label's own law belongs to the previous
+        Congress: "118-2not263not328" holds back 117-263 and 117-328 (the FY2023 NDAA and the 2023 appropriations
+        act) at the start of the 118th (scripts/history_govinfo_check.py)."""
+        return frozenset((self.congress - 1 if n > self.law else self.congress, n) for n in self.excluded)
+
     def incorporates(self, congress: int, law: int) -> bool:
-        return (congress, law) <= (self.congress, self.law) and not (congress == self.congress
-                                                                      and law in self.excluded)
+        return (congress, law) <= (self.congress, self.law) and (congress, law) not in self.excluded_laws
 
     @property
     def order(self) -> tuple:

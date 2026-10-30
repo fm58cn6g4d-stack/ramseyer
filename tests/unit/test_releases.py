@@ -57,3 +57,14 @@ def test_order_follows_publication():
 def test_entering():
     assert releases.entering("116-344not283u1", "116-344", ["116-283", "116-344", "116-1"]) == ["116-283"]
     assert releases.entering("119-100", "119-102", ["119-101", "119-102", "119-99"]) == ["119-101", "119-102"]
+
+
+def test_a_held_back_number_above_the_label_is_the_previous_congress():
+    # "118-2not263not328" opens the 118th Congress without 117-263 (FY2023 NDAA) and 117-328.
+    p = releases.parse("118-2not263not328")
+    assert p.excluded_laws == frozenset({(117, 263), (117, 328)})
+    assert not p.incorporates(117, 263) and p.incorporates(117, 262) and p.incorporates(118, 2)
+    labels = ["117-262", "118-2not263not328", "118-2not328", "118-2", "118-5"]
+    assert releases.window(labels, "117-263") == ("118-2not263not328", "118-2not328")
+    assert releases.window(labels, "117-328") == ("118-2not328", "118-2")
+    assert releases.window(labels, "118-1") == ("117-262", "118-2not263not328")
