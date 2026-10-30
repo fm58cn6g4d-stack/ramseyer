@@ -718,14 +718,18 @@ class Engine:
         return hits, None
 
     @staticmethod
-    def _is_marker(seg) -> bool:
+    def _is_marker(seg, footnoted: bool) -> bool:
+        """A footnote marker: <ref class="footnoteRef">, or a one- or two-digit <sup> in a section that has footnotes
+        (a <sup> elsewhere may be an exponent)."""
         node = seg.node
         if seg.attr != "text" or not isinstance(node.tag, str):
             return False
-        return (local(node) == "ref" and "footnoteRef" in (node.get("class") or "")) or \
-            (local(node) == "sup" and (node.text or "").strip().isdigit())
+        if local(node) == "ref":
+            return "footnoteRef" in (node.get("class") or "")
+        t = (node.text or "").strip()
+        return footnoted and local(node) == "sup" and t.isdigit() and len(t) <= 2
 
-    def _clear_markers_in(self, ins, scope, find) -> bool:
+    def _clear_markers_in(self, ins, scope, find, positional=False) -> bool:
         """If `find` occurs, once footnote markers are skipped, in the part of the unit the instruction may edit,
         remove the markers inside the occurrence it edits (and their footnote notes). Only when that occurrence is
         unambiguous: one occurrence (or "each place"), and no "second place" or later. Returns True when any marker
@@ -739,10 +743,13 @@ class Engine:
             return False
         segs = Working.segments(target_scope)
         allowed = self._ranges(ins, segs, linear(segs), find)
+        root = self.work.el
+        footnoted = root is not None and any(n.get("type") == "footnote" or n.get("topic") == "footnote"
+                                             for n in root.iter(NS + "note"))
         kept, index = [], []
         for sg in segs:
             txt = getattr(sg.node, sg.attr) or ""
-            if self._is_marker(sg):
+            if self._is_marker(sg, footnoted):
                 while kept and kept[-1] in "\u202f ":       # the thin space set before a marker goes with it
                     kept.pop()
                     index.pop()
@@ -755,11 +762,23 @@ class Engine:
             return False
         spans = [(index[a], index[b - 1] + 1) for a, b in hits if b > a]
         spans = [(lo, hi) for lo, hi in spans if any(a <= lo and hi <= b for a, b in allowed)]
+        if positional and spans:
+            # "the period at the end": as in _locate, the occurrence must end the allowed text; markers and
+            # whitespace may follow it ("end.¹").
+            end = max(b for _, b in allowed) if allowed else len(index)
+            marked = [(sg.start, sg.start + len(getattr(sg.node, sg.attr) or "")) for sg in segs
+                      if self._is_marker(sg, footnoted)]
+            hay = linear(segs)
+            def rest_is_blank(hi):
+                rest = "".join(ch for i, ch in enumerate(hay[hi:end], hi)
+                               if not any(m0 <= i < m1 for m0, m1 in marked))
+                return not rest.strip(" \n\t\u202f")
+            spans = [sp for sp in spans if rest_is_blank(sp[1])][-1:]
         if not spans or (len(spans) > 1 and ins.occurrence != "each"):
             return False
         removed = False
         for sg in segs:
-            if self._is_marker(sg) and any(lo <= sg.start <= hi for lo, hi in spans):
+            if self._is_marker(sg, footnoted) and any(lo <= sg.start <= hi for lo, hi in spans):
                 ref = sg.node
                 if local(ref) == "ref":
                     note = ref.getnext()
@@ -865,7 +884,7 @@ class Engine:
                     segs, hay, hits, how = segs2, hay2, hits2, f"with “this Act” as “this {unit}”"
                     make_new = (lambda mk, u: lambda old: mk(old).replace("this Act", f"this {u}"))(make_new, unit)
                     break
-        if not hits and self._clear_markers_in(ins, scope, find):
+        if not hits and self._clear_markers_in(ins, scope, find, positional):
             # The quote runs across a footnote marker (OLRC's "So in original" on the words a correction fixes:
             # "the the¹ Secretary", 10 U.S.C. 14504(b)); the marker goes with the words, as OLRC removes it.
             segs, hay, hits, how, err = self._locate(ins, scope, find, positional)

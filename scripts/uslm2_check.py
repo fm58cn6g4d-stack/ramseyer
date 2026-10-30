@@ -26,7 +26,10 @@ from lxml import etree
 
 from ramseyer.data.indexer import NON_OPERATIVE, Indexer, text_of
 
-SAMPLES = Path("/home/user/aih/uscode-redesign/samples/uslm2/USLM2")
+# OLRC's 2.x sample titles, from aih/uscode-redesign (samples/uslm2/USLM2/usc01.xml, usc16.xml, usc49.xml); fetch with
+#   git clone --depth 1 --filter=blob:none --sparse https://github.com/aih/uscode-redesign <dir>
+#   git -C <dir> sparse-checkout set samples/uslm2 && cp <dir>/samples/uslm2/USLM2/usc*.xml var/uslm2/samples/
+SAMPLES = config.VAR / "uslm2" / "samples"
 LABEL = "uslm2-sample-2023-06-29"
 REVIEWED = Path(__file__).resolve().parents[1] / "tests" / "oracle" / "uslm2_reviewed.json"
 
@@ -141,7 +144,8 @@ def main() -> int:
 
     # Identifiers as published in the raw 2.x files, to tell a nesting OLRC published from one the seam made; and
     # fidelity: the raw 2.x text (no conversion; inline footnotes skipped, as 1.0 keeps them in notes) must hold
-    # exactly the characters the index stored, so the seam provably adds, drops and reorders nothing.
+    # exactly the non-whitespace characters the index stored, in order, so the seam adds, drops and reorders no text
+    # (line breaks and spacing are compared separately, in the 1.0 comparison below).
     published: dict[str, set[str]] = {}
     fidelity, unfaithful = collections.Counter(), []
     skip = frozenset(NON_OPERATIVE | {"footnote"})
@@ -195,7 +199,7 @@ def main() -> int:
         f"release point {label1}.", "",
         "| Measure | Count |", "| --- | --- |",
         f"| Sections in the 2.x samples | {len(v2)} |",
-        f"| Fidelity: indexed text holds exactly the raw 2.x characters | {fidelity['same']} of "
+        f"| Fidelity: indexed text holds exactly the raw 2.x non-whitespace characters | {fidelity['same']} of "
         f"{fidelity['same'] + fidelity['different']} |",
         f"| Sections in the 1.0 index for these titles | {len(v1)} |",
         f"| In both, by identifier | {len(both)} |",
