@@ -20,6 +20,7 @@ import copy
 import hashlib
 import json
 import re
+import sqlite3
 import sys
 import time
 from functools import lru_cache
@@ -115,9 +116,33 @@ def editorial_equal(pred_el, after_xml: str | None) -> bool:
     return re.fullmatch(rx, after) is not None
 
 
+def data_fingerprint(cfg, set_name: str, db: Path) -> dict:
+    """What the loaded data says about itself: the history's shards, or the oracle store's release points, and the
+    pinned index's release points (label and source hash)."""
+    out = {}
+    stores = {"pinned": cfg.index_path}
+    if set_name.startswith("history_"):
+        stores["history"] = cfg.var / "history" / "history.sqlite"
+    else:
+        stores["oracle"] = db
+    for name, path in stores.items():
+        if not Path(path).exists():
+            out[name] = None
+            continue
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        q = ("SELECT name, sha256, rows FROM loaded_shards ORDER BY name" if name == "history" else
+             "SELECT label, source_sha256, complete FROM release_points ORDER BY id")
+        out[name] = con.execute(q).fetchall()
+        con.close()
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--law")
+    ap.add_argument("--law", nargs="+", help="only these laws (outputs tagged _laws)")
+    ap.add_argument("--dump", action="store_true",
+                    help="write each CLEAN prediction that differs from R_after in substance, in full, with its "
+                         "instructions and R_after's new notes, to var/<tag>_dump.jsonl (for diagnosis)")
     ap.add_argument("--show", type=int, default=30)
     ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b); same as --set heldout")
     ap.add_argument("--set", choices=sorted(SETS), default="tuning")
@@ -129,14 +154,15 @@ def main() -> int:
     cfg = config.load()
     f = Fetcher(cfg)
     t0 = time.monotonic()
-    resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(),
-                        classification_map(classification_rows(f, cfg.olrc_base)))
+    rows = classification_rows(f, cfg.olrc_base)
+    resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(), classification_map(rows))
     manifest, db, tag, heading = SETS["heldout" if args.heldout else args.set]
     if args.resolve_before:
         tag, heading = tag + "_resolve_before", heading + " (targets resolved against each law's R_before)"
     corpus = Corpus.load(manifest)
     if args.law:
-        corpus.laws = [corpus.law(args.law)]
+        corpus.laws = [corpus.law(pl) for pl in args.law]
+        tag += "_laws"
     if args.set.startswith("govinfo") and not args.heldout:
         # Sections outside the answer key are fetched from the same edition on demand (red team F6).
         open_index = lru_cache(maxsize=None)(lambda label: GovInfoOverlay(store.index(label, db), int(label[-4:]), f,
@@ -194,6 +220,33 @@ def main() -> int:
                 after_xml = None
             return work is not None and not work.removed and editorial_equal(work.el, after_xml)
         with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
+        if args.dump:
+            with open(cfg.var / f"{tag}_dump.jsonl", "a") as fh:
+                for o in outs:
+                    if not (o.outcome == "mismatch" and o.status == "CLEAN") or editorial_at_after(o.identifier):
+                        continue
+                    work = run.working.get(o.identifier)
+
+                    def notes(ix):
+                        try:
+                            sid = ix.by_identifier(o.identifier).id
+                        except LookupError_:
+                            return []
+                        return [t for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? ORDER BY id",
+                                                            (sid,))]
+                    fh.write(json.dumps({
+                        "pl": law.pl, "identifier": o.identifier, "rp_before": law.rp_before,
+                        "rp_after": law.rp_after, "predicted": work.render() if work is not None else None,
+                        "before": harness.section_text(before, o.identifier)[0],
+                        "after": harness.section_text(after, o.identifier)[0],
+                        "new_notes": [t for t in notes(after) if t not in set(notes(before))],
+                        "instructions": [{"id": tr.instruction.id, "op": tr.instruction.op,
+                                          "find": tr.instruction.find, "new": tr.instruction.new_text,
+                                          "path": list(tr.resolution.path),
+                                          "status": tr.result.status if tr.result else None,
+                                          "detail": tr.result.detail if tr.result else None}
+                                         for tr in run.traces if tr.section == o.identifier]},
+                        ensure_ascii=False) + "\n")
         law_labels = {}
         for o in outs:
             key = f"{o.pl} {o.identifier}"
@@ -230,7 +283,13 @@ def main() -> int:
     for path in sorted(SRC.rglob("*.py")) + [Path(__file__), manifest, touched_path, harness.LABELS]:
         if path.exists():
             digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
-    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law]).encode())
+    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump]).encode())
+    # The data, too: the release points graded against, the pinned index the resolver reads, OLRC's classification
+    # tables and each enrolled bill as fetched (the materialized release points derive from the history and the code).
+    digest.update(json.dumps(data_fingerprint(cfg, args.set, db), sort_keys=True).encode())
+    digest.update(repr(rows).encode())
+    for law in corpus.laws:
+        digest.update(law.pl.encode() + f.get(law.enrolled_url).path.read_bytes())
     extras: dict[str, dict] = {}
     rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None, after_law=after_law,
                            checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras)
