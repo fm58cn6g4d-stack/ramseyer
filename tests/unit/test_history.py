@@ -75,5 +75,15 @@ def test_a_label_never_first_or_last_is_placed_in_its_gap(tmp_path):
     h.load_rows([r])
     assert h.flush_release_map() == ["118-5not3"]
     placed, empty = h.place_unsequenced(4)
-    assert placed == {"118-5not3": 2} and empty == [4]
+    assert placed == {"118-5not3": 2} and empty == [0, 4]          # the dataset numbers from 0
     assert "Lorem." in h.section_xml("/us/usc/t99/s1", "118-5not3")[0]
+
+
+def test_a_title_not_loaded_at_a_release_point_carries_forward(tmp_path):
+    # The dataset loads a title only where OLRC updated it; 118-9 here holds title 99 as of 118-5.
+    h = History(tmp_path / "h.sqlite")
+    h.load_rows([row("1", "Lorem.", ["118-1", "118-5"]), row("2", "Other title.", ["118-1", "118-9"])])
+    h.db.execute("UPDATE versions SET title='98', identifier='/us/usc/t98/s2' WHERE identifier='/us/usc/t99/s2'")
+    h.flush_release_map()
+    assert "Lorem." in h.section_xml("/us/usc/t99/s1", "118-9")[0]
+    assert h.section_xml("/us/usc/t99/s1", "118-9") == h.section_xml("/us/usc/t99/s1", "118-5")

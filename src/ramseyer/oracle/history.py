@@ -8,12 +8,16 @@ One SQLite file under var/history/:
                                                                            its USLM XML zlib-compressed, as published
   version_releases(vid, seq)                                               which release points published it
 
-A section at a release point is the version whose release list holds it; a release point can be materialized as an
-ordinary ramseyer index (oracle.history.materialize) so the dry-run and the harness read it like any other.
+The dataset loads a title at a release point only when OLRC updated it there (about 8 titles per release point), so a
+title at a release point is the title as last loaded at or before it (title_releases; scripts/history_check.py
+checks the rule against OLRC's full zips). A section at a release point is then the version that release list holds.
+A release point can be materialized as an ordinary ramseyer index (oracle.history.materialize), so the dry-run and the
+harness read it like any other.
 """
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import zlib
 from dataclasses import dataclass
@@ -33,6 +37,8 @@ CREATE TABLE IF NOT EXISTS versions (
     first_seq INTEGER, last_seq INTEGER
 );
 CREATE TABLE IF NOT EXISTS version_releases (vid INTEGER NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (seq, vid))
+    WITHOUT ROWID;
+CREATE TABLE IF NOT EXISTS title_releases (title TEXT NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY (title, seq))
     WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS pending_releases (vid INTEGER NOT NULL, label TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS loaded_shards (name TEXT PRIMARY KEY, sha256 TEXT, rows INTEGER);
@@ -93,11 +99,11 @@ class History:
         return [l for (l,) in self.db.execute("SELECT DISTINCT label FROM pending_releases ORDER BY label")]
 
     def place_unsequenced(self, total: int) -> tuple[dict[str, int], list[int]]:
-        """Give a sequence to each label that is never a version's first or last release: the one gap in 1..total
+        """Give a sequence to each label that is never a version's first or last release: the one gap in 0..total
         whose neighbours bracket it under the label order rule (oracle/releases.py). Returns the placements and the
         gaps left empty (release points with no section rows in the dataset)."""
         known = dict(self.db.execute("SELECT seq, label FROM releases"))
-        gaps = sorted(set(range(1, total + 1)) - set(known))
+        gaps = sorted(set(range(0, total + 1)) - set(known))       # the dataset numbers from 0
         placed: dict[str, int] = {}
         for label in sorted(self.flush_release_map(), key=lambda l: rl.parse(l).order):
             order = rl.parse(label).order
@@ -129,19 +135,40 @@ class History:
             raise LookupError(f"release point {label} is not in the history")
         return r[0]
 
+    def _title_releases(self) -> None:
+        if self.db.execute("SELECT 1 FROM title_releases LIMIT 1").fetchone() is None:
+            self.db.execute("INSERT OR IGNORE INTO title_releases SELECT DISTINCT v.title, m.seq FROM versions v "
+                            "JOIN version_releases m ON m.vid=v.vid")
+            self.db.commit()
+
+    def title_seq(self, title: str, label: str) -> int | None:
+        """The release point a title's text comes from at `label`: the latest at or before it that loaded the title.
+        None when the title was not loaded at or before `label`."""
+        self._title_releases()
+        r = self.db.execute("SELECT max(seq) FROM title_releases WHERE title=? AND seq<=?",
+                            (title, self.seq(label))).fetchone()
+        return r[0]
+
     def section_xml(self, identifier: str, label: str) -> list[str]:
         """The section's published XML at a release point: [] when absent, two items at an identifier collision."""
+        m = re.match(r"^/us/usc/t(\w+?)/", identifier)
+        seq = self.title_seq(m.group(1), label) if m else None
+        if seq is None:
+            return []
         rows = self.db.execute("SELECT v.xml_zlib FROM versions v JOIN version_releases m ON m.vid=v.vid "
-                               "WHERE m.seq=? AND v.identifier=? ORDER BY v.vid", (self.seq(label), identifier))
+                               "WHERE m.seq=? AND v.identifier=? ORDER BY v.vid", (seq, identifier))
         return [zlib.decompress(x).decode("utf-8") for (x,) in rows]
 
     def title_sections(self, title: str, label: str):
         """(identifier, parent_identifier, seq_in_title, positive_law, xml) for every section of a title at a release
         point, in reading order."""
+        seq = self.title_seq(title, label)
+        if seq is None:
+            return
         rows = self.db.execute(
             "SELECT v.identifier, v.parent_identifier, v.seq_in_title, v.positive_law, v.xml_zlib FROM versions v "
             "JOIN version_releases m ON m.vid=v.vid WHERE m.seq=? AND v.title=? ORDER BY v.seq_in_title, v.vid",
-            (self.seq(label), title))
+            (seq, title))
         for ident, parent, sit, pos, x in rows:
             yield ident, parent, sit, pos, zlib.decompress(x).decode("utf-8")
 
