@@ -184,3 +184,16 @@ def test_a_table_in_quoted_text_keeps_the_instruction_from_clean(tmp_path):
     res = Engine(work).run(ins[0], list(ins[0].target.path))
     assert res.status == "WARN" and "table" in res.detail
     assert "table omitted" not in work.render()
+
+
+def test_a_references_clause_scoped_to_a_subsection():
+    # Pub. L. 114-255 § 3101(a)(1): "whenever in this subsection an amendment is expressed in terms of an amendment to
+    # a section ..., the reference shall be considered to be made to ... the Federal Food, Drug, and Cosmetic Act":
+    # every § 3101(a) instruction resolved to UNKNOWN (21 U.S.C. 355-1 stayed CLEAN without its edits).
+    ins = parse_text("SEC. 3101. CORRECTIONS.\n(a) One.—\n(1) References.—Except as otherwise expressly provided, "
+                     "whenever in this subsection an amendment is expressed in terms of an amendment to a section or "
+                     "other provision, the reference shall be considered to be made to that section or other provision "
+                     "of the Placeholder Act (99 U.S.C. 301 et seq.).\n(2) Amendments.—Section 505–1(h)(99 U.S.C. "
+                     "355–1(h)) is amended in paragraph (8) by striking “x” and inserting “y”.\n(b) Two.—Section 351 "
+                     "(98 U.S.C. 262) is amended by striking “a” and inserting “b”.\n").instructions
+    assert [(i.id, i.target.act) for i in ins] == [("sec3101.a.2#0", "Placeholder Act"), ("sec3101.b#0", None)]

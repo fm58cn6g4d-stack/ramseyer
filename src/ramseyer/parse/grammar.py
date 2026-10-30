@@ -177,7 +177,8 @@ EACH_SECTIONS = re.compile(rf"^\s*[Ii]n (?:each of )?sections (?P<list>{_SN}(?:{
 # amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to that
 # section or other provision of the Social Security Act."
 REFERENCES_CLAUSE = re.compile(
-    r"\b(?:wherever|whenever) in this (?P<scope>Act|division|title|subtitle|part|chapter|section)\b[^.]{0,200}?"
+    r"\b(?:wherever|whenever) in this (?P<scope>Act|division|title|subtitle|part|chapter|section|subsection)\b"
+    r"[^.]{0,200}?"
     r"expressed in terms of an amendment[^.]{0,160}?references? shall be considered to be made to (?:a|that|the) (?:section or "
     rf"other provision|section|provision) of (?:title (?P<title>\d+),? United States Code|(?P<act>{ACT_NAME}))")
 TOC_HEAD = re.compile(r"\b[Tt]he (?:table of (?:sections|contents|chapters)|analysis)\b")

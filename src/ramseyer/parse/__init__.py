@@ -25,7 +25,13 @@ def references_clauses(roots: list[Node]) -> list[tuple[str, str]]:
         if m:
             scope, parts = m["scope"].lower(), n.loc.split(".")
             prefix = ""
-            if scope != "act":
+            if scope == "subsection":
+                # "whenever in this subsection ..." (Pub. L. 114-255 § 3101(a)(1)): the bill section and its letter.
+                k = next((i for i, p in enumerate(parts) if p.startswith("sec") and p[3:][:1].isalnum()), None)
+                if k is None or k + 1 >= len(parts):
+                    return
+                prefix = ".".join(parts[:k + 2]) + "."
+            elif scope != "act":
                 lead = LEVEL_PREFIX.get(scope, "sec" if scope == "section" else scope)
                 k = next((i for i, p in enumerate(parts) if p.startswith(lead) and p[len(lead):][:1].isalnum()), None)
                 if k is None:
@@ -68,6 +74,14 @@ def parse_text(text: str) -> ParseResult:
             if act:
                 ctx.memory["default_act"] = act
         child_ctx = ctx
+        # A references clause narrower than the bill section ("whenever in this subsection") holds for this unit and
+        # its children only.
+        prev_act, scoped = None, False
+        if ctx is not None and node.level != "section":
+            act = default_act(defaults, node.loc)
+            if act and act != ctx.memory.get("default_act"):
+                prev_act, scoped = ctx.memory.get("default_act"), True
+                ctx.memory["default_act"] = act
         if node.cls != "TABLE_OF_CONTENTS" and node.text and ctx is not None:
             qf = quote_free(node.text)
             n = count_ops(qf)
@@ -91,6 +105,11 @@ def parse_text(text: str) -> ParseResult:
                 node.freestanding_type = freestanding_type(node.text)
         for c in node.children:
             visit(c, child_ctx, node.text)
+        if scoped:
+            if prev_act is None:
+                ctx.memory.pop("default_act", None)
+            else:
+                ctx.memory["default_act"] = prev_act
         if node.level == "section" and ctx is not None and ctx.memory.get("usc") is not None:
             bill_memory["usc"] = ctx.memory["usc"]
 
