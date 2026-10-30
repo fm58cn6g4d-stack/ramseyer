@@ -39,7 +39,7 @@ class Prediction(BaseModel):
 class SectionOutcome(BaseModel):
     pl: str
     identifier: str
-    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending"]
+    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending", "ungradable"]
     status: str | None
     stage: str | None
     detail: str = ""
@@ -84,8 +84,27 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
         changed = normalize(bt) != normalize(at) or bs != as_
         out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_, "changed": changed,
                       "rows": [row.description],
-                      "pending": at is not None and pending_note(law, before, after, ident, changed)}
+                      "pending": at is not None and pending_note(law, before, after, ident, changed),
+                      "other_laws": other_laws(law, before, after, ident)}
     return out
+
+
+PL_CITE = re.compile(r"Pub\. L\. (\d+)[–-](\d+)")
+
+
+def other_laws(law: CorpusLaw, before: Index, after: Index, ident: str) -> list[str]:
+    """Laws other than this one that OLRC's amendment notes credit with changing the section between R_before and
+    R_after: R_after then carries their changes too (a delayed amendment of an earlier law taking effect in the
+    window, as the FY2021 NDAA's title XVIII did on Jan. 1, 2022), so the section cannot grade this law alone."""
+    def cited(ix: Index) -> set[str]:
+        try:
+            sid = ix.by_identifier(ident).id
+        except LookupError_:
+            return set()
+        return {f"{c}-{n}" for (t,) in ix.db.execute(
+            "SELECT text FROM notes WHERE section_id=? AND note_type='amendments'", (sid,))
+            for c, n in PL_CITE.findall(t)}
+    return sorted(cited(after) - cited(before) - {law.pl})
 
 
 DELAYED_NOTE = re.compile(r"Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"
@@ -170,7 +189,11 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         counts = collections.Counter()
         for ident, t in gt.items():
             p = preds.get(ident)
-            if t.get("pending"):
+            if t.get("other_laws") and not t.get("pending"):
+                o = SectionOutcome(pl=law.pl, identifier=ident, outcome="ungradable", status=p.status if p else None,
+                                   stage=None, detail="R_after's amendment notes credit other laws in the window "
+                                                      f"too: {', '.join(t['other_laws'])}")
+            elif t.get("pending"):
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="pending", status=p.status if p else None,
                                    stage=None, detail="amendment set out in a note (delayed effective date); "
                                                       "R_after text is unchanged by design")
@@ -225,6 +248,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "extra": sum(o.outcome == "extra" for o in outcomes),
         "unexpected_change": sum(o.outcome == "unexpected_change" for o in outcomes),
         "pending": sum(o.outcome == "pending" for o in outcomes),
+        "ungradable": sum(o.outcome == "ungradable" for o in outcomes),
         "match_rate": round(sum(o.outcome == "match" for o in outcomes) / targets, 4) if targets else 0.0,
         "clean": len(clean),
         "false_clean": len(false_clean),

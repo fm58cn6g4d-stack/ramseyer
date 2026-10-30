@@ -348,7 +348,7 @@ def main() -> int:
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
-         f"{m['pending']}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
+         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
          f"{editorial} differ only editorially (enactment date substituted, footnote markers, heading case)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%} (substantive: OLRC editorial differences excluded)",
          (substantive + off_sub) / max(m["clean"] + m["clean_off_target"], 1) < FALSE_CLEAN_TARGET,

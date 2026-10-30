@@ -134,3 +134,31 @@ def test_a_section_with_a_delayed_amendment_note_is_pending_even_when_other_chan
     assert t["/us/usc/t99/s2"]["changed"] and t["/us/usc/t99/s2"]["pending"]
     other = law.model_copy(update={"pl": "1-3"})                       # a note citing another law does not count
     assert not harness.truth(other, Index(db, "1-1"), Index(db, "1-2"))["/us/usc/t99/s2"]["pending"]
+
+
+def test_a_section_another_law_also_amended_in_the_window_is_not_graded(tmp_path):
+    # R_after carries every law executed in the window; when OLRC's amendment notes credit another law with
+    # changing the section there (M6e dev: the FY2021 NDAA's Jan. 1, 2022 changes in the FY2022 NDAA's window),
+    # the section cannot grade this law alone.
+    def amendments(*laws):
+        body = " ".join(f"Pub. L. {pl.replace('-', '–')} substituted text." for pl in laws)
+        return f'<notes><note topic="amendments"><heading>Amendments</heading><p>{body}</p></note></notes>'
+    db = tmp_path / "o.sqlite"
+    ix = Indexer(db)
+    for label, body in (("1-1", sec("2", "Beta gamma.").replace("</section>", amendments("1-1") + "</section>")),
+                        ("1-2", sec("2", "Beta delta.").replace("</section>", amendments("1-2", "0-9", "1-1")
+                                                            + "</section>"))):
+        z = tmp_path / f"{label}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("usc99.xml", doc(body))
+        ix.mark_complete(ix.load_release_point(z, label, None, "t", log=lambda s: None))
+    law = CorpusLaw(pl="1-2", name="t", bill="1 hr 1", enrolled_url="x", enrolled_sha256="x", rp_before="1-1",
+                    rp_after="1-2", titles=["99"], reason="t",
+                    rows=[ClassifiedRow(title="99", section="2", description="", law_section="1")])
+    corpus = Corpus(built="t", selection="t", release_points=[], laws=[law])
+
+    def p(law, before):
+        return [Prediction(identifier="/us/usc/t99/s2", status="CLEAN", text="§ 2. H2\nBeta delta.")]
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
+    assert [o.outcome for o in rep.outcomes] == ["ungradable"] and "0-9" in rep.outcomes[0].detail
+    assert (rep.metrics["targets"], rep.metrics["ungradable"]) == (0, 1)
