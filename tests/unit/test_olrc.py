@@ -59,3 +59,23 @@ def test_classification_table_json_layout():
     rows = olrc.parse_classification_table(page)
     assert [(r.title, r.section, r.description, r.public_law, r.law_section) for r in rows] == [
         ("99", "101", "", "118-63", "201(a)"), ("99", "102", "nt new", "118-63", "1")]
+
+
+def test_classification_fields_running_into_the_next_column():
+    # Older tables (113th-117th Congress) let fields run over, and list several pages (synthetic values).
+    page = ("<PRE>\n U. S. Code\nTitle Section      Description      Pub. L.  Sec.                  127 Stat.\n"
+            "-------------      -----------      -------------                  ---------\n"
+            "99    4016                          113-1   1(a)                     3          \n"
+            "99A   105          nt repealed EG Act113-7   1(a)(3)                  438\n"
+            "99    1308-3a                       113-79   1605(a)-(e)              707,708\n"
+            "99    7181         tr to 99/7971    114-95   4001(a)(4)(A), (B), (C)(ii)1966\n"
+            "99    1395m                         119-4    2207(a)-(e)              43, 44\n"
+            "99    320101       nt ed chg        119-25                            408\n</PRE>")
+    rows = olrc.parse_classification_table(page)
+    assert [(r.public_law, r.description, r.law_section, r.stat_page) for r in rows] == [
+        ("113-1", "", "1(a)", "3"),
+        ("113-7", "nt repealed EG Act", "1(a)(3)", "438"),
+        ("113-79", "", "1605(a)-(e)", "707,708"),
+        ("114-95", "tr to 99/7971", "4001(a)(4)(A), (B), (C)(ii)", "1966"),
+        ("119-4", "", "2207(a)-(e)", "43, 44"),
+        ("119-25", "nt ed chg", "", "408")]
