@@ -21,8 +21,8 @@ from ramseyer.parse.segment import Segmenter, walk
 
 # NOT_EXECUTED: the instruction reached no section text (a note, uncodified Act text, an unresolved target); it is
 # reported with the reason, never dropped. ALREADY_EXECUTED: current law already reads as the instruction would
-# leave it (the struck text is gone and the inserted text is there, or the insertion is already in place); the text
-# is left as it is.
+# leave it at the place it names (an insertion already next to its anchor, or a replacement that contains the old
+# text already around it); the text is left as it is.
 Status = Literal["CLEAN", "WARN", "AMBIGUOUS", "NOT_FOUND", "TARGET_MISSING", "STALE_BASELINE", "CONFLICT",
                  "UNPARSED", "NOT_APPLICABLE", "NOT_EXECUTED", "ALREADY_EXECUTED"]
 SEVERITY = ["CLEAN", "NOT_APPLICABLE", "WARN", "ALREADY_EXECUTED", "AMBIGUOUS", "STALE_BASELINE", "CONFLICT",
@@ -760,20 +760,19 @@ class Engine:
         return linear(Working.segments(unit)) if unit is not None else ""
 
     def _already_there(self, ins, scope, path, find, new_text):
-        """ALREADY_EXECUTED when, before this bill, the struck text was already gone and the text that replaces it was
-        already in the unit: current law already carries the amendment (an earlier law, or OLRC executing a
-        correction). If only an earlier instruction of this bill put the new text there, it is a CONFLICT."""
+        """A note for NOT_FOUND when the struck text is absent but its replacement already occurs in the unit.
+
+        Not ALREADY_EXECUTED: with the struck text gone there is no place to check, and the replacement occurs by
+        chance far too often (a deletion's replacement is part of the struck text, "and $13,300,000" -> "$13,300,000";
+        a common word, "contract"). Measured on the drafting-error benchmark (records/milestones.md, M6d)."""
         if len(_squash(new_text)) < MIN_EXECUTED:
             return None
         _, _, hits, _, err = self._locate(ins, scope, new_text)
         if err or not hits:
             return None
-        base = self._baseline_hay(path)
-        if find_all(base, new_text, [(0, len(base))])[0]:
-            return Result(ins.id, "ALREADY_EXECUTED", f"struck text absent and the inserted text is already there: "
-                          f"“{new_text[:80]}”", matches=len(hits))
-        return Result(ins.id, "CONFLICT", f"struck text absent; an earlier instruction in this bill inserted "
-                      f"“{new_text[:80]}”", matches=len(hits))
+        return Result(ins.id, "NOT_FOUND", f"quoted text is absent from the target: “{find[:80]}”; its replacement "
+                      f"“{new_text[:60]}” already occurs in the unit (an earlier execution, or chance)",
+                      matches=len(hits))
 
     @staticmethod
     def _in_place(hay, a, b, piece, join):

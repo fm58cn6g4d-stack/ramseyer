@@ -190,10 +190,12 @@ def test_unit_found_by_the_term_it_defines():
 
 # ---- already executed (M6d): current law already reads as the instruction would leave it ----
 
-def test_strike_insert_already_executed():
+def test_a_missing_quote_whose_replacement_occurs_stays_not_found():
+    # No place to check once the struck text is gone; the replacement's presence is only noted.
     text, res = run("Section 1 of title 99, United States Code, is amended in subsection (a) by striking “each term "
                     "of the omega program” and inserting “each term of the alpha program”.")
-    assert res[0].status == "ALREADY_EXECUTED", res[0].detail
+    assert res[0].status == "NOT_FOUND", res[0].detail
+    assert "already occurs in the unit" in res[0].detail
     assert "each term of the alpha program" in text
 
 
