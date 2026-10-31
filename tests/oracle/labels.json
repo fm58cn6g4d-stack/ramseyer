@@ -46,5 +46,95 @@
   "reason": "OLRC dropped the comma after the struck parenthetical with its References-in-Text footnote",
   "pred": "f01a1e7ec993527a",
   "after": "149db0fd44fefdeb"
+ },
+ "113-291 /us/usc/t10/s1129a": {
+  "stage": "editorial",
+  "reason": "OLRC printed the new section's number as “§§ 1129a.”",
+  "pred": "b5b01f3ecc4cb823",
+  "after": "63097c3c9216992d"
+ },
+ "113-291 /us/usc/t10/s429": {
+  "stage": "editorial",
+  "reason": "OLRC dropped a comma marked “So in original” together with its footnote",
+  "pred": "85d86e86eebe8f0e",
+  "after": "2db45b49a8e09e1b"
+ },
+ "113-66 /us/usc/t10/s1501": {
+  "stage": "editorial",
+  "reason": "OLRC added subpar. (D) but did not execute § 581(a)(1) and (2): (B) keeps its “and” and (C) ends with a period",
+  "pred": "565cd226a71a9a84",
+  "after": "c45d014c3ba03efc"
+ },
+ "114-153 /us/usc/t18/s1839": {
+  "stage": "editorial",
+  "reason": "OLRC kept the law's inner single quotation marks (‘Trademark Act of 1946’), with a “So in original” footnote",
+  "pred": "2d1cd71e039d58d2",
+  "after": "ca8db0c8c1832c4c"
+ },
+ "114-55 /us/usc/t49/s41742": {
+  "stage": "editorial",
+  "reason": "OLRC kept the “and” before “$93,000,000 for fiscal year 2015” that the law struck with those words",
+  "pred": "1af3c44b28ff5bb9",
+  "after": "3c6dd37e3eefcf73"
+ },
+ "114-94 /us/usc/t23/s120": {
+  "stage": "editorial",
+  "reason": "OLRC's note says § 1408(a)(1) inserted “or project delivery” after “or contracting”; R_after's text lacks it",
+  "pred": "e662b30e529f4f0c",
+  "after": "a794e82d4bbd62b1"
+ },
+ "114-94 /us/usc/t23/s607": {
+  "stage": "editorial",
+  "reason": "OLRC added a closing period that the section's text at R_before lacks (“to carry out this chapter”)",
+  "pred": "2a00172c3b1b6f2e",
+  "after": "39d8494640c66b60"
+ },
+ "115-254 /us/usc/t42/s5170a": {
+  "stage": "editorial",
+  "reason": "OLRC dropped the “and” that ends the new par. (5) as enacted (§ 1206(a)(3))",
+  "pred": "40c1e211020d5e3f",
+  "after": "23f41a7f70fe95f8"
+ },
+ "116-171 /us/usc/t38/s119": {
+  "stage": "editorial",
+  "reason": "R_after carries a stray “”.” after subsec. (a)",
+  "pred": "2fbcb9a1e6c4e346",
+  "after": "33f9545be64f3576"
+ },
+ "116-260 /us/usc/t33/s467": {
+  "stage": "editorial",
+  "reason": "R_after holds clause (iii) of par. (4)(A) twice",
+  "pred": "0208431094d9d3be",
+  "after": "7c1163f18162592d"
+ },
+ "116-260 /us/usc/t42/s16273": {
+  "stage": "editorial",
+  "reason": "R_after reads “180 days December 27, 2020,”, dropping “after”",
+  "pred": "676ab9ffbcc8e217",
+  "after": "a3f216fb631a0b9c"
+ },
+ "116-260 /us/usc/t42/s8287a": {
+  "stage": "editorial",
+  "reason": "R_after reads “maintenance expense.” where the law, and OLRC's own amendment note, say “expenses”",
+  "pred": "d606b7b9933c707a",
+  "after": "004092a6b5b7865d"
+ },
+ "117-263 /us/usc/t10/s4025": {
+  "stage": "editorial",
+  "reason": "OLRC carried a stray closing quotation mark after “development that—”",
+  "pred": "0c734640cb2f6fad",
+  "after": "666e8d8aa46df09f"
+ },
+ "117-81 /us/usc/t10/s2714": {
+  "stage": "editorial",
+  "reason": "OLRC carried a stray closing quotation mark (“atoms.”” ) and set the new catchline in title case",
+  "pred": "092a5e3d1025204f",
+  "after": "962fd06681b80d62"
+ },
+ "117-81 /us/usc/t10/s2715": {
+  "stage": "editorial",
+  "reason": "R_after reads “section:the”, a missing space",
+  "pred": "97d2afee9cbbcc18",
+  "after": "ef05ab9bc3bde4d3"
  }
 }
