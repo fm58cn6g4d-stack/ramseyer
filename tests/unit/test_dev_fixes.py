@@ -303,3 +303,13 @@ def test_inserting_a_quoted_term_keeps_its_marks():
     text, res = run("Section 1 of title 99, United States Code, is amended by inserting “‘Parapan American’,” after "
                     "“‘Pan-American’,”.", xml)
     assert res[0].status == "CLEAN" and "“Pan-American”, “Parapan American”, and “Beta”" in text
+
+
+def test_an_effective_on_lead_in_delays_its_items():
+    # Pub. L. 117-151 § 2(i)(1) (11 U.S.C. 1182): a two-year sunset was executed at once.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(i) Sunsets.—\n(1) In general.—Effective on the date that is 2 years after the date of enactment "
+         "of this Act—\n(A) section 1(1) of title 99, United States Code, is amended to read as follows:\n“(1) Alpha.”.\n"
+         "(j) Other.—Section 2 of title 99, United States Code, is amended by striking “b”.\n")
+    ins = parse_text(t).instructions
+    assert [any(f.startswith("delayed effective date") for f in i.flags) for i in ins] == [True, False]
