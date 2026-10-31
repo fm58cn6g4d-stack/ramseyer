@@ -142,6 +142,7 @@ SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|
 SUCH_SECTION = re.compile(rf"^(?:The (?:section )?heading (?:of|for) )?"
                           rf"(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           rf"[Ss]uch section(?: (?P<num>{SECTION_NUM}))?\b")
+SUCH_SUBSECTION_OF = re.compile(rf"^(?P<unit>[Pp]aragraph|[Ss]ubparagraph|[Cc]lause)s? (?P<labels>{LABELS}) of such subsection\b")
 SUCH_SECTION_NUM = re.compile(rf"\b[Ss]uch section (?P<num>\d+[\w\u2013.-]*?)(?=[,\s]|$)")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
@@ -326,6 +327,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
             ctx.target.section = m["num"]
         for u in reversed(list(re.finditer(SUCH_UNIT_OF, m["chain"]))):     # outermost unit is named last
             _set_path(ctx, u["unit"].lower(), u["labels"])
+        ctx.qualifiers, ctx.is_target_set = [], True
+    elif (m := SUCH_SUBSECTION_OF.match(h.strip())) and (last := ctx.memory.get("last")) is not None and \
+            last.path:
+        # "Paragraph (2) of such subsection is amended" (Pub. L. 116-158 § 1(b)(2), 50 U.S.C. 3955): the subsection
+        # the last instruction reached, in its section.
+        ctx.target = last.model_copy(deep=True)
+        ctx.target.path, ctx.path = [], [(0, last.path[0])]
+        _set_path(ctx, m["unit"].lower(), m["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := SUCH_SECTION_NUM.search(h)) and (ctx.memory.get("last") is not None or _usc_base(ctx) is not None):
         # "In subsection (a)(2) of such section 710a, as so redesignated—": the section named in the title in context.

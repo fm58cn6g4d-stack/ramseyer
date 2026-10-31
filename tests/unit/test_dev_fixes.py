@@ -274,3 +274,14 @@ def test_the_heading_of_such_section():
          "inserting “and beta” after “alpha”.\n")
     last = parse_text(t).instructions[-1]
     assert (last.op, last.target.title, last.target.section, last.target.path) == ("AMEND_HEADING", "99", "1", [])
+
+
+def test_paragraph_of_such_subsection():
+    # Pub. L. 116-158 § 1(b)(2) (50 U.S.C. 3955): "Paragraph (2) of such subsection is amended" had no target.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 1. X.\n(a) Termination.—Subsection (a)(1) of section 3 of title 99, United States Code, is amended by "
+         "striking “z”.\n(b) Covered.—\n(1) Alpha.—Paragraph (1) of subsection (b) of such section is amended by "
+         "striking “a”.\n(2) Beta.—Paragraph (2) of such subsection is amended—\n(A) in subparagraph (A), by striking "
+         "“b”; and\n(B) by adding at the end the following:\n“(C) Gamma.”.\n")
+    ins = parse_text(t).instructions
+    assert [(i.target.section, i.target.path) for i in ins[2:]] == [("3", ["(b)", "(2)", "(A)"]), ("3", ["(b)", "(2)"])]
