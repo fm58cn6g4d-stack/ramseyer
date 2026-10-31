@@ -475,15 +475,12 @@ def block_lines(block: str) -> list[str]:
             s = s[1:]
         lines.append(s)
     if lines:
-        lines[-1] = re.sub(r"”[\s.;,:]*(?:and|or)?[\s.;,:]*$", "", lines[-1])
-    # Inner quotation marks are ‘ ’ in a bill, so a ” still unmatched on a line closes the block a second time: a
-    # drafting slip OLRC drops (“... Hawaii.”.” in the middle of a block, Pub. L. 116-315 § 7002; “... general.”;”;”,
-    # Pub. L. 117-263 § 502).
+        # The block's own close, however often the law repeats it (“... general.”;”;”, Pub. L. 117-263 § 502).
+        lines[-1] = re.sub(r"(?:”[\s.;,:]*)+(?:and|or)?[\s.;,:]*$", "", lines[-1])
+    # A ” still unmatched on a line in the middle of a block is the law's own text and is kept, as OLRC prints it
+    # with "So in original" (38 U.S.C. 119, Pub. L. 116-171; Espen, 2026-10-31). Where OLRC drops such a mark
+    # (Pub. L. 116-315 § 7002, 38 U.S.C. 547) it departs from the law's text.
     lines = [x for x in lines if not x.startswith(TABLE_OMITTED)]   # parse/xmltext.py: never statute text
-    for i, x in enumerate(lines):
-        while x.count("”") > x.count("“") and re.search(r"”[\s.;,:]*$", x):
-            x = re.sub(r"”[\s.;,:]*$", "", x).rstrip()
-        lines[i] = x
     return [nested_to_double(x) for x in lines if x]
 
 

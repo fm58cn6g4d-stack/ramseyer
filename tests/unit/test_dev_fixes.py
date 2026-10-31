@@ -48,14 +48,15 @@ def test_a_plural_possessive_inside_a_nested_quotation():
         "the term “State” includes the Indians’ lands"
 
 
-def test_a_closing_quotation_mark_repeated_by_the_drafter_is_dropped():
-    # Pub. L. 116-315 § 7002 closes a quoted block twice in its middle (“... Hawaii.”.” then “(6) ...”); Pub. L.
-    # 117-263 § 502 ends one “... general.”;”;”. OLRC drops the extra marks.
+def test_a_stray_closing_mark_inside_a_block_is_kept_and_a_repeated_close_dropped():
+    # A ” the law leaves in the middle of a block is its own text and is kept (38 U.S.C. 119, Pub. L. 116-171; Espen,
+    # 2026-10-31: literal marks). A close the law repeats at the block's end is the block's close (“... general.”;”;”,
+    # Pub. L. 117-263 § 502).
     text, _ = run("Section 1 of title 99, United States Code, is amended by adding at the end the following:\n"
                   "“(c) Definitions.—In this section:\n“(1) The term ‘alpha’ means the alpha of the State.”.\n"
                   "“(2) The term ‘beta’ means beta.”;”;")
-    assert "the alpha of the State. (2) The term “beta” means beta." in text and "”" not in text.split("(c)")[1] \
-        .replace("“alpha”", "").replace("“beta”", "")
+    assert "the alpha of the State.”. (2) The term “beta” means beta." in text
+    assert not text.rstrip().endswith("”;")
 
 
 def test_an_inserted_em_dash_takes_no_space_before_it():
