@@ -243,6 +243,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
+    # "Effective as of November 25, 2015, and as if included therein as enacted, the ... Act ... is amended as
+    # follows:" (Pub. L. 114-328 § 1081(c)): the date clause names no target; left in, it hid the Act, and the items
+    # below fell back to the last citation (title 10).
+    eff = re.match(r"^\s*[Ee]ffective (?:as of|on) (?:[A-Z][a-z]+ \d{1,2}, \d{4}|the date [^,]+)"
+                   r"(?:, and as if included (?:therein|in [^,]+) (?:as enacted|on the date of [^,]+))?,\s*", h)
+    if eff:
+        h = h[eff.end():]
+        h = h[:1].upper() + h[1:]                                  # what remains starts the sentence
     h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
     # "Subsection (b) and subsection (d) of section 311103 ... are amended" is "Subsections (b) and (d) of ..." (Pub. L.
     # 114-289 § 501(d)); read as the last unit alone, the edit fell on the whole section.

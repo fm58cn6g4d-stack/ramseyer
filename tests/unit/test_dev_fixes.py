@@ -254,3 +254,13 @@ def test_subsection_aa_follows_subsection_z():
          "States Code, is amended by striking the second sentence.\n")
     ins = parse_text(t).instructions
     assert [(i.id, i.op) for i in ins][-1] == ("sec2.aa#0", "STRIKE")
+
+
+def test_an_effective_date_clause_does_not_hide_the_act_amended():
+    # Pub. L. 114-328 § 1081(c)(6): "Section 1079(a) is amended" of the FY2016 NDAA was applied to 10 U.S.C. 1079.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(b) Gamma.—Section 2218 of title 10, United States Code, is amended by striking “a”.\n"
+         "(c) Alpha.—Effective as of November 25, 2015, and as if included therein as enacted, the Beta Act of 2015 "
+         "(Public Law 114–92) is amended as follows:\n(1) Section 563(a) is amended by striking “b”.\n")
+    last = parse_text(t).instructions[-1]
+    assert (last.target.kind, last.target.act, last.target.section) == ("act", "Beta Act of 2015", "563")
