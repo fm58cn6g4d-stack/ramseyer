@@ -63,7 +63,9 @@ def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True)
 
 def _head_line(el, in_block=False) -> str:
     enum = (el.findtext("enum") or "").strip()
-    header = " ".join("".join(el.find("header").itertext()).split()) if el.find("header") is not None else ""
+    # Quoted words in a header keep their marks ("(a) Certain “hit-to-kill” technology", Pub. L. 114-92 § 1671, 10 U.S.C.
+    # 130h): inside a quoted block they are the block's inner quotation, as in its text.
+    header = " ".join(inline(el.find("header"), inner=bool(in_block)).split()) if el.find("header") is not None else ""
     tag = el.tag
     if tag in HEADINGS:
         return f"{HEADINGS[tag]} {enum.rstrip('.')}—{header.upper() if tag in ('division', 'title') else header}"
@@ -90,7 +92,7 @@ def _render(el, lines: list[str], in_block: bool) -> None:
         else:
             enum = (el.findtext("enum") or "").strip()
             header_el = el.find("header")
-            header = " ".join("".join(header_el.itertext()).split()) if header_el is not None else ""
+            header = " ".join(inline(header_el, inner=q).split()) if header_el is not None else ""   # quotes kept
             line = enum
             if header:
                 line += f" {header}.—"

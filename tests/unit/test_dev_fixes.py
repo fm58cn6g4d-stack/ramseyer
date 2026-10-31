@@ -327,3 +327,14 @@ def test_a_drafting_slip_is_applied_by_intent_and_warned():
     xml_text, res = run("(a) Alpha.—Section 1 of title 99, United States Code, is amended by striking “ at least annually”.\n"
                         "(c) Beta.—Section (a) of such section is amending by inserting “every” after “review each”.")
     assert [r.status for r in res] == ["CLEAN", "WARN"] and "review each every term" in xml_text
+
+
+def test_quoted_words_in_a_header_keep_their_marks():
+    # Pub. L. 114-92 § 1671 (10 U.S.C. 130h): "(a) Certain “Hit-to-kill” technology" lost its marks.
+    from lxml import etree
+    from ramseyer.parse.xmltext import _render
+    el = etree.fromstring('<subsection><enum>(a)</enum><header>Certain <quote>alpha-beta</quote> gamma</header>'
+                          '<text>Delta.</text></subsection>')
+    lines = []
+    _render(el, lines, True)
+    assert lines[0] == "(a) Certain ‘alpha-beta’ gamma.—Delta."
