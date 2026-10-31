@@ -204,3 +204,8 @@ def test_materialized_release_points_are_stamped_with_the_code_that_built_them(t
 
 def test_unicode_encoding_never_decides_a_comparison():
     assert harness.normalize("Attaché Program") == harness.normalize("Attaché Program")
+
+
+def test_a_fraction_is_its_digits():
+    assert harness.normalize("the first 5 ½ percent") == harness.normalize("the first 5 1/2 percent")
+    assert harness.normalize("multiplying 7⁄10") == harness.normalize("multiplying 7/10")

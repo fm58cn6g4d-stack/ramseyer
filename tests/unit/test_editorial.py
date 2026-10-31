@@ -170,3 +170,14 @@ def test_a_supplied_heading_on_a_unit_the_law_replaces_whole():
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
     lost = [(["(b)"], "“(b) Refusal of registration.—The applicant shall reply.”")]
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=lost)) is None
+
+
+def test_a_bracketed_repealed_placeholder_and_this_clause():
+    # 10 U.S.C. 652: "[(5) Repealed. Pub. L. 114–92, ...]"; 33 U.S.C. 2263: "the date of enactment of this clause".
+    pred = sec(sub("a", "Alpha.") + sub("b", "Beta."))
+    after = sec(sub("a", "Alpha.") + sub("b", "Beta.") +
+                "<p>[(5) Repealed. Pub. L. 1–2, div. A, title V, § 524(a)(2), Nov. 25, 2015, 129 Stat. 818.]</p>")
+    assert kind(pred, after, Context(pl="1-2")) is not None
+    after2 = sec(sub("a", "carried out after June 10, 2014, or later"))
+    pred2 = sec(sub("a", "carried out after the date of enactment of this clause, or later"))
+    assert kind(pred2, after2, Context(pl="1-2", date_of=lambda act: "2014-06-10" if act is None else None)) is not None

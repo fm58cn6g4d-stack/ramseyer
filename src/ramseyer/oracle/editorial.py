@@ -21,8 +21,8 @@ from ramseyer.data.indexer import text_of
 from ramseyer.oracle.harness import normalize
 
 DATE_PHRASE = re.compile(
-    r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph|subparagraph|sentence|"
-    r"title|subtitle|division|part|chapter)|the (?P<act>[A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year "
+    r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph|subparagraph|clause|"
+    r"subclause|item|sentence|title|subtitle|division|part|chapter)|the (?P<act>[A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year "
     r"\d{4})?(?:, \d{4})?))")
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
           "November", "December")
@@ -241,7 +241,8 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
     placeholder = False
     if ctx is not None:                                 # "(f) Repealed. Pub. L. 113–76, ..., 128 Stat. 424"
         # OLRC may set the placeholder as the unit's heading, which texts() lower-cases.
-        stripped = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?",
+        # It may be bracketed: "[(5) Repealed. Pub. L. 114–92, ..., 129 Stat. 818.]" (10 U.S.C. 652).
+        stripped = re.sub(rf"\[?\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?\]?",
                           "", after, flags=re.I)
         placeholder = stripped != after
         after = re.sub(r"\s+", " ", stripped).strip()

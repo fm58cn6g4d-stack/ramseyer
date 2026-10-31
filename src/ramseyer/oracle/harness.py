@@ -61,8 +61,10 @@ def normalize(text: str | None) -> str | None:
     """Whitespace, quote style and Unicode encoding never decide a comparison; every other character does."""
     if text is None:
         return None
-    # One encoding of each character: "Attaché" with a combining accent is "Attaché" (31 U.S.C. 316).
-    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text).translate(QUOTES)).strip()
+    # One encoding of each character: "Attaché" with a combining accent is "Attaché" (31 U.S.C. 316); a fraction is
+    # its digits, "½" and "1⁄2" being "1/2" (2 U.S.C. 901a, 5 U.S.C. 8415).
+    text = re.sub(r"[\u00bc-\u00be\u2150-\u215e]", lambda m: unicodedata.normalize("NFKC", m.group()), text)
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text).replace("\u2044", "/").translate(QUOTES)).strip()
 
 
 def section_text(ix: Index, identifier: str) -> tuple[str | None, str]:
