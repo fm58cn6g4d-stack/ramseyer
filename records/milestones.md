@@ -886,10 +886,10 @@ The 120 CLEAN predictions wrong in substance at the first dev measurement were c
 The dev set's 9,589 classification rows are 7,746 distinct law-section targets, less 134 pending at the first measurement: 7,612.
 
 The 27 remaining (plus 1 off target):
-- 15 are OLRC departing from the literal instruction with no note explaining it (a skipped clause, a corrected comma, a stray quotation mark, "180 days December 27, 2020"). They count as wrong until hand-labelled; `tests/oracle/labels.json` is tier 3, so they go to Espen as a separate proposal.
+- 15 were first taken as OLRC departing from the literal instruction. On review (#9), 12 are labelled (a skipped clause, a corrected comma, "180 days December 27, 2020", ...); 3 (38 U.S.C. 119, 18 U.S.C. 1839, 10 U.S.C. 4025) turn on whether a law's own quotation marks are kept literally, a question for Espen, and count as wrong meanwhile.
 - 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them.
 - 9 others: "this part" translated to "this subchapter" (no Act-unit to Code-unit map yet), a subsection heading the engine built into the text, an "Omitted" placeholder, the LIBOR Act citation the resolver does not know, 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)), 42 U.S.C. 1395m and 300u-11, and #110 (unclear).
-Without the 15 OLRC departures: 12 of 1,461 (0.82%) on target.
+With the 12 labels of #9: 15 of 1,461 (1.03%) on target, just over the 1% target until the literal-marks question is settled.
 
 ### Step 3, part 1: GPO as a second reader (2026-10-31)
 
