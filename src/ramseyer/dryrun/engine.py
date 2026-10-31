@@ -1172,7 +1172,9 @@ class Engine:
         if ins.new_text is None:
             return Result(ins.id, "UNPARSED", "insertion with no quoted text to insert")
         new = nested_to_double(ins.new_text)
-        if "\n" in new or new.startswith("\u201c"):
+        # A quoted block is one the law opens with “; a “ the conversion made from the law's ‘ is the inserted text's own
+        # quotation (inserting “‘Parapan American’,” lost its marks and comma, Pub. L. 116-189 § 4, 36 U.S.C. 220506).
+        if "\n" in new or ins.new_text.startswith("\u201c"):
             new = " ".join(block_lines(new))
         new = self._tr(new)
         positional = any(f.startswith("anchor is positional") for f in ins.flags)

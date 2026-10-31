@@ -295,3 +295,11 @@ def test_through_the_period_skips_a_citation_period():
     text, res = run("Subsection (a) of section 1 of title 99, United States Code, is amended by striking “a copy of” "
                     "and all that follows through the period and inserting “a summary of the beta report.”.", xml)
     assert res[0].status == "CLEAN" and "include a summary of the beta report. The" in text and "4567" not in text
+
+
+def test_inserting_a_quoted_term_keeps_its_marks():
+    # Pub. L. 116-189 § 4 (36 U.S.C. 220506): inserting “‘Parapan American’,” after “‘Pan-American’,”.
+    xml = XML.replace("Reviews shall be made at least annually.", "The words “Alpha”, “Pan-American”, and “Beta” are reserved.")
+    text, res = run("Section 1 of title 99, United States Code, is amended by inserting “‘Parapan American’,” after "
+                    "“‘Pan-American’,”.", xml)
+    assert res[0].status == "CLEAN" and "“Pan-American”, “Parapan American”, and “Beta”" in text
