@@ -29,6 +29,12 @@ MONTHS = ("January", "February", "March", "April", "May", "June", "July", "Augus
 # "section 4 of the Indian Self-Determination and Education Assistance Act" -> "section 5304 of title 25"
 ACT_REF = re.compile(r"section (\d+[A-Za-z]*(?:[–-]\d+[A-Za-z]*)?)((?:\([^()\s]+\))*) of (the [A-Z][^,;:()\[\]]*?Act"
                      r"(?: of \d{4})?)")
+# "section 8(o)(19) of the United States Housing Act of 1937 (42 U.S.C. 1437f(o)(19))", "the Act of March 4, 1940 (7
+# U.S.C. 331)": the law prints the Code citation itself, and OLRC sets "section 1437f(o)(19) of title 42" in its place.
+PAREN_REF = re.compile(r"(?:section \d+[A-Za-z]*(?:[–-]\d+[A-Za-z]*)?(?:\([^()\s]+\))* of (?:title [IVXLC\d]+ of )?"
+                       r"the [A-Z][^,;:()\[\]]*?Act(?: of \d{4})?|the Act of [A-Z][a-z]+ \d{1,2}, \d{4}) "
+                       r"\((?:Public Law [^;()]+; )?(?:\d+ Stat\. [\d–-]+; )?(?P<t>\d+) U\.S\.C\. "
+                       r"(?P<s>\d+[\w–-]*?)(?P<sub>(?:\([^()\s]+\))*)\)")
 UNIT = ("section", "subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem")
 
 
@@ -174,6 +180,10 @@ def _pattern(pred: str, ctx: Context | None) -> re.Pattern:
             spans.append((m.start(), m.end(),
                           f"(?:{re.escape(f'{MONTHS[mo - 1]} {d}, {y}')},?|{re.escape(m.group(0))})"))
     if ctx is not None:
+        for m in PAREN_REF.finditer(pred):
+            where = f"(?:title {re.escape(m['t'])}" + ("|this title)" if m["t"] == ctx.title else ")")
+            spans.append((m.start(), m.end(), f"(?:{re.escape(m.group(0))}|section {re.escape(m['s'] + m['sub'])} of "
+                                              f"{where})"))
         for m in ACT_REF.finditer(pred):
             if any(s < m.end() and m.start() < e for s, e, _ in spans):
                 continue

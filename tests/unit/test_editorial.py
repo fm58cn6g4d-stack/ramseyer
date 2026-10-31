@@ -181,3 +181,15 @@ def test_a_bracketed_repealed_placeholder_and_this_clause():
     after2 = sec(sub("a", "carried out after June 10, 2014, or later"))
     pred2 = sec(sub("a", "carried out after the date of enactment of this clause, or later"))
     assert kind(pred2, after2, Context(pl="1-2", date_of=lambda act: "2014-06-10" if act is None else None)) is not None
+
+
+def test_an_act_reference_with_its_own_code_citation():
+    # 38 U.S.C. 2021, 7 U.S.C. 3195, 4 U.S.C. 7 (dev 2): the law prints the Code citation; OLRC sets it in place.
+    pred = sec(sub("a", "pursuant to section 8(o)(19) of the Alpha Act of 1937 (42 U.S.C. 1437f(o)(19)) or the"))
+    after = sec(sub("a", "pursuant to section 1437f(o)(19) of title 42 or the"))
+    assert kind(pred, after, Context(pl="1-2", title="38")) is not None
+    assert kind(pred, sec(sub("a", "pursuant to section 1437g(o)(19) of title 42 or the")),
+                Context(pl="1-2", title="38")) is None                    # another section: not the law's citation
+    pred = sec(sub("a", "employees subject to the Act of March 4, 1940 (7 U.S.C. 331);"))
+    assert kind(pred, sec(sub("a", "employees subject to section 331 of this title;")),
+                Context(pl="1-2", title="7")) is not None
