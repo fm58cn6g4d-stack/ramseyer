@@ -49,7 +49,11 @@ def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True)
             pass
         elif c.tag == "term":            # defined terms print in quotes
             o, cl = ("\u2018", "\u2019") if inner else (quote_open, quote_close)
-            parts.append(o + inline(c, inner=True, top=False) + cl)
+            # A space at a term's edge is markup, not the term: "<term>promotion board </term>means" (Pub. L.
+            # 116-283 § 505) prints “promotion board” means.
+            t = inline(c, inner=True, top=False)
+            lead, trail = t[:len(t) - len(t.lstrip())], t[len(t.rstrip()):]
+            parts.append(lead + o + t.strip() + cl + trail)
         else:
             parts.append(inline(c, inner=inner, top=False))
         parts.append(c.tail or "")

@@ -816,6 +816,15 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
                 "STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH", "ADD_END"):
             pflags.append(f"heading edit ({op})")
             op = "AMEND_HEADING"
+        elif op == "REPLACE_UNIT" and any(qq.endswith("heading") or qq == "heading" for qq in ictx.qualifiers) and \
+                parsed.get("new_text") and "\n" not in parsed["new_text"].strip():
+            # "The heading of such section 1005 is amended to read as follows: “§ 1005. Army, ...”." (Pub. L.
+            # 116-283 § 925(k)(1)(B)): the heading alone, never the whole unit. A section's number is not its heading.
+            line = re.sub(r"^“|”[.;]?$", "", parsed.pop("new_text").strip()).strip()
+            parsed["replace"] = re.sub(r"^§+\s*[\w.\u2013-]+\.\s*", "", line)
+            parsed["unit"] = "heading" if ictx.path else "section heading"
+            pflags.append("heading replaced")
+            op = "AMEND_HEADING"
         if listed and TRAILING_OK.match(rest.rstrip(":")):
             for j, d in enumerate(listed):
                 out.append(Instruction(**{**base, "id": f"{base['id']}.{j}"}, target=d.target_out(), op=op,

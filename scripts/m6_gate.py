@@ -108,6 +108,9 @@ def main() -> int:
     ap.add_argument("--set", choices=sorted(SETS), default="tuning")
     ap.add_argument("--resolve-before", action="store_true",
                     help="resolve each law against its R_before release point instead of the pinned index (tuning)")
+    ap.add_argument("--rerun", type=int, default=0,
+                    help="a repeat run N of the same code and data, with its own checkpoint, outputs (tagged _rerunN) "
+                         "and freshly built release points, to check that a run reproduces (compare_runs.py)")
     ap.add_argument("--refresh-labels", action="store_true",
                     help="re-stamp the hashes of hand labels on this set after checking each difference by hand")
     args = ap.parse_args()
@@ -123,6 +126,8 @@ def main() -> int:
     if args.law:
         corpus.laws = [corpus.law(pl) for pl in args.law]
         tag += "_laws"
+    if args.rerun:
+        tag += f"_rerun{args.rerun}"
     if args.set.startswith("govinfo") and not args.heldout:
         # Sections outside the answer key are fetched from the same edition on demand (red team F6).
         open_index = lru_cache(maxsize=None)(lambda label: GovInfoOverlay(store.index(label, db), int(label[-4:]), f,
@@ -131,7 +136,8 @@ def main() -> int:
         # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
         # One cache directory per set: a set may need more titles at a release point than another set built there.
         open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
-                                    {rp.label: rp.titles for rp in corpus.release_points}, db / args.set,
+                                    {rp.label: rp.titles for rp in corpus.release_points},
+                                    db / (args.set + (f"_rerun{args.rerun}" if args.rerun else "")),
                                     log=lambda s: None)
     else:
         open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
@@ -285,6 +291,12 @@ def main() -> int:
             "statuses": dict(collections.Counter(tr.result.status if tr.result else
                                                  f"unattributed:{tr.resolution.outcome}" for tr in run.traces)),
             "labels": law_labels,
+            # Per section graded or predicted: hashes of the predicted, R_before and R_after texts, so two runs can be
+            # compared section by section (scripts/compare_runs.py).
+            "hashes": {o.identifier: [harness.text_hash(run.working[o.identifier].render())
+                                      if o.identifier in run.working else None,
+                                      harness.text_hash(harness.section_text(before, o.identifier)[0]),
+                                      harness.text_hash(harness.section_text(after, o.identifier)[0])] for o in outs},
             "traces": [{"pl": law.pl, "section": tr.section, "id": tr.instruction.id, "op": tr.instruction.op,
                         "unit": tr.instruction.unit, "find": tr.instruction.find, "new": tr.instruction.new_text,
                         "replace": tr.instruction.replace, "flags": tr.instruction.flags,
@@ -300,7 +312,7 @@ def main() -> int:
     for path in sorted(SRC.rglob("*.py")) + [Path(__file__), manifest, touched_path, harness.LABELS]:
         if path.exists():
             digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
-    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump]).encode())
+    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump, args.rerun]).encode())
     # The data, too: the release points graded against, the pinned index the resolver reads, OLRC's classification
     # tables and each enrolled bill as fetched (the materialized release points derive from the history and the code).
     digest.update(json.dumps(data_fingerprint(cfg, args.set, db), sort_keys=True).encode())

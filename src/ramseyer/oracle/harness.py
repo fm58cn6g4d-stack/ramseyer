@@ -11,6 +11,7 @@ import collections
 import hashlib
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -57,10 +58,11 @@ class Report(BaseModel):
 
 
 def normalize(text: str | None) -> str | None:
-    """Whitespace and quote style never decide a comparison; every other character does."""
+    """Whitespace, quote style and Unicode encoding never decide a comparison; every other character does."""
     if text is None:
         return None
-    return re.sub(r"\s+", " ", text.translate(QUOTES)).strip()
+    # One encoding of each character: "Attaché" with a combining accent is "Attaché" (31 U.S.C. 316).
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", text).translate(QUOTES)).strip()
 
 
 def section_text(ix: Index, identifier: str) -> tuple[str | None, str]:

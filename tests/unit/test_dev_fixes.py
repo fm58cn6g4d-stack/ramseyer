@@ -217,3 +217,21 @@ def test_an_apostrophe_inside_a_word_is_the_codes():
     from ramseyer.parse.normalize import normalize
     n = normalize("the alpha's beta, ``gamma'' and 'delta'")
     assert n.text == "the alpha’s beta, “gamma” and 'delta'" and len(n.offsets) == len(n.text) + 1
+
+
+def test_a_space_at_a_defined_terms_edge_goes_outside_its_marks():
+    # Pub. L. 116-283 § 505: "<term>promotion board </term>means". Synthetic placeholder text.
+    from lxml import etree
+    from ramseyer.parse.xmltext import inline
+    el = etree.fromstring("<text>the term <term>alpha beta </term>means gamma</text>")
+    assert inline(el) == "the term “alpha beta” means gamma"
+    assert inline(etree.fromstring("<text>striking <quote> and beta</quote></text>")) == "striking “ and beta”"
+
+
+def test_the_heading_of_a_section_amended_to_read_replaces_the_heading_only():
+    # Pub. L. 116-283 § 925(k)(1)(B) (37 U.S.C. 1005): read as a whole-section replacement, the text was lost.
+    text, res = run("(a) In general.—Section 1 of title 99, United States Code, is amended by striking “review each "
+                    "term” and inserting “review every term”.\n(b) Heading.—The heading of such section 1 is amended "
+                    "to read as follows:\n“§ 1. Alpha rule”.")
+    assert [r.status for r in res] == ["CLEAN", "CLEAN"]
+    assert "Alpha rule" in text and "review every term" in text

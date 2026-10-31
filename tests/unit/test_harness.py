@@ -188,3 +188,19 @@ def test_a_section_the_law_has_not_reached_at_r_after_is_not_graded(tmp_path):
     rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
     assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "unexecuted", "s3": "mismatch"}
     assert (rep.metrics["targets"], rep.metrics["unexecuted"]) == (1, 1)
+
+
+def test_materialized_release_points_are_stamped_with_the_code_that_built_them(tmp_path):
+    # A file built by other code is never reused (review of #10): it sits under another stamp and is removed.
+    from ramseyer.oracle.history import ReleaseIndexes, code_stamp
+    stale = tmp_path / "code-000000000000"
+    stale.mkdir()
+    (stale / "1-1.sqlite").write_text("x")
+    (tmp_path / "1-2.sqlite").write_text("x")
+    ri = ReleaseIndexes(None, {}, tmp_path, log=lambda s: None)
+    assert ri.dir == tmp_path / f"code-{code_stamp()}" and ri.dir.is_dir()
+    assert not stale.exists() and not (tmp_path / "1-2.sqlite").exists()
+
+
+def test_unicode_encoding_never_decides_a_comparison():
+    assert harness.normalize("Attaché Program") == harness.normalize("Attaché Program")
