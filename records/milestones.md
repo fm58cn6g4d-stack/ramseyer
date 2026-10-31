@@ -903,7 +903,7 @@ With the 12 labels of #9: 15 of 1,461 (1.03%) on target, just over the 1% target
 
 GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 remaining false cleans and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
 
-### Step 2: the test set, measured once (2026-10-31, code at 27b92e1's parent)
+### Step 2: the test set, measured once (2026-10-31, code at a97de33)
 
 `scripts/m6_gate.py --set history_test`: 280 laws, 2 h 15 min. Measured only; no case was inspected. Aggregates:
 
