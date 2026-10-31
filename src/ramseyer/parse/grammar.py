@@ -138,7 +138,9 @@ SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})?
                   r"(?:\s*\((?P<paren>\d+ U\.S\.C\. [^()]*(?:\([^()]*\)[^()]*)*)\))?")
 SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause)s? (?P<labels>{LABELS}) of "
 # "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
-SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
+# "The heading of such section is amended" (Pub. L. 114-328 § 1134(c)(1), 5 U.S.C. 5524a) names it too.
+SUCH_SECTION = re.compile(rf"^(?:The (?:section )?heading (?:of|for) )?"
+                          rf"(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           rf"[Ss]uch section(?: (?P<num>{SECTION_NUM}))?\b")
 SUCH_SECTION_NUM = re.compile(rf"\b[Ss]uch section (?P<num>\d+[\w\u2013.-]*?)(?=[,\s]|$)")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"

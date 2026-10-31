@@ -209,3 +209,9 @@ def test_unicode_encoding_never_decides_a_comparison():
 def test_a_fraction_is_its_digits():
     assert harness.normalize("the first 5 ½ percent") == harness.normalize("the first 5 1/2 percent")
     assert harness.normalize("multiplying 7⁄10") == harness.normalize("multiplying 7/10")
+
+
+def test_a_transfer_and_amendment_note_is_a_delayed_amendment():
+    # 10 U.S.C. 930 (Pub. L. 114-328 § 5443): effective on a date the President designates.
+    assert harness.DELAYED_NOTE.match("Transfer and Amendment of Section\nPub. L. 114–328 ... provided that, effective")
+    assert not harness.DELAYED_NOTE.match("Amendments\n2016—Pub. L. 114–328 substituted")

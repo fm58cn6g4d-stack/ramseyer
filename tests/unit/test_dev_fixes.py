@@ -264,3 +264,13 @@ def test_an_effective_date_clause_does_not_hide_the_act_amended():
          "(Public Law 114–92) is amended as follows:\n(1) Section 563(a) is amended by striking “b”.\n")
     last = parse_text(t).instructions[-1]
     assert (last.target.kind, last.target.act, last.target.section) == ("act", "Beta Act of 2015", "563")
+
+
+def test_the_heading_of_such_section():
+    # Pub. L. 114-328 § 1134(c)(1) (5 U.S.C. 5524a): the catchline edit had no target and was never applied.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(a) In general.—Subsection (a) of section 1 of title 99, United States Code, is amended by "
+         "striking “a”.\n(c) Clerical amendments.—\n(1) Section heading.—The heading of such section is amended by "
+         "inserting “and beta” after “alpha”.\n")
+    last = parse_text(t).instructions[-1]
+    assert (last.op, last.target.title, last.target.section, last.target.path) == ("AMEND_HEADING", "99", "1", [])

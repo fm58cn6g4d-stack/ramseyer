@@ -134,7 +134,8 @@ def other_laws(law: CorpusLaw, before: Index, after: Index, ident: str) -> list[
     return sorted({f"{m.group(1)}-{m.group(2)}" for e in new if (m := PL_CITE.match(e))} - {law.pl})
 
 
-DELAYED_NOTE = re.compile(r"Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"
+# "Transfer and Amendment of Section" too (Pub. L. 114-328 § 5443, 10 U.S.C. 930, effective on a date the President sets).
+DELAYED_NOTE = re.compile(r"(?:Transfer and )?Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"
                           r"Items?)\b")
 
 
