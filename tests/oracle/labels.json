@@ -65,12 +65,6 @@
   "pred": "565cd226a71a9a84",
   "after": "c45d014c3ba03efc"
  },
- "114-153 /us/usc/t18/s1839": {
-  "stage": "editorial",
-  "reason": "OLRC kept the law's inner single quotation marks (‘Trademark Act of 1946’), with a “So in original” footnote",
-  "pred": "2d1cd71e039d58d2",
-  "after": "ca8db0c8c1832c4c"
- },
  "114-55 /us/usc/t49/s41742": {
   "stage": "editorial",
   "reason": "OLRC kept the “and” before “$93,000,000 for fiscal year 2015” that the law struck with those words",
@@ -95,12 +89,6 @@
   "pred": "40c1e211020d5e3f",
   "after": "23f41a7f70fe95f8"
  },
- "116-171 /us/usc/t38/s119": {
-  "stage": "editorial",
-  "reason": "R_after carries a stray “”.” after subsec. (a)",
-  "pred": "2fbcb9a1e6c4e346",
-  "after": "33f9545be64f3576"
- },
  "116-260 /us/usc/t33/s467": {
   "stage": "editorial",
   "reason": "R_after holds clause (iii) of par. (4)(A) twice",
@@ -121,13 +109,13 @@
  },
  "117-263 /us/usc/t10/s4025": {
   "stage": "editorial",
-  "reason": "OLRC carried a stray closing quotation mark after “development that—”",
+  "reason": "the enrolled § 844(1)(A) inserts “that—” then “(1) have”; R_after reads “that—”” with a closing mark the law's text does not have",
   "pred": "0c734640cb2f6fad",
   "after": "666e8d8aa46df09f"
  },
  "117-81 /us/usc/t10/s2714": {
   "stage": "editorial",
-  "reason": "OLRC carried a stray closing quotation mark (“atoms.”” ) and set the new catchline in title case",
+  "reason": "the enrolled § 341(a) ends § 2714 “nonfluorinated carbon atoms.” and gives its catchline in sentence case; R_after adds a closing quotation mark and sets the catchline in title case",
   "pred": "092a5e3d1025204f",
   "after": "962fd06681b80d62"
  },
