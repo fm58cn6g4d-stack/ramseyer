@@ -210,3 +210,10 @@ def test_nested_quotation_keeps_the_laws_own_marks():
     assert nested_to_double(want) == want
     assert nested_to_double("the term ‘State’ includes the Indians’ lands") == \
         "the term “State” includes the Indians’ lands"
+
+
+def test_an_apostrophe_inside_a_word_is_the_codes():
+    # Pub. L. 116-283 § 505 (10 U.S.C. 628a): "person's" in the enrolled text, "person’s" in the Code.
+    from ramseyer.parse.normalize import normalize
+    n = normalize("the alpha's beta, ``gamma'' and 'delta'")
+    assert n.text == "the alpha’s beta, “gamma” and 'delta'" and len(n.offsets) == len(n.text) + 1

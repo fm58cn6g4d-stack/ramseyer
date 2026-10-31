@@ -367,7 +367,7 @@ def main() -> int:
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
-         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
+         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; not yet executed by OLRC in the section at R_after (not graded) {m.get('unexecuted', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
          f"{n_editorial} differ only editorially or in whitespace (kinds below)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%} (substantive: OLRC editorial differences excluded)",
          (substantive + off_sub) / max(m["clean"] + m["clean_off_target"], 1) < FALSE_CLEAN_TARGET,
@@ -414,7 +414,8 @@ def main() -> int:
         tg, n, k = tally(os_)
         lo, hi = wilson(k, n)
         return f"| {name} | {tg} | {n} | {k} | {k / max(n, 1):.2%} | {lo:.2%}–{hi:.2%} |"
-    ndaa = {l.pl for l in corpus.laws if "National Defense Authorization" in (l.name or "")}
+    # Names may carry line breaks ("William M. (Mac) Thornberry National \r\nDefense Authorization Act ...").
+    ndaa = {l.pl for l in corpus.laws if "National Defense Authorization" in " ".join((l.name or "").split())}
     strata = ["| Laws | Targets | CLEAN (incl. off target) | Wrong in substance | Rate | 95% interval |",
               "| --- | --- | --- | --- | --- | --- |",
               row("all", rep.outcomes), row("National Defense Authorization Acts", [o for o in rep.outcomes if o.pl in ndaa]),

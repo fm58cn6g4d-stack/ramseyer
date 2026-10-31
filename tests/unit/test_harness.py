@@ -162,3 +162,29 @@ def test_a_section_another_law_also_amended_in_the_window_is_not_graded(tmp_path
     rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
     assert [o.outcome for o in rep.outcomes] == ["ungradable"] and "0-9" in rep.outcomes[0].detail
     assert (rep.metrics["targets"], rep.metrics["ungradable"]) == (0, 1)
+
+
+def test_a_section_the_law_has_not_reached_at_r_after_is_not_graded(tmp_path):
+    # OLRC may list a law in a release point before executing it in every title (Pub. L. 116-283's title 46
+    # amendments: listed in 116-344, executed in 117-17). A section unchanged at R_after with no note citing the law
+    # is not graded; one with such a note is.
+    db = tmp_path / "o.sqlite"
+    ix = Indexer(db)
+    cited = '<notes><note topic="amendments"><heading>Amendments</heading><p>Pub. L. 1–2 struck text.</p></note></notes>'
+    for label, body in (("1-1", sec("2", "Beta gamma.") + sec("3", "Gamma.")),
+                        ("1-2", sec("2", "Beta gamma.") + sec("3", "Gamma.").replace("</section>", cited + "</section>"))):
+        z = tmp_path / f"{label}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("usc99.xml", doc(body))
+        ix.mark_complete(ix.load_release_point(z, label, None, "t", log=lambda s: None))
+    law = CorpusLaw(pl="1-2", name="t", bill="1 hr 1", enrolled_url="x", enrolled_sha256="x", rp_before="1-1",
+                    rp_after="1-2", titles=["99"], reason="t",
+                    rows=[ClassifiedRow(title="99", section=s, description="", law_section="1") for s in ("2", "3")])
+    corpus = Corpus(built="t", selection="t", release_points=[], laws=[law])
+
+    def p(law, before):
+        return [Prediction(identifier=f"/us/usc/t99/s{s}", status="CLEAN", text=f"§ {s}. H{s}\nDelta.")
+                for s in ("2", "3")]
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
+    assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "unexecuted", "s3": "mismatch"}
+    assert (rep.metrics["targets"], rep.metrics["unexecuted"]) == (1, 1)

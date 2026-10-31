@@ -39,7 +39,8 @@ class Prediction(BaseModel):
 class SectionOutcome(BaseModel):
     pl: str
     identifier: str
-    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending", "ungradable"]
+    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending", "ungradable",
+                     "unexecuted"]
     status: str | None
     stage: str | None
     detail: str = ""
@@ -85,8 +86,22 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
         out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_, "changed": changed,
                       "rows": [row.description],
                       "pending": at is not None and pending_note(law, before, after, ident, changed),
-                      "other_laws": other_laws(law, before, after, ident)}
+                      "other_laws": other_laws(law, before, after, ident),
+                      "unexecuted": not changed and not cites_law(law, after, ident)}
     return out
+
+
+def cites_law(law: CorpusLaw, after: Index, ident: str) -> bool:
+    """Any of the section's notes at R_after cites the law. A section whose text R_after leaves as it was, with no
+    note citing the law, shows no sign that OLRC has executed the law there yet: OLRC may list a law as
+    incorporated in a release point before it has executed it in every title (Pub. L. 116-283's title 46
+    amendments, listed in 116-344 but executed in 117-17), and it notes an amendment it could not execute."""
+    cite = "Pub. L. " + law.pl.replace("-", "\u2013")
+    try:
+        sid = after.by_identifier(ident).id
+    except LookupError_:
+        return False
+    return any(cite in t for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (sid,)))
 
 
 PL_CITE = re.compile(r"Pub\. L\. (\d+)[–-](\d+)")
@@ -205,6 +220,10 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="pending", status=p.status if p else None,
                                    stage=None, detail="amendment set out in a note (delayed effective date); "
                                                       "R_after text is unchanged by design")
+            elif t.get("unexecuted"):
+                o = SectionOutcome(pl=law.pl, identifier=ident, outcome="unexecuted", status=p.status if p else None,
+                                   stage=None, detail="R_after shows no sign of the law in this section: text "
+                                                      "unchanged from R_before and no note cites it")
             elif p is None:
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="missed", status=None, stage=None,
                                    detail="classified to this law; no prediction")
@@ -257,6 +276,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "unexpected_change": sum(o.outcome == "unexpected_change" for o in outcomes),
         "pending": sum(o.outcome == "pending" for o in outcomes),
         "ungradable": sum(o.outcome == "ungradable" for o in outcomes),
+        "unexecuted": sum(o.outcome == "unexecuted" for o in outcomes),
         "match_rate": round(sum(o.outcome == "match" for o in outcomes) / targets, 4) if targets else 0.0,
         "clean": len(clean),
         "false_clean": len(false_clean),
