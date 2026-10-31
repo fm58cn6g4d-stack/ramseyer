@@ -10,9 +10,10 @@ follow the dump.
 
 | Class | Cases | What was done |
 | --- | --- | --- |
-| Parser | 9 | Fixed, each with a test (below) |
+| Parser | 8 | Fixed, each with a test (below) |
 | Engine | 2 | Fixed, each with a test |
-| Comparison (an OLRC convention the checker can verify) | 11 | Fixed, each with a test |
+| Comparison (an OLRC convention the checker can verify) | 10 | Fixed, each with a test |
+| Partly fixed | 2 | #8 and #21: one cause fixed, another left (below) |
 | OLRC departs from the law's text, or R_after is garbled | 11 | Not fixed: hand-label candidates for Espen, each to be checked against the enrolled text first |
 | OLRC editorial work not yet checkable | 3 | Left counted as wrong; M8a's Act text can settle them |
 | Open (not yet explained) | 13 | Left counted as wrong |
@@ -32,14 +33,18 @@ Three fixes made on the way are not among the 49: they came from the first look 
 | 43 | 117-151 | 11 U.S.C. 1182 | a two-year sunset ("Effective on the date that is 2 years after ...—") executed at once | parser: such lead-ins delay their items |
 | 47 | 119-21 | 16 U.S.C. 3841 | "clauses (i) through (v)" read as the letters i to v: only (i) and (v) replaced | parser: a roman range |
 | 48 | 119-37 | 38 U.S.C. 3737 | "Section (d)(1) of such section is amending by inserting": dropped | parser: applied by intent, WARN with the slip named |
-| 8 | 114-92 | 10 U.S.C. 130h | quoted words in a header lost their marks | parser (text rendering) |
 | 17 | 114-328 | 10 U.S.C. 2228 | "through the period" stopped at "122 Stat." | engine |
 | 20 | 114-328 | 10 U.S.C. 930 | OLRC's "Transfer and Amendment of Section" note (effective on a date the President sets) was not read as a delayed amendment | comparison: pending |
 | 28 | 116-189 | 36 U.S.C. 220506 | inserting “‘Parapan American’,” lost its marks and comma (read as a quoted block) | engine |
 | 4 | 113-121 | 33 U.S.C. 2263 | "the date of enactment of this clause": "clause" missing from the date rule | comparison |
 | 7, 15, 25 | 114-92, 114-328, 116-94 | 10 U.S.C. 652, 5 U.S.C. 7511, 23 U.S.C. 125 | a "Repealed" placeholder in square brackets | comparison |
 | 10, 34 | 114-190, 117-7 | 5 U.S.C. 8415, 2 U.S.C. 901a | "7⁄10" for "7/10", "½" for "1/2" | comparison: fractions are their digits |
-| 3, 21, 22, 39 | 113-79, 115-123, 115-407, 117-58 | 7 U.S.C. 3195, 4 U.S.C. 7, 38 U.S.C. 2021, 49 U.S.C. 119 | an Act reference set in the Code citation the law itself prints ("section 8(o)(19) of the ... Act of 1937 (42 U.S.C. 1437f(o)(19))" → "section 1437f(o)(19) of title 42") | comparison: accepted only for the law's own citation |
+| 3, 22, 39 | 113-79, 115-407, 117-58 | 7 U.S.C. 3195, 38 U.S.C. 2021, 49 U.S.C. 119 | an Act reference set in the Code citation the law itself prints ("section 8(o)(19) of the ... Act of 1937 (42 U.S.C. 1437f(o)(19))" → "section 1437f(o)(19) of title 42") | comparison: accepted only for the law's own citation |
+
+## Partly fixed (still wrong at 4b0677b)
+
+- #8 10 U.S.C. 130h: quoted words in a header kept their marks (fixed), but a header holding quotation marks is not recognised as a heading when the new section is built, so it is not set in title case as R_after has it ("Certain “Hit-to-kill” Technology and Telemetry Data"); and two footnote markers set apart by a space.
+- #21 4 U.S.C. 7: the Act reference in its own Code citation is now accepted, but ", and first responders working in the District of Columbia" was inserted before the wrong period (Pub. L. 115-123 § 10102(a)(4)).
 
 ## Not fixed
 

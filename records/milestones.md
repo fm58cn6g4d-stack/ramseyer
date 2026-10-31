@@ -940,4 +940,4 @@ Changes, each with a test (case by case in `records/m6e_dev2_false_clean.md`):
 | Before (dev at 5d2d585, dev 2 at c9ef141) | 0 | 24 (1.64%) | 49 (3.54%) |
 | Not yet executed (not graded) | 55 | 332 | 476 |
 
-All 29 dev 2 false cleans were among the 49; none is new. The dev figure is before #9's labels (this branch predates them); 12 of its 23 are labelled there. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).
+All 29 dev 2 false cleans were among the 49; none is new. Two of them (#8, #21) were only partly fixed. The dev figure is before #9's labels (this branch predates them); 12 of its 23 are labelled there. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).
