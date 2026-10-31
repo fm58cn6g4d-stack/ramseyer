@@ -313,3 +313,10 @@ def test_an_effective_on_lead_in_delays_its_items():
          "(j) Other.—Section 2 of title 99, United States Code, is amended by striking “b”.\n")
     ins = parse_text(t).instructions
     assert [any(f.startswith("delayed effective date") for f in i.flags) for i in ins] == [True, False]
+
+
+def test_clauses_i_through_v_is_a_roman_range():
+    # Pub. L. 119-21 § 10601(a)(2) (16 U.S.C. 3841(a)(3)): only clauses (i) and (v) were replaced.
+    from ramseyer.parse.grammar import _expand
+    assert _expand("clauses (i) through (v)") == ["(i)", "(ii)", "(iii)", "(iv)", "(v)"]
+    assert _expand("subsections (i) through (k)") == ["(i)", "(j)", "(k)"]

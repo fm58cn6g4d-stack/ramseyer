@@ -552,7 +552,10 @@ def _expand(labels_phrase: str) -> list[str]:
         x, y = a.strip("()"), b.strip("()")
         if x.isdigit() and y.isdigit():
             out += [f"({i})" for i in range(int(x), int(y) + 1)]
-        elif is_roman(x) and is_roman(y) and max(len(x), len(y)) > 1 and roman_to_int(x) < roman_to_int(y):
+        elif is_roman(x) and is_roman(y) and roman_to_int(x) < roman_to_int(y) and (
+                max(len(x), len(y)) > 1 or re.search(r"\b(?:sub)?clauses?\b", labels_phrase, re.I)):
+            # "clauses (i) through (v)" is roman even with single-letter ends (Pub. L. 119-21 § 10601(a)(2),
+            # 16 U.S.C. 3841(a)(3)): read as letters, only (i) and (v) were replaced.
             # "(i) through (iii)": a roman range (a range of single letters is read as letters below)
             out += [f"({r if x.islower() else r.upper()})" for r in
                     (int_to_roman(i) for i in range(roman_to_int(x), roman_to_int(y) + 1))]
