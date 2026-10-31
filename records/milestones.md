@@ -902,3 +902,17 @@ With the 12 labels of #9: 15 of 1,461 (1.03%) on target, just over the 1% target
 | disagrees | 4 | 0 |
 
 GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 remaining false cleans and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
+
+### Step 2: the test set, measured once (2026-10-31, code at 27b92e1's parent)
+
+`scripts/m6_gate.py --set history_test`: 280 laws, 2 h 15 min. Measured only; no case was inspected. Aggregates:
+
+| | Dev (after fixes) | Test |
+| --- | --- | --- |
+| Targets graded | 7,108 | 7,865 |
+| Pending / other laws in the window | 328 / 310 | 420 / 279 |
+| CLEAN | 1,461 (20.6%) | 1,444 (18.4%) |
+| CLEAN and wrong in substance | 27 (1.85%) | 118 (8.17%; 95% interval 6.86–9.68%) |
+| NDAAs / other laws | – | 3.95% / 9.05% |
+
+The test result fails the gate, and is about four times the dev rate: the dev fixes did not generalize. The errors are concentrated: one law accounts for 60 of the 118 (and 2,598 of the set's 2,623 "unexpected change" outcomes, a single systematic failure); 35 of 280 laws have any. Without that one law, 58 of 1,221 (4.75%). Which law, and why, has not been looked at: the test set is measured only. How to proceed (keep the test set held out and widen dev, or make it the new dev set and rely on the sealed set) is Espen's call.
