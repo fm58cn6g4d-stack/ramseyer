@@ -890,3 +890,15 @@ The 27 remaining (plus 1 off target):
 - 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them.
 - 9 others: "this part" translated to "this subchapter" (no Act-unit to Code-unit map yet), a subsection heading the engine built into the text, an "Omitted" placeholder, the LIBOR Act citation the resolver does not know, 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)), 42 U.S.C. 1395m and 300u-11, and #110 (unclear).
 Without the 15 OLRC departures: 12 of 1,461 (0.82%) on target.
+
+### Step 3, part 1: GPO as a second reader (2026-10-31)
+
+`parse/gpo.py` reads a public law's USLM (Congress.gov's "United States Legislative Markup" version; every one of the 286 dev laws has one): per bill location, the `amendingAction` verbs and the `/us/usc` citations GPO tags, the citation inherited from the enclosing unit. `scripts/gpo_reader_check.py` compares it with every instruction the dev run graded (from the checkpoint), by location: the Code section we applied it to, and our operation against GPO's verb there.
+
+| GPO on the section's CLEAN instructions | Right in substance | Wrong in substance |
+| --- | --- | --- |
+| agrees | 855 | 18 |
+| silent (no Code citation there or above) | 575 | 9 |
+| disagrees | 4 | 0 |
+
+GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 remaining false cleans and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
