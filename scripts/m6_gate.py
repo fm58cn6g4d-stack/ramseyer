@@ -16,28 +16,26 @@ from __future__ import annotations
 
 import argparse
 import collections
-import copy
 import hashlib
 import json
 import re
+import sqlite3
 import sys
 import time
 from functools import lru_cache
 from pathlib import Path
 
-from lxml import etree
-
 from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index, LookupError_
-from ramseyer.data.indexer import text_of
 from ramseyer.dryrun.engine import category
 from ramseyer.dryrun.predict import run_bill
-from ramseyer.oracle import harness, store
+from ramseyer.oracle import editorial, harness, store
 from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
 from ramseyer.oracle.history import History, ReleaseIndexes
 from ramseyer.oracle.corpus import MANIFEST, Corpus
-from ramseyer.parse import parse_text
+from ramseyer.parse import gpo, parse_text
+from ramseyer.parse.grammar import Ctx, apply_head, lift_quotes
 from ramseyer.parse.xmltext import render
 from ramseyer.resolve import popular
 from ramseyer.resolve.actcode import classification_map
@@ -77,47 +75,33 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     return max(0.0, c - h), min(1.0, c + h)
 
 
-DATE_PHRASE = re.compile(r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph)|the [A-Z][\w ,.\u2019'()-]*?Act(?: of \d{4})?(?: for Fiscal Year \d{4})?)")
-DATE = r"(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}"
-
-
-def _text(el) -> str:
-    """Section text with footnote reference markers removed (OLRC adds and removes footnotes editorially)."""
-    el = copy.deepcopy(el)
-    marks = el.xpath(".//*[local-name()='ref'][@class='footnoteRef'] | .//*[local-name()='note'][@type='footnote']"
-                     " | .//*[local-name()='sup'][re:test(., '^\\s*\\d+\\s*$')]",
-                     namespaces={"re": "http://exslt.org/regular-expressions"})
-    for ref in marks:
-        parent, tail = ref.getparent(), ref.tail or ""
-        prev = ref.getprevious()
-        if prev is not None:
-            prev.tail = (prev.tail or "").rstrip("\u202f\u00a0 ") + tail
-        else:
-            parent.text = (parent.text or "").rstrip("\u202f\u00a0 ") + tail
-        parent.remove(ref)
-    for h in el.iter("{*}heading"):     # heading case is OLRC's editorial choice (records/milestones.md, M6)
-        for n in h.iter():
-            n.text = n.text.lower() if n.text else n.text
-            if n is not h and n.tail:
-                n.tail = n.tail.lower()
-    return re.sub(r"\s+", " ", harness.normalize(text_of(el)))
-
-
-def editorial_equal(pred_el, after_xml: str | None) -> bool:
-    """True when the prediction equals R_after except for OLRC's editorial work: footnote markers, the letter
-    case of headings, and the enactment date set in place of "the date of the enactment of this Act" (any date
-    is accepted there)."""
-    if pred_el is None or after_xml is None:
-        return False
-    pred, after = _text(pred_el), _text(etree.fromstring(after_xml.encode("utf-8")))
-    parts = DATE_PHRASE.split(pred)
-    rx = f"(?:{DATE}|{DATE_PHRASE.pattern})".join(re.escape(p) for p in parts)
-    return re.fullmatch(rx, after) is not None
+def data_fingerprint(cfg, set_name: str, db: Path) -> dict:
+    """What the loaded data says about itself: the history's shards, or the oracle store's release points, and the
+    pinned index's release points (label and source hash)."""
+    out = {}
+    stores = {"pinned": cfg.index_path}
+    if set_name.startswith("history_"):
+        stores["history"] = cfg.var / "history" / "history.sqlite"
+    else:
+        stores["oracle"] = db
+    for name, path in stores.items():
+        if not Path(path).exists():
+            out[name] = None
+            continue
+        con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        q = ("SELECT name, sha256, rows FROM loaded_shards ORDER BY name" if name == "history" else
+             "SELECT label, source_sha256, complete FROM release_points ORDER BY id")
+        out[name] = con.execute(q).fetchall()
+        con.close()
+    return out
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--law")
+    ap.add_argument("--law", nargs="+", help="only these laws (outputs tagged _laws)")
+    ap.add_argument("--dump", action="store_true",
+                    help="write each CLEAN prediction that differs from R_after in substance, in full, with its "
+                         "instructions and R_after's new notes, to var/<tag>_dump.jsonl (for diagnosis)")
     ap.add_argument("--show", type=int, default=30)
     ap.add_argument("--heldout", action="store_true", help="run on the held-out laws (M6b); same as --set heldout")
     ap.add_argument("--set", choices=sorted(SETS), default="tuning")
@@ -129,14 +113,15 @@ def main() -> int:
     cfg = config.load()
     f = Fetcher(cfg)
     t0 = time.monotonic()
-    resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(),
-                        classification_map(classification_rows(f, cfg.olrc_base)))
+    rows = classification_rows(f, cfg.olrc_base)
+    resolver = Resolver(Index(cfg.index_path, cfg.release_pin), popular.load(), classification_map(rows))
     manifest, db, tag, heading = SETS["heldout" if args.heldout else args.set]
     if args.resolve_before:
         tag, heading = tag + "_resolve_before", heading + " (targets resolved against each law's R_before)"
     corpus = Corpus.load(manifest)
     if args.law:
-        corpus.laws = [corpus.law(args.law)]
+        corpus.laws = [corpus.law(pl) for pl in args.law]
+        tag += "_laws"
     if args.set.startswith("govinfo") and not args.heldout:
         # Sections outside the answer key are fetched from the same edition on demand (red team F6).
         open_index = lru_cache(maxsize=None)(lambda label: GovInfoOverlay(store.index(label, db), int(label[-4:]), f,
@@ -157,7 +142,13 @@ def main() -> int:
     pop, cmap = resolver.popular, resolver.classification
     # History sets keep release points in ReleaseIndexes (db is its cache directory, not a file).
     before_index = open_index if args.set.startswith("history_") else (lambda label: store.index(label, db))
-    before_resolver = lru_cache(maxsize=2)(lambda label: Resolver(before_index(label), pop, cmap))
+    def make_before_resolver(label):
+        r = Resolver(before_index(label), pop, cmap)
+        # Positive-law status comes from the pinned index: the release-point history marks no title positive law,
+        # and no title's status changed within the sets' windows (title 54 did not exist before it was enacted).
+        r.positive = set(resolver.positive)
+        return r
+    before_resolver = lru_cache(maxsize=2)(make_before_resolver)
 
     def predictor(law, before):
         print(f"{time.strftime('%H:%M:%S')} {law.pl} ({len(law.targets)} targets)", file=sys.stderr, flush=True)
@@ -179,21 +170,98 @@ def main() -> int:
         return o.identifier in (by_law.get(o.pl, ()) if by_law is not None else touched)
     labels = json.loads(harness.LABELS.read_text()) if harness.LABELS.exists() else {}
 
+    @lru_cache(maxsize=None)
+    def enacted_date(pl_or_date: str | None) -> str | None:
+        """A law's approval date from its USLM ("2020-03-27"); a date passes through; None when unknown."""
+        if pl_or_date is None or re.fullmatch(r"\d{4}-\d{2}-\d{2}", pl_or_date):
+            return pl_or_date
+        path = gpo.uslm_path(f, cfg, pl_or_date)
+        return gpo.approved_date(path) if path is not None else None
+
+    def act_law(name: str) -> str | None:
+        """The public law (or, for an older Act, the date) an Act's popular name points to, if exactly one."""
+        ids = {i for e in pop.get(popular.norm_name(name), []) for i in e.get("identities", [])}
+        if len(ids) != 1:
+            return None
+        i = next(iter(ids))
+        return i[3:] if i.startswith("pl:") else i.split(":")[1] if i.startswith("act:") else None
+
     def after_law(law, outs, before, after) -> dict:
         """Everything the report needs from this law's run, taken while its release points are open; the run is
         then let go (a set of hundreds of laws does not fit in memory, and reopening release points is slow)."""
         run, instructions = runs.pop(law.pl)
 
-        def editorial_at_after(ident) -> bool:
-            # Editorial-only differences: OLRC substitutes the enactment date for "the date of enactment of ..."
-            # and removes or adds footnote markers.
+        after_resolver = lru_cache(maxsize=1)(lambda: Resolver(after, pop, cmap))
+
+        def resolve_at_after(cite: str) -> str | None:
+            ctx = Ctx()
+            head, quotes, _ = lift_quotes(cite)
+            apply_head(head, ctx, quotes)
+            # R_after first; it holds only the titles this set needs, so then the pinned index (a section renumbered
+            # since then reads differently from R_after's text and is not accepted).
+            for r in (after_resolver(), resolver):
+                try:
+                    res = r.resolve(ctx.target_out())
+                    if res.node_id:
+                        return r.ix._node(res.node_id).identifier
+                except Exception:                    # an unresolvable citation is simply not accepted
+                    continue
+            return None
+
+        def notes(ix, ident) -> list[str]:
+            try:
+                sid = ix.by_identifier(ident).id
+            except LookupError_:
+                return []
+            return [t for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? ORDER BY id", (sid,))]
+
+        def editorial_kind(ident) -> str | None:
+            """Why the prediction differs from R_after only editorially (oracle/editorial.py), or None."""
             work = run.working.get(ident)
             try:
                 after_xml = after.section_xml(after.by_identifier(ident))
             except LookupError_:
                 after_xml = None
-            return work is not None and not work.removed and editorial_equal(work.el, after_xml)
+            if work is None or work.removed:
+                return None
+            title = re.match(r"^/us/usc/t(\w+)/", ident)
+            ctx = editorial.Context(
+                pl=law.pl, positive_law=(title.group(1) in resolver.positive) if title else None,   # as above
+                heading_amended=any(tr.section == ident and tr.instruction.op == "AMEND_HEADING" for tr in run.traces),
+                new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
+                resolve=resolve_at_after, title=title.group(1) if title else "",
+                date_of=lambda act: enacted_date(law.pl if act is None else act_law(act)),
+                inserted=[t for tr in run.traces if tr.section == ident
+                          for t in (tr.instruction.new_text, tr.instruction.replace) if t])
+            return editorial.kind(work.el, after_xml, ctx)
+        kinds = {o.identifier: editorial_kind(o.identifier) for o in outs
+                 if o.outcome == "mismatch" or (o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
+                                                and o.after_differs is not False and not is_touched(o))}
+
+        def editorial_at_after(ident) -> bool:
+            return kinds.get(ident) is not None
         with_status = {tr.instruction.id for tr in run.traces if tr.result is not None and tr.result.status}
+        if args.dump:
+            with open(cfg.var / f"{tag}_dump.jsonl", "a") as fh:
+                for o in outs:
+                    if not (o.outcome == "mismatch" and o.status == "CLEAN") or editorial_at_after(o.identifier):
+                        continue
+                    work = run.working.get(o.identifier)
+
+                    fh.write(json.dumps({
+                        "pl": law.pl, "identifier": o.identifier, "rp_before": law.rp_before,
+                        "rp_after": law.rp_after, "predicted": work.render() if work is not None else None,
+                        "before": harness.section_text(before, o.identifier)[0],
+                        "after": harness.section_text(after, o.identifier)[0],
+                        "new_notes": [t for t in notes(after, o.identifier)
+                                      if t not in set(notes(before, o.identifier))],
+                        "instructions": [{"id": tr.instruction.id, "op": tr.instruction.op,
+                                          "find": tr.instruction.find, "new": tr.instruction.new_text,
+                                          "path": list(tr.resolution.path),
+                                          "status": tr.result.status if tr.result else None,
+                                          "detail": tr.result.detail if tr.result else None}
+                                         for tr in run.traces if tr.section == o.identifier]},
+                        ensure_ascii=False) + "\n")
         law_labels = {}
         for o in outs:
             key = f"{o.pl} {o.identifier}"
@@ -207,7 +275,8 @@ def main() -> int:
                 law_labels[key] = {"applies": harness.label_stage(labels[key], pred, after_text) is not None,
                                    "pred": harness.text_hash(pred), "after": harness.text_hash(after_text)}
         return {
-            "editorial": [o.identifier for o in outs if o.outcome == "mismatch" and editorial_at_after(o.identifier)],
+            "editorial": {o.identifier: kinds[o.identifier] for o in outs if o.outcome == "mismatch"
+                          and editorial_at_after(o.identifier)},
             "off_editorial": [o.identifier for o in outs if o.outcome in ("extra", "unexpected_change")
                               and o.status == "CLEAN" and o.after_differs is not False and not is_touched(o)
                               and editorial_at_after(o.identifier)],
@@ -230,7 +299,13 @@ def main() -> int:
     for path in sorted(SRC.rglob("*.py")) + [Path(__file__), manifest, touched_path, harness.LABELS]:
         if path.exists():
             digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
-    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law]).encode())
+    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump]).encode())
+    # The data, too: the release points graded against, the pinned index the resolver reads, OLRC's classification
+    # tables and each enrolled bill as fetched (the materialized release points derive from the history and the code).
+    digest.update(json.dumps(data_fingerprint(cfg, args.set, db), sort_keys=True).encode())
+    digest.update(repr(rows).encode())
+    for law in corpus.laws:
+        digest.update(law.pl.encode() + f.get(law.enrolled_url).path.read_bytes())
     extras: dict[str, dict] = {}
     rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None, after_law=after_law,
                            checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras)
@@ -240,13 +315,15 @@ def main() -> int:
     m = rep.metrics
     mism = [o for o in rep.outcomes if o.outcome == "mismatch"]
     # Editorial-only differences are counted separately; they remain mismatches in the match rate.
-    editorial = 0
+    n_editorial = 0
     detected_ids: set[tuple[str, str]] = set()
+    editorial_kinds = collections.Counter()
     for o in mism:
         if o.identifier in extras[o.pl]["editorial"]:
+            editorial_kinds[extras[o.pl]["editorial"][o.identifier]] += 1
             o.stage = "editorial"
             detected_ids.add((o.pl, o.identifier))
-            editorial += 1
+            n_editorial += 1
     ungradable = [o for o in rep.outcomes if o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"
                   and is_touched(o)]
     for o in ungradable:
@@ -289,8 +366,8 @@ def main() -> int:
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
-         f"{m['pending']}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
-         f"{editorial} differ only editorially (enactment date substituted, footnote markers, heading case)"),
+         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
+         f"{n_editorial} differ only editorially or in whitespace (kinds below)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%} (substantive: OLRC editorial differences excluded)",
          (substantive + off_sub) / max(m["clean"] + m["clean_off_target"], 1) < FALSE_CLEAN_TARGET,
          f"{substantive} of {m['clean']} CLEAN predictions differ from R_after in substance "
@@ -352,6 +429,8 @@ def main() -> int:
     lines += ["", "Instruction statuses: " + ", ".join(f"{k} {v}" for k, v in statuses.most_common()),
               "", "Failure categories (Comparative Print Suite): " + ", ".join(f"{k} {v}" for k, v in cats.most_common()),
               "", "Mismatches by stage: " + ", ".join(f"{k} {v}" for k, v in by_stage.most_common()),
+              "", "Editorial or whitespace-only mismatches by kind (oracle/editorial.py): "
+              + (", ".join(f"{k} {v}" for k, v in editorial_kinds.most_common()) or "none"),
               *(["", "Halves:", *halves] if halves else []),
               "", "## Strata", "", *strata, "", "## CLEAN and wrong per law", "",
               "| Law | Targets | CLEAN | Wrong | Rate | 95% interval |", "| --- | --- | --- | --- | --- | --- |", *per_law,

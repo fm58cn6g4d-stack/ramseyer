@@ -106,6 +106,8 @@ def _render(el, lines: list[str], in_block: bool) -> None:
                 lines.append(" ".join("".join(e.itertext()).split()))
         elif c.tag == "continuation-text":
             lines.append(inline(c, inner=q))
+        elif c.tag == "table-omitted":
+            lines.append(c.text)
         elif c.tag not in SKIP and tag not in STRUCT:
             _render(c, lines, in_block)
 
@@ -145,9 +147,24 @@ def _body(root, xml_path):
     return body
 
 
+TABLE_OMITTED = "[table omitted from the dry run"
+
+
+def _mark_tables(body) -> None:
+    """A <table> is not rendered as text; a marker line keeps its place, so an instruction carrying one is never
+    taken as complete (Pub. L. 113-67 § 402(b)(2): “(C) ... shall be as follows:” and a one-row table)."""
+    for t in list(body.iter("table")):
+        rows = len(t.findall(".//row"))
+        marker = etree.Element("table-omitted")
+        marker.text = f"{TABLE_OMITTED}: {rows} row{'s' if rows != 1 else ''}]"
+        marker.tail = t.tail
+        t.getparent().replace(t, marker)
+
+
 def render(xml_path) -> str:
     root = etree.parse(str(xml_path)).getroot()
     body = _body(root, xml_path)
+    _mark_tables(body)
     lines: list[str] = []
     for c in body:
         if isinstance(c.tag, str):

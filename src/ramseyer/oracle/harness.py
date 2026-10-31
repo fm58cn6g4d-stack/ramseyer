@@ -39,7 +39,7 @@ class Prediction(BaseModel):
 class SectionOutcome(BaseModel):
     pl: str
     identifier: str
-    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending"]
+    outcome: Literal["match", "mismatch", "missed", "extra", "unexpected_change", "pending", "ungradable"]
     status: str | None
     stage: str | None
     detail: str = ""
@@ -84,13 +84,47 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
         changed = normalize(bt) != normalize(at) or bs != as_
         out[ident] = {"before": bt, "before_status": bs, "after": at, "after_status": as_, "changed": changed,
                       "rows": [row.description],
-                      "pending": not changed and at is not None and pending_note(law, before, after, ident)}
+                      "pending": at is not None and pending_note(law, before, after, ident, changed),
+                      "other_laws": other_laws(law, before, after, ident)}
     return out
 
 
-def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> bool:
-    """OLRC did not execute the law's amendment: a delayed effective date set it out in a new note instead
-    ("..., provided that, effective one year after ..., this section is amended as follows: ...")."""
+PL_CITE = re.compile(r"Pub\. L\. (\d+)[–-](\d+)")
+
+
+AMENDMENT_ENTRY = re.compile(r"(?<=\.)\s+(?=(?:Subsecs?\.|Pars?\.|Subpars?\.|Cls?\.|Pub\. L\.|\d{4}\u2014))")
+
+
+def other_laws(law: CorpusLaw, before: Index, after: Index, ident: str) -> list[str]:
+    """Laws other than this one that OLRC's amendment notes credit with changing the section between R_before and
+    R_after: R_after then carries their changes too (a delayed amendment of an earlier law taking effect in the
+    window, as the FY2021 NDAA's title XVIII did on Jan. 1, 2022), so the section cannot grade this law alone.
+    Entries of the notes are compared, not the laws they cite: an earlier law may have amended the section before
+    R_before too (Pub. L. 116-283 § 1081 in 2021, then § 1883 on Jan. 1, 2022)."""
+    def entries(ix: Index) -> set[str]:
+        try:
+            sid = ix.by_identifier(ident).id
+        except LookupError_:
+            return set()
+        out = set()
+        for (t,) in ix.db.execute("SELECT text FROM notes WHERE section_id=? AND note_type='amendments'", (sid,)):
+            out |= {" ".join(e.split()) for e in AMENDMENT_ENTRY.split(t)}
+        return out
+    new = entries(after) - entries(before)
+    # The law an entry starts with is the one that acted; laws it mentions later ("... added by Pub. L. 116-92") did not.
+    return sorted({f"{m.group(1)}-{m.group(2)}" for e in new if (m := PL_CITE.match(e))} - {law.pl})
+
+
+DELAYED_NOTE = re.compile(r"Amendment of (?:Sections?|Subsections?|Paragraphs?|Subparagraphs?|Clauses?|Subclauses?|"
+                          r"Items?)\b")
+
+
+def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str, changed: bool = False) -> bool:
+    """OLRC did not execute (all of) the law's amendment: a delayed effective date set it out in a new note instead.
+    OLRC heads such a note "Amendment of Subsection (a)" (or Section, Paragraph, ...), and it says so even when the
+    law's other amendments to the section were executed, so the section is not gradable either way. A note without
+    that heading counts only when the text did not change ("..., provided that, effective one year after ..., this
+    section is amended as follows: ...")."""
     try:
         a = after.by_identifier(ident)
     except LookupError_:
@@ -101,7 +135,8 @@ def pending_note(law: CorpusLaw, before: Index, after: Index, ident: str) -> boo
     except LookupError_:
         b_notes = set()
     cite = "Pub. L. " + law.pl.replace("-", "\u2013")
-    return any(cite in t and re.search(r"effective .{0,160}amended", t, re.S)
+    return any(cite in t and (DELAYED_NOTE.match(t) and cite in t[:300] or
+                              not changed and re.search(r"effective .{0,160}amended", t, re.S))
                for (t,) in after.db.execute("SELECT text FROM notes WHERE section_id=?", (a.id,)) if t not in b_notes)
 
 
@@ -162,7 +197,11 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         counts = collections.Counter()
         for ident, t in gt.items():
             p = preds.get(ident)
-            if t.get("pending"):
+            if t.get("other_laws") and not t.get("pending"):
+                o = SectionOutcome(pl=law.pl, identifier=ident, outcome="ungradable", status=p.status if p else None,
+                                   stage=None, detail="R_after's amendment notes credit other laws in the window "
+                                                      f"too: {', '.join(t['other_laws'])}")
+            elif t.get("pending"):
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="pending", status=p.status if p else None,
                                    stage=None, detail="amendment set out in a note (delayed effective date); "
                                                       "R_after text is unchanged by design")
@@ -217,6 +256,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "extra": sum(o.outcome == "extra" for o in outcomes),
         "unexpected_change": sum(o.outcome == "unexpected_change" for o in outcomes),
         "pending": sum(o.outcome == "pending" for o in outcomes),
+        "ungradable": sum(o.outcome == "ungradable" for o in outcomes),
         "match_rate": round(sum(o.outcome == "match" for o in outcomes) / targets, 4) if targets else 0.0,
         "clean": len(clean),
         "false_clean": len(false_clean),

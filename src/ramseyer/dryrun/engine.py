@@ -15,6 +15,7 @@ from typing import Callable, Literal
 from lxml import etree
 
 from ramseyer.data.indexer import NON_OPERATIVE, SUB, USLM, local, text_of
+from ramseyer.parse.xmltext import TABLE_OMITTED
 from ramseyer.parse.ir import Instruction
 from ramseyer.parse.normalize import normalize
 from ramseyer.parse.segment import Segmenter, walk
@@ -81,8 +82,28 @@ class Seg:
 
 # ---- quotes --------------------------------------------------------------------------------
 def nested_to_double(s: str) -> str:
-    """Bills quote inside quotes with ‘ ’; the Code prints those as “ ”. Apostrophes (applicant’s) stay."""
-    return re.sub(r"(?<![\w])‘((?:[^‘’]|’(?=\w))*?)’(?![\w])", "“\\1”", s)
+    """Bills quote inside quotes with ‘ ’; the Code prints those as “ ”. Apostrophes (applicant’s) stay.
+
+    A quotation closes at the first ’ not followed by a letter, except that a plural possessive (“Victims’ ” followed
+    by a space) is skipped when a later ’ before the next ‘ is followed by closing punctuation: ‘Special Victims’
+    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not."""
+    out, i = [], 0
+    for m in re.finditer(r"(?<![\w])‘", s):
+        if m.start() < i:
+            continue
+        rest = s[m.end():]
+        nxt = rest.find("‘")
+        span = rest if nxt < 0 else rest[:nxt]
+        closes = [c.start() for c in re.finditer(r"’(?!\w)", span)]
+        if not closes:
+            continue
+        end = closes[0]
+        if span[end - 1:end] == "s" and span[end + 1:end + 2] == " ":
+            later = [c for c in closes[1:] if re.match(r"’(?:[)\].,;:”—]|$)", span[c:])]
+            end = later[0] if later else end
+        out.append(s[i:m.start()] + "“" + span[:end] + "”")
+        i = m.end() + end + 1
+    return "".join(out) + s[i:]
 
 
 def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
@@ -425,6 +446,8 @@ def tidy(hay: str, a: int, b: int, new: str, join: str) -> tuple[int, int, str]:
             new = new[1:]
         if new[0] in CLOSE_PUNCT and left.endswith(" ") and not hay[a:a + 1].isspace():
             a -= 1
+        elif new == "\u2014" and left.endswith(" ") and not hay[a:a + 1].isspace():
+            a -= 1                              # "striking “as follows:” and inserting an em dash": "made—"
         if new.endswith(" ") and right.startswith(" "):
             new = new[:-1]
         if new.endswith(" ") and rc and rc in CLOSE_PUNCT:
@@ -442,6 +465,14 @@ def block_lines(block: str) -> list[str]:
         lines.append(s)
     if lines:
         lines[-1] = re.sub(r"”[\s.;,:]*(?:and|or)?[\s.;,:]*$", "", lines[-1])
+    # Inner quotation marks are ‘ ’ in a bill, so a ” still unmatched on a line closes the block a second time: a
+    # drafting slip OLRC drops (“... Hawaii.”.” in the middle of a block, Pub. L. 116-315 § 7002; “... general.”;”;”,
+    # Pub. L. 117-263 § 502).
+    lines = [x for x in lines if not x.startswith(TABLE_OMITTED)]   # parse/xmltext.py: never statute text
+    for i, x in enumerate(lines):
+        while x.count("”") > x.count("“") and re.search(r"”[\s.;,:]*$", x):
+            x = re.sub(r"”[\s.;,:]*$", "", x).rstrip()
+        lines[i] = x
     return [nested_to_double(x) for x in lines if x]
 
 
@@ -563,10 +594,24 @@ class Engine:
     # Act section label -> (Code section, " of this title" | " of title N"), for the Act being amended; or None.
     act_ref: Callable[[str], tuple[str, str, bool] | None] | None = None
     weak_refs: set[str] = field(default_factory=set)     # Act references translated on one witness
+    done: dict = field(default_factory=dict)              # an applied edit -> the instruction that made it
 
     def run(self, ins: Instruction, path: list[str]) -> Result:
         self.weak_refs = set()
+        key = (ins.op, tuple(path), ins.find, ins.replace, ins.new_text, ins.unit, ins.occurrence,
+               tuple(ins.target.qualifiers))
+        if ins.find and key in self.done:
+            # Two provisions of one bill making the identical edit (Pub. L. 115-254 div. B § 539(l) and div. K
+            # § 1991(f)(9)(C), 49 U.S.C. 46111): the second would apply it again to the first one's text.
+            r = Result(ins.id, "CONFLICT", f"instruction {self.done[key]} of this bill already made this same edit")
+            self.results.append(r)
+            return r
         r = self._run(ins, path)
+        if r.status in ("CLEAN", "WARN"):
+            self.done.setdefault(key, ins.id)
+        if r.status == "CLEAN" and TABLE_OMITTED in (ins.new_text or "") + (ins.replace or ""):
+            r.status, r.detail = "WARN", "; ".join(x for x in (r.detail, "the quoted text holds a table the dry run "
+                                                                         "does not carry") if x)
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":
@@ -618,7 +663,16 @@ class Engine:
             kinds.add("num")
         if "each place, headings included" in ins.flags:
             kinds.add("heading")
-        ranges = [(s.start, s.start + len(getattr(s.node, s.attr) or "")) for s in segs if s.kind in kinds]
+        own = None
+        if kinds == {"heading"}:
+            # "in the section heading" / "in the subsection heading": the unit's own heading, which comes first, not
+            # the headings of its subunits (Pub. L. 114-255 § 9010, 42 U.S.C. 290bb-41).
+            def heading_of(seg):
+                owner = seg.node if seg.attr == "text" else seg.node.getparent()
+                return next((a for a in [owner, *owner.iterancestors()] if local(a) == "heading"), None)
+            own = next((heading_of(s) for s in segs if s.kind == "heading"), None)
+        ranges = [(s.start, s.start + len(getattr(s.node, s.attr) or "")) for s in segs if s.kind in kinds
+                  and (own is None or s.kind != "heading" or heading_of(s) is own)]
         merged: list[tuple[int, int]] = []
         for a, b in ranges:
             if merged and merged[-1][1] == a:
@@ -699,10 +753,14 @@ class Engine:
     def _ranges(self, ins, segs, hay, find):
         """The ranges of the unit's text an instruction may edit: its part (heading, matter preceding ...) and sentence."""
         allowed = self._allowed(segs, ins, find)
-        for q in ins.target.qualifiers:
-            m = re.match(r"(first|second|third|fourth|last) sentence", q)
-            if m:
-                allowed = self._sentence_range(hay, m.group(1), allowed)
+        # "in the second sentence" (a target qualifier), or "the period at the end of the first sentence" (a
+        # positional flag on the operation, Pub. L. 116-136 § 19006(a)).
+        named = [m.group(1) for q in ins.target.qualifiers if (m := re.match(r"(first|second|third|fourth|last) "
+                                                                              r"sentence", q))]
+        named += [m.group(1) for f in ins.flags if f.startswith(("positional", "anchor is positional"))
+                  and (m := re.search(r"\b(first|second|third|fourth|last) sentence\b", f))]
+        for n in named[:1]:
+            allowed = self._sentence_range(hay, n, allowed)
         return allowed
 
     def _choose(self, ins, hits):
@@ -1252,6 +1310,15 @@ class Engine:
             text = " ".join(loose)
             replace_span(segs, len(linear(segs).rstrip()), len(linear(segs)), " " + text)
             return Result(ins.id, "CLEAN", "text added at the end")
+        sibling = None
+        if after_el is None and before_el is None and units and local(units[0]) == local(scope) and \
+                local(scope) in SUB and scope.getparent() is not None:
+            # "Section 312(d)(3)(A) is amended ... by adding at the end the following new subparagraph: “(C) ...”": a
+            # unit cannot hold one of its own level, so it goes after the last of its kind in the enclosing unit
+            # (as OLRC executed Pub. L. 116-136 § 19002(a), 2 U.S.C. 2062).
+            same = [c for c in scope.getparent() if local(c) == local(scope)]
+            after_el, sibling = same[-1], f"added after ({_num(same[-1])}) in the enclosing unit: the target is a " \
+                f"{local(scope)} and so is the new unit"
         if after_el is not None:
             parent, idx = after_el.getparent(), after_el.getparent().index(after_el) + 1
         elif before_el is not None:
@@ -1262,6 +1329,12 @@ class Engine:
             if kids:
                 idx = scope.index(kids[-1]) + 1
             else:
+                if loose:
+                    # "adding at the end the following: “Whenever ..., the Chairperson shall—“(i) ...”": the lead-in
+                    # ends the unit's text and introduces the new units (Pub. L. 113-76 div. G § 416, 20 U.S.C. 954).
+                    segs = Working.segments(scope)
+                    replace_span(segs, len(linear(segs).rstrip()), len(linear(segs)), " " + " ".join(loose))
+                    loose = []
                 # The unit had only content: it becomes a chapeau over the new units.
                 content = scope.find(NS + "content")
                 if content is not None:
@@ -1281,11 +1354,13 @@ class Engine:
         if gap:
             # "(d)" added after a last "(b)": a wrong section or unit is the likelier explanation (M6c benchmark).
             return Result(ins.id, "WARN", gap)
-        warn = None
+        warn = sibling
+        if loose:
+            warn = f"lead-in text before the new units not placed: “{' '.join(loose)[:80]}”"
         prev = parent[idx - 1] if idx > 0 else None
         if prev is not None and local(prev) in SUB and units and local(units[0]) in SUB:
             tail = text_of(prev).rstrip()
-            if tail.endswith(".") and not tail.endswith("”."):
+            if tail.endswith(".") and not tail.endswith("”.") and warn is None:
                 warn = "the preceding unit ends with a period; a conjunction or semicolon amendment may be missing"
         return Result(ins.id, "WARN" if warn else "CLEAN", warn or f"added {len(units)} unit(s)")
 

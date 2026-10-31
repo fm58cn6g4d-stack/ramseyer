@@ -1,26 +1,27 @@
 {
  "predictor": "ramseyer M6",
  "metrics": {
-  "targets": 1295,
-  "matched": 573,
-  "mismatched": 343,
-  "missed": 379,
+  "targets": 1269,
+  "matched": 568,
+  "mismatched": 331,
+  "missed": 370,
   "extra": 1,
   "unexpected_change": 3,
-  "pending": 7,
-  "match_rate": 0.4425,
-  "clean": 373,
+  "pending": 14,
+  "ungradable": 19,
+  "match_rate": 0.4476,
+  "clean": 370,
   "false_clean": 44,
-  "false_clean_rate": 0.118,
+  "false_clean_rate": 0.1189,
   "clean_off_target": 0,
   "clean_off_target_wrong": 0,
   "deterministic_coverage": 1.0,
   "model_tokens": 0,
-  "mismatch_engine": 242,
+  "mismatch_engine": 232,
   "mismatch_verify": 5,
   "mismatch_unclassified": 37,
-  "mismatch_parser": 22,
+  "mismatch_parser": 21,
   "mismatch_editorial": 7,
-  "mismatch_resolver": 30
+  "mismatch_resolver": 29
  }
 }

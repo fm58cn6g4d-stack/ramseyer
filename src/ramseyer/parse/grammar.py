@@ -168,11 +168,17 @@ LEAD_UNITS = re.compile(rf"^(?:{UNIT}) (?P<labels>{LABELS}(?:(?:,| and|, and) {L
 _SN = r"\d[\w\u2013-]*+"           # possessive: no backtracking between the digits and the suffix
 SECTION_LIST = re.compile(rf"\b[Ss]ections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and) {_SN}(?:{LABELS})?)+)"
                           r" of (?:such title|this title|title \d+,? United States Code)\b")
+# "(1) in each of sections 46101(a)(1), 46102(a), and 46110(a) by striking ...", under "Chapter 461 is amended—":
+# the title is the one in context (Pub. L. 115-254 div. K § 1991(f)).
+# A comma the drafter left out between two entries ("46102(a) 46103(a)", § 1991(f)(3)) still separates them.
+EACH_SECTIONS = re.compile(rf"^\s*[Ii]n (?:each of )?sections (?P<list>{_SN}(?:{LABELS})?(?:(?:,| and|, and|) "
+                           rf"{_SN}(?:{LABELS})?)+),?\s*(?:by\s*)?$")
 # "Except as otherwise expressly provided, wherever in this title an amendment or repeal is expressed in terms of an
 # amendment to, or repeal of, a section or other provision, the reference shall be considered to be made to that
 # section or other provision of the Social Security Act."
 REFERENCES_CLAUSE = re.compile(
-    r"\b(?:wherever|whenever) in this (?P<scope>Act|division|title|subtitle|part|chapter|section)\b[^.]{0,200}?"
+    r"\b(?:wherever|whenever) in this (?P<scope>Act|division|title|subtitle|part|chapter|section|subsection)\b"
+    r"[^.]{0,200}?"
     r"expressed in terms of an amendment[^.]{0,160}?references? shall be considered to be made to (?:a|that|the) (?:section or "
     rf"other provision|section|provision) of (?:title (?P<title>\d+),? United States Code|(?P<act>{ACT_NAME}))")
 TOC_HEAD = re.compile(r"\b[Tt]he (?:table of (?:sections|contents|chapters)|analysis)\b")
@@ -203,6 +209,11 @@ def _unquote(s: str | None, quotes: list[str] | None) -> str | None:
 
 # "Such subchapter is further amended" (no number): the Code unit named last, in this bill section or an earlier one.
 SUCH_BARE_UNIT = re.compile(r"^[Ss]uch (?P<u>chapter|subchapter|part|subpart|subtitle) (?:is|are) (?:further )?amended")
+# "Such subsection is further amended" after "Subsection (a) of section 1562 of title 38 ... is amended": the
+# section's own unit named last (Pub. L. 116-315 § 2003(b)(1)).
+SUCH_OWN_UNIT = re.compile(r"^[Ss]uch (?P<u>subsection|paragraph|subparagraph|clause) (?:is|are) (?:further )?amended")
+OWN_LABEL = {"subsection": r"\([a-z]+\)", "paragraph": r"\(\d+[A-Za-z]?\)", "subparagraph": r"\([A-Z]+\)",
+             "clause": r"\([ivxl]+\)"}
 SUCH_UNIT = re.compile(r"(?:\b[Ss]uch (?P<u1>chapter|subchapter|part|subpart) (?P<x1>[\w]+)|"
                        r"\b(?P<u2>[Cc]hapter|[Ss]ubchapter|[Pp]art|[Ss]ubpart) (?P<x2>[\w]+) of (?:such|this) title)")
 
@@ -226,10 +237,19 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     """Update ctx from a head phrase (target and location). Returns flags."""
     flags: list[str] = []
     h = usc_variants(head)
+    # "Section 505–1(h)(21 U.S.C. 355–1(h)) is amended": no space before the Code parenthetical (Pub. L. 114-255
+    # § 3101(a)(2)(C)); it is not a label.
+    h = re.sub(r"\)\((\d+ U\.S\.C\. )", r") (\1", h)
     h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
     h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
+    # "The second sentence of paragraph (1) of section 3(a) of the ... Act is amended": the target is the paragraph,
+    # restricted to that sentence (Pub. L. 114-94 § 78001(a)).
+    sentence = re.match(r"^\s*[Tt]he (?P<n>first|second|third|fourth|last) sentence of ", h)
+    if sentence:
+        h = h[sentence.end():]
+        h = h[:1].upper() + h[1:]
     if TOC_HEAD.search(h):
         ctx.toc = True
     m = USC_SECTION.search(h)
@@ -247,10 +267,11 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                             usc_parenthetical=m["paren"])
         _section_path(ctx, m["path"])
         ctx.qualifiers, ctx.is_target_set = [], True
-    elif (m := SECTION_LIST.search(h)):
+    elif (m := SECTION_LIST.search(h)) or (m := EACH_SECTIONS.search(h)) and _usc_base(ctx) is not None:
         # "Sections 351(a), 352(a), and 353(b) of such title": the first here; parse_unit_text fans out the rest.
         tm = re.search(r"title (\d+)", m.group(0))
         base = (Target(kind="usc", title=tm.group(1)) if tm else
+                Target(kind="usc", title=_usc_base(ctx).title) if m.re is EACH_SECTIONS else
                 ctx.target if ctx.target.kind != "unknown" else ctx.memory.get("last") or ctx.target)
         t = base.model_copy(deep=True)
         first = re.match(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?", m["list"])
@@ -312,6 +333,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
         ctx.target = Target(kind="act", cite_raw=m.group(0), act=_unquote(re.sub(r"^The ", "", m["act"]), quotes),
                             usc_parenthetical=m["paren"])
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], [], True
+    elif (m := SUCH_OWN_UNIT.match(h.strip())) and (last := ctx.memory.get("last")) is not None and \
+            last.section and (depth := ["subsection", "paragraph", "subparagraph", "clause"].index(m["u"])) < \
+            len(last.path) and re.fullmatch(OWN_LABEL[m["u"]], last.path[depth]):
+        ctx.target = last.model_copy(deep=True)
+        ctx.target.path = []
+        ctx.path = [(i, lab) for i, lab in enumerate(last.path[:depth + 1])]
+        ctx.qualifiers, ctx.is_target_set = [], True
+        flags.append(f"such {m['u']}: {last.cite_raw}")
     elif (m := SUCH_BARE_UNIT.match(h.strip())) and (prior := _named_unit(ctx, m["u"])) is not None:
         ctx.target = prior.model_copy(deep=True)
         ctx.path, ctx.qualifiers, ctx.is_target_set = [], list(prior.qualifiers), True
@@ -381,6 +410,8 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                 ctx.qualifiers.append(q)
             if rx is HEADING_QUAL and m["fu"]:          # "the subsection heading for subsection (c)"
                 _set_path(ctx, m["fu"], m["fl"])
+    if sentence and f"{sentence['n']} sentence" not in ctx.qualifiers:
+        ctx.qualifiers.append(f"{sentence['n']} sentence")
     for m in DEFINING.finditer(h):
         # "in the paragraph defining the term “State”": the engine finds the unit that defines the term.
         term = quotes[int(m["q"])] if quotes and int(m["q"]) < len(quotes) else None
@@ -700,11 +731,11 @@ def _distributed(node: Node, ctx: Ctx) -> list[Ctx]:
 
 def _section_list(head: str, ctx: Ctx) -> list[Ctx]:
     """"Sections 351(a), 352(a), 353(a), and 353(b) of such title are amended by ...": one target per section."""
-    m = SECTION_LIST.search(head)
+    m = SECTION_LIST.search(head) or EACH_SECTIONS.search(head)
     if not m or ctx.target.kind != "usc":
         return []
     out = []
-    for sm in re.finditer(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?(?=,| and|$)", m["list"]):
+    for sm in re.finditer(rf"(?P<sec>{SECTION_NUM}?)(?P<path>{LABELS})?(?=,| and| \d|$)", m["list"]):
         if not sm["sec"]:
             continue
         d = ctx.copy()

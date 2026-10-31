@@ -866,3 +866,57 @@ Every parsed instruction has a status (23,040). The false-clean check FAILS on d
 - Unclear until read against the enrolled text.
 
 Next: classify all 120 by hand (dev may be inspected), teach the editorial detector only conventions confirmed against the enrolled text and OLRC's notes, fix the engine errors, rerun dev, then measure test once.
+
+### Step 2: the dev set's false cleans (2026-10-30/31, claude/m6e-false-clean)
+
+The 120 CLEAN predictions wrong in substance at the first dev measurement were classified by hand (`records/m6e_dev_false_clean.md`): 16 real errors, 12 whitespace only, 59 the comparison's (delayed effective dates, other laws in the window, OLRC departing from the literal instruction), 32 OLRC editorial conventions, 1 unclear. Changes, each with a test:
+- The comparison: a section with an OLRC "Amendment of ..." note citing the law is pending; a target another law's amendment-note entries credit in the window is not graded (new outcome "ungradable").
+- The editorial checker, now `oracle/editorial.py`, accepts a convention only where it can be checked: enactment dates; Act citations translated to Code citations that our resolver (at R_after, then the pinned index) maps to that section; outside positive law, headings OLRC supplied and catchlines the law does not amend; heading case and closing punctuation; "Repealed" placeholders citing this law; bracketed Code citations; footnote digits attached to a word; a "probable intent" note, for the passages it quotes; whitespace, reported apart.
+- Parser and engine: "the second sentence of ..." targets and "the period at the end of the first sentence"; "in each of sections A, B(c), and C" under a chapter (a missing comma included); "Such subsection is further amended"; a Code parenthetical with no space before it; a references clause scoped to a subsection; nested quotations with a plural possessive; repeated closing marks; an inserted em dash; lead-in text before added units; the section heading as against a subsection heading; a unit added at the end of a unit of its own level (WARN); an identical edit made twice (CONFLICT); a table in a bill (kept as a marker, WARN); an unapplied "each place it appears" strike naming no target.
+- Found on the way: the release-point history marks no title positive law; the editorial context and `--resolve-before` now take positive-law status from the pinned index (the engine's default resolver already did). A dropped release point that was never fully indexed no longer corrupts the full-text index (earlier in this step).
+
+| | Tuning | Dev, first | Dev, now |
+| --- | --- | --- | --- |
+| Targets graded | 1,269 | 7,612 | 7,108 |
+| Pending / other laws in the window (not graded) | 14 / 19 | 134 / – | 328 / 310 |
+| CLEAN | 370 (29.2%) | 1,555 (20.4%) | 1,461 (20.6%) |
+| CLEAN and wrong in substance | 0 | 120 (7.77%) | 24 (1.64%; 95% interval 1.16–2.51% with the off-target one) |
+| Raw (any difference) | 44 | 250 (16.08%) | 185 (12.66%) |
+
+The dev set's 9,589 classification rows are 7,746 distinct law-section targets, less 134 pending at the first measurement: 7,612.
+
+"Dev, now" is the re-measurement after the review of #10 (code at 5d2d585, 2026-10-31): enactment dates are accepted only for the Act the phrase names, and a unit heading only where the law's own inserted text gives none. It replaces the first figure taken after the fixes (27 of 1,461, at a97de33). Two of those 27, 42 U.S.C. 1395m (Pub. L. 113-67) and 300u-11 (Pub. L. 114-255), now differ from R_after only in a heading's case ("esrd" for "ESRD"), which the checker sets aside by design. The rules only became stricter, so the predicted text itself changed between the runs; the cause has not been pinned down.
+
+The 24 remaining (plus 1 off target):
+- 15 were first taken as OLRC departing from the literal instruction. On review (#9), 12 are labelled (a skipped clause, a corrected comma, "180 days December 27, 2020", ...); 3 (38 U.S.C. 119, 18 U.S.C. 1839, 10 U.S.C. 4025) turn on whether a law's own quotation marks are kept literally. Espen decided they are (below); the change is on claude/m6e-dev2.
+- 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them (10 U.S.C. 483, 2380c, 2583, under Pub. L. 117-81).
+- 6 others: 16 U.S.C. 823a, 10 U.S.C. 1407a, 34 U.S.C. 21711, 15 U.S.C. 77ppp (the LIBOR Act citation the resolver does not know), and 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)).
+With the 12 labels of #9, if the texts they were checked against are unchanged (a label carries hashes of both and lapses otherwise): 12 of 1,461 (0.82%) on target.
+
+### Step 3, part 1: GPO as a second reader (2026-10-31)
+
+`parse/gpo.py` reads a public law's USLM (Congress.gov's "United States Legislative Markup" version; every one of the 286 dev laws has one): per bill location, the `amendingAction` verbs and the `/us/usc` citations GPO tags, the citation inherited from the enclosing unit. `scripts/gpo_reader_check.py` compares it with every instruction the dev run graded (from the checkpoint), by location: the Code section we applied it to, and our operation against GPO's verb there.
+
+| GPO on the section's CLEAN instructions | Right in substance | Wrong in substance |
+| --- | --- | --- |
+| agrees | 855 | 18 |
+| silent (no Code citation there or above) | 575 | 9 |
+| disagrees | 4 | 0 |
+
+GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 false cleans of the first post-fix dev run and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
+
+### Step 2: the test set, measured once (2026-10-31, code at a97de33)
+
+`scripts/m6_gate.py --set history_test`: 280 laws, 2 h 15 min. Measured only; no case was inspected. Aggregates:
+
+| | Dev (after fixes) | Test |
+| --- | --- | --- |
+| Targets graded | 7,108 | 7,865 |
+| Pending / other laws in the window | 328 / 310 | 420 / 279 |
+| CLEAN | 1,461 (20.6%) | 1,444 (18.4%) |
+| CLEAN and wrong in substance | 27 (1.85%) | 118 (8.17%; 95% interval 6.86–9.68%) |
+| NDAAs / other laws | – | 3.95% / 9.05% |
+
+The test result fails the gate, and is about four times the dev rate: the dev fixes did not generalize. The errors are concentrated: one law accounts for 60 of the 118 (and 2,598 of the set's 2,623 "unexpected change" outcomes, a single systematic failure); 35 of 280 laws have any. Without that one law, 58 of 1,221 (4.75%). Which law, and why, has not been looked at: the test set is measured only. How to proceed (keep the test set held out and widen dev, or make it the new dev set and rely on the sealed set) is Espen's call.
+
+Re-measured after the review of #10 (code at 5d2d585, which only makes the editorial checker stricter): 115 of 1,444 (7.96%; 95% interval 6.67–9.46% with the off-target ones); NDAAs 10 of 253 (3.95%), other laws 105 of 1,193 (8.80%). Pub. L. 116-283 still accounts for 60; without it 55 of 1,221 (4.50%). Targets, pending and other-law counts and the raw figures are unchanged. CLEAN predictions in the groups not graded: dev 70 pending and 30 on targets other laws also changed; test 81 and 20. Three earlier test false cleans now pass as editorial; as on dev, those cases were not inspected.
