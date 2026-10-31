@@ -1198,6 +1198,12 @@ class Engine:
         if through in (".", ";", ":"):
             # "and all that follows through the period": the next one after the start.
             nxt = hay.find(through, start + len(ins.find or ""), allowed_end)
+            # A period that closes an abbreviation or a citation ("122 Stat. 4567", "10 U.S.C. 2228", "Pub. L.") ends
+            # no sentence (Pub. L. 114-328 § 954(b)(2), 10 U.S.C. 2228(e)(2)).
+            while through == "." and nxt >= 0 and re.search(r"(?:\bStat|\bU\.S\.C|\bU\.S|\bPub|\bL|\bNo|\bNos|\bSec|"
+                                                         r"\bseq|\bInc|\bCo|\bCorp|\bv|\b[A-Z])$", hay[:nxt]) and \
+                    re.match(r"\.\s*[\w(§]", hay[nxt:nxt + 4]) and not re.match(r"\.\s*[A-Z][a-z]", hay[nxt:nxt + 4]):
+                nxt = hay.find(through, nxt + 1, allowed_end)
             if nxt < 0:
                 return Result(ins.id, "NOT_FOUND", f"no “{through}” after the start")
             end = nxt + 1

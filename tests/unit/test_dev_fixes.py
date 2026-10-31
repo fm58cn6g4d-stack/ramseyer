@@ -285,3 +285,13 @@ def test_paragraph_of_such_subsection():
          "“b”; and\n(B) by adding at the end the following:\n“(C) Gamma.”.\n")
     ins = parse_text(t).instructions
     assert [(i.target.section, i.target.path) for i in ins[2:]] == [("3", ["(b)", "(2)", "(A)"]), ("3", ["(b)", "(2)"])]
+
+
+def test_through_the_period_skips_a_citation_period():
+    # Pub. L. 114-328 § 954(b)(2) (10 U.S.C. 2228(e)(2)): "through the period" stopped at "122 Stat." and left
+    # "4567; 10 U.S.C. 2228 note)." behind. Synthetic placeholder text.
+    xml = XML.replace("Reviews shall be made at least annually.",
+                      "Reviews shall include a copy of the alpha report (Public Law 1–2; 122 Stat. 4567; 10 U.S.C. 1 note).")
+    text, res = run("Subsection (a) of section 1 of title 99, United States Code, is amended by striking “a copy of” "
+                    "and all that follows through the period and inserting “a summary of the beta report.”.", xml)
+    assert res[0].status == "CLEAN" and "include a summary of the beta report. The" in text and "4567" not in text
