@@ -197,3 +197,15 @@ def test_a_references_clause_scoped_to_a_subsection():
                      "355–1(h)) is amended in paragraph (8) by striking “x” and inserting “y”.\n(b) Two.—Section 351 "
                      "(98 U.S.C. 262) is amended by striking “a” and inserting “b”.\n").instructions
     assert [(i.id, i.target.act) for i in ins] == [("sec3101.a.2#0", "Placeholder Act"), ("sec3101.b#0", None)]
+
+
+def test_nested_quotation_keeps_the_laws_own_marks():
+    # Pub. L. 114-153 § 2 (18 U.S.C. 1839): a quotation the law opens inside another keeps its single marks, and the
+    # outer one the law never closes is still set as double. Synthetic placeholder text.
+    from ramseyer.dryrun.engine import nested_to_double
+    s = "the Act entitled ‘An Act to foo, (referred to as the ‘Alpha Act’ or the ‘Beta Act’)"
+    want = "the Act entitled “An Act to foo, (referred to as the ‘Alpha Act’ or the ‘Beta Act’)"
+    assert nested_to_double(s) == want
+    assert nested_to_double(want) == want
+    assert nested_to_double("the term ‘State’ includes the Indians’ lands") == \
+        "the term “State” includes the Indians’ lands"

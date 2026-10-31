@@ -86,24 +86,35 @@ def nested_to_double(s: str) -> str:
 
     A quotation closes at the first ’ not followed by a letter, except that a plural possessive (“Victims’ ” followed
     by a space) is skipped when a later ’ before the next ‘ is followed by closing punctuation: ‘Special Victims’
-    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not."""
-    out, i = [], 0
-    for m in re.finditer(r"(?<![\w])‘", s):
-        if m.start() < i:
-            continue
-        rest = s[m.end():]
-        nxt = rest.find("‘")
-        span = rest if nxt < 0 else rest[:nxt]
-        closes = [c.start() for c in re.finditer(r"’(?!\w)", span)]
-        if not closes:
-            continue
-        end = closes[0]
-        if span[end - 1:end] == "s" and span[end + 1:end + 2] == " ":
-            later = [c for c in closes[1:] if re.match(r"’(?:[)\].,;:”—]|$)", span[c:])]
-            end = later[0] if later else end
-        out.append(s[i:m.start()] + "“" + span[:end] + "”")
-        i = m.end() + end + 1
-    return "".join(out) + s[i:]
+    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not.
+
+    Only the outermost quotation is set as “ ”. One the law opens inside another keeps the law's own marks, as OLRC
+    prints them ("So in original"): ‘Trademark Act of 1946’ inside ‘An Act ...’, Pub. L. 114-153 § 2, 18 U.S.C.
+    1839). An opening ‘ the law never closes is still the outer quotation's. Marks already set as “ ” count as
+    quotations, so a second pass changes nothing."""
+    out = list(s)
+    stack: list[tuple[str, int]] = []                  # ("d", i) for “, ("s", i) for ‘
+    for i, ch in enumerate(s):
+        if ch == "“":
+            stack.append(("d", i))
+        elif ch == "”":
+            if stack and stack[-1][0] == "d":
+                stack.pop()
+        elif ch == "‘" and not (i > 0 and re.match(r"\w", s[i - 1])):
+            stack.append(("s", i))
+        elif ch == "’" and stack and stack[-1][0] == "s" and not re.match(r"\w", s[i + 1:i + 2]):
+            if s[i - 1:i] == "s" and s[i + 1:i + 2] == " ":
+                rest = s[i + 1:]
+                nxt = rest.find("‘")
+                span = rest if nxt < 0 else rest[:nxt]
+                if re.search(r"’(?:[)\].,;:”—]|$)", span):
+                    continue                            # a plural possessive inside the quotation
+            _, o = stack.pop()
+            if not stack:
+                out[o], out[i] = "“", "”"
+    if stack and stack[0][0] == "s":
+        out[stack[0][1]] = "“"                          # never closed: still the outermost quotation
+    return "".join(out)
 
 
 def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
