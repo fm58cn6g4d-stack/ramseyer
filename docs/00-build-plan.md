@@ -38,12 +38,12 @@ Nineteen milestones, each with a gate that must pass before the next starts. The
 | M6d | Foundations | Next | Indexer and text extraction read USLM 1.x and 2.x, checked on OLRC's 2.0.12 sample titles; dry-run reports the Comparative Print Suite's four failure categories, including already executed into current law; before and after release points chosen by incorporated-set window, including `not` and `u1` labels | 1 Data layer, 5 Dry-run |
 | M6e | Oracle rebuild | Planned | Oracle rebuilt on the dreamproit/uscode release points (381, 2013–2026); GPO amendingAction tagging compared as a second reader; introduced and reported versions of enacted laws graded against the enacted change; amendments to Act text quoted in Code notes dry-run; substantive false-clean under 1% on a sealed set | 11 Testing |
 | M8a | Act-text layer | Planned | Statute Compilations (about 2,710) loaded with their currentThroughPublicLaw; each draft run against both the Act and the Code; every disagreement between the two reported with a reason | 1 Data layer |
-| M8 | Comparative print | Planned | Each provision shown as a redline (amends existing text) or a structure-and-placement view (new statute); HTML and DOCX render; stripping markup recovers before and after text exactly; checked against the changes-in-existing-law sections of committee reports | 6 Comparative print |
+| M8 | Comparative print | Planned | Each provision shown as a redline (amends existing text) or a structure-and-placement view (new statute); HTML and DOCX render; stripping markup recovers before and after text exactly; checked against the changes-in-existing-law sections of committee reports; shown in the first version of the local app (tab 10) | 6 Comparative print |
 | M7 | Word ingestion | Planned | Five real drafts parse, with tracked changes and manual numbering handled | 3 Draft parser |
 | M9 | Ripple graph | Planned | Interactive HTML for 50 amended sections loads in seconds; edges match the refs table | 7 Ripple graph |
 | M10 | Flags and ledger | Planned | Authorization ledger CSV and flag report produced for the American Passenger Rail Network Act | 8 Flags |
 | M11 | Model fallback | Planned | Residue handled by propose-then-verify; log, cache and budget caps working | 9 Model fallback |
-| M12 | Packaging and hardening | Planned | One command produces the full report folder; quickstart works on a clean machine | 10 Packaging |
+| M12 | Packaging and hardening | Planned | The local app and one command both produce the full report folder; a non-programmer installs from the guide on a clean machine (checked by Espen on their own) | 10 Packaging |
 | M13 | Bill and amendment comparison | Later | Bill-to-bill and amendment-to-bill comparison and bill viewer features; gate set when it is scheduled | 6 Comparative print |
 
 ## Model and effort
