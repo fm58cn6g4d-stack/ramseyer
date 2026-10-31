@@ -107,12 +107,6 @@
   "pred": "d606b7b9933c707a",
   "after": "004092a6b5b7865d"
  },
- "117-263 /us/usc/t10/s4025": {
-  "stage": "editorial",
-  "reason": "the enrolled § 844(1)(A) inserts “that—” then “(1) have”; R_after reads “that—”” with a closing mark the law's text does not have",
-  "pred": "0c734640cb2f6fad",
-  "after": "666e8d8aa46df09f"
- },
  "117-81 /us/usc/t10/s2714": {
   "stage": "editorial",
   "reason": "the enrolled § 341(a) ends § 2714 “nonfluorinated carbon atoms.” and gives its catchline in sentence case; R_after adds a closing quotation mark and sets the catchline in title case",
