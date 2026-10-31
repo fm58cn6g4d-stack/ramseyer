@@ -880,16 +880,18 @@ The 120 CLEAN predictions wrong in substance at the first dev measurement were c
 | Targets graded | 1,269 | 7,612 | 7,108 |
 | Pending / other laws in the window (not graded) | 14 / 19 | 134 / – | 328 / 310 |
 | CLEAN | 370 (29.2%) | 1,555 (20.4%) | 1,461 (20.6%) |
-| CLEAN and wrong in substance | 0 | 120 (7.77%) | 27 (1.85%; 95% interval 1.33–2.75% with the off-target one) |
+| CLEAN and wrong in substance | 0 | 120 (7.77%) | 24 (1.64%; 95% interval 1.16–2.51% with the off-target one) |
 | Raw (any difference) | 44 | 250 (16.08%) | 185 (12.66%) |
 
 The dev set's 9,589 classification rows are 7,746 distinct law-section targets, less 134 pending at the first measurement: 7,612.
 
-The 27 remaining (plus 1 off target):
-- 15 are OLRC departing from the literal instruction with no note explaining it (a skipped clause, a corrected comma, a stray quotation mark, "180 days December 27, 2020"). They count as wrong until hand-labelled; `tests/oracle/labels.json` is tier 3, so they go to Espen as a separate proposal.
-- 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them.
-- 9 others: "this part" translated to "this subchapter" (no Act-unit to Code-unit map yet), a subsection heading the engine built into the text, an "Omitted" placeholder, the LIBOR Act citation the resolver does not know, 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)), 42 U.S.C. 1395m and 300u-11, and #110 (unclear).
-Without the 15 OLRC departures: 12 of 1,461 (0.82%) on target.
+"Dev, now" is the re-measurement after the review of #10 (code at 5d2d585, 2026-10-31): enactment dates are accepted only for the Act the phrase names, and a unit heading only where the law's own inserted text gives none. It replaces the first figure taken after the fixes (27 of 1,461, at a97de33). Two of those 27, 42 U.S.C. 1395m (Pub. L. 113-67) and 300u-11 (Pub. L. 114-255), now differ from R_after only in a heading's case ("esrd" for "ESRD"), which the checker sets aside by design. The rules only became stricter, so the predicted text itself changed between the runs; the cause has not been pinned down.
+
+The 24 remaining (plus 1 off target):
+- 15 were first taken as OLRC departing from the literal instruction. On review (#9), 12 are labelled (a skipped clause, a corrected comma, "180 days December 27, 2020", ...); 3 (38 U.S.C. 119, 18 U.S.C. 1839, 10 U.S.C. 4025) turn on whether a law's own quotation marks are kept literally. Espen decided they are (below); the change is on claude/m6e-dev2.
+- 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them (10 U.S.C. 483, 2380c, 2583, under Pub. L. 117-81).
+- 6 others: 16 U.S.C. 823a, 10 U.S.C. 1407a, 34 U.S.C. 21711, 15 U.S.C. 77ppp (the LIBOR Act citation the resolver does not know), and 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)).
+With the 12 labels of #9, if the texts they were checked against are unchanged (a label carries hashes of both and lapses otherwise): 12 of 1,461 (0.82%) on target.
 
 ### Step 3, part 1: GPO as a second reader (2026-10-31)
 
@@ -901,4 +903,20 @@ Without the 15 OLRC departures: 12 of 1,461 (0.82%) on target.
 | silent (no Code citation there or above) | 575 | 9 |
 | disagrees | 4 | 0 |
 
-GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 remaining false cleans and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
+GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a rule lowering CLEAN to WARN on disagreement would catch none of the 27 false cleans of the first post-fix dev run and cost 4 right ones. So it is not wired into statuses: on enacted text GPO's tagging confirms the parse and adds no protection. The reader stays for bill versions that carry GPO USLM, and as a check on future parser changes (`gpo_reader_check.py` after a run).
+
+### Step 2: the test set, measured once (2026-10-31, code at a97de33)
+
+`scripts/m6_gate.py --set history_test`: 280 laws, 2 h 15 min. Measured only; no case was inspected. Aggregates:
+
+| | Dev (after fixes) | Test |
+| --- | --- | --- |
+| Targets graded | 7,108 | 7,865 |
+| Pending / other laws in the window | 328 / 310 | 420 / 279 |
+| CLEAN | 1,461 (20.6%) | 1,444 (18.4%) |
+| CLEAN and wrong in substance | 27 (1.85%) | 118 (8.17%; 95% interval 6.86–9.68%) |
+| NDAAs / other laws | – | 3.95% / 9.05% |
+
+The test result fails the gate, and is about four times the dev rate: the dev fixes did not generalize. The errors are concentrated: one law accounts for 60 of the 118 (and 2,598 of the set's 2,623 "unexpected change" outcomes, a single systematic failure); 35 of 280 laws have any. Without that one law, 58 of 1,221 (4.75%). Which law, and why, has not been looked at: the test set is measured only. How to proceed (keep the test set held out and widen dev, or make it the new dev set and rely on the sealed set) is Espen's call.
+
+Re-measured after the review of #10 (code at 5d2d585, which only makes the editorial checker stricter): 115 of 1,444 (7.96%; 95% interval 6.67–9.46% with the off-target ones); NDAAs 10 of 253 (3.95%), other laws 105 of 1,193 (8.80%). Pub. L. 116-283 still accounts for 60; without it 55 of 1,221 (4.50%). Targets, pending and other-law counts and the raw figures are unchanged. CLEAN predictions in the groups not graded: dev 70 pending and 30 on targets other laws also changed; test 81 and 20. Three earlier test false cleans now pass as editorial; as on dev, those cases were not inspected.
