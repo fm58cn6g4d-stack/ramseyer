@@ -866,3 +866,27 @@ Every parsed instruction has a status (23,040). The false-clean check FAILS on d
 - Unclear until read against the enrolled text.
 
 Next: classify all 120 by hand (dev may be inspected), teach the editorial detector only conventions confirmed against the enrolled text and OLRC's notes, fix the engine errors, rerun dev, then measure test once.
+
+### Step 2: the dev set's false cleans (2026-10-30/31, claude/m6e-false-clean)
+
+The 120 CLEAN predictions wrong in substance at the first dev measurement were classified by hand (`records/m6e_dev_false_clean.md`): 16 real errors, 12 whitespace only, 59 the comparison's (delayed effective dates, other laws in the window, OLRC departing from the literal instruction), 32 OLRC editorial conventions, 1 unclear. Changes, each with a test:
+- The comparison: a section with an OLRC "Amendment of ..." note citing the law is pending; a target another law's amendment-note entries credit in the window is not graded (new outcome "ungradable").
+- The editorial checker, now `oracle/editorial.py`, accepts a convention only where it can be checked: enactment dates; Act citations translated to Code citations that our resolver (at R_after, then the pinned index) maps to that section; outside positive law, headings OLRC supplied and catchlines the law does not amend; heading case and closing punctuation; "Repealed" placeholders citing this law; bracketed Code citations; footnote digits attached to a word; a "probable intent" note, for the passages it quotes; whitespace, reported apart.
+- Parser and engine: "the second sentence of ..." targets and "the period at the end of the first sentence"; "in each of sections A, B(c), and C" under a chapter (a missing comma included); "Such subsection is further amended"; a Code parenthetical with no space before it; a references clause scoped to a subsection; nested quotations with a plural possessive; repeated closing marks; an inserted em dash; lead-in text before added units; the section heading as against a subsection heading; a unit added at the end of a unit of its own level (WARN); an identical edit made twice (CONFLICT); a table in a bill (kept as a marker, WARN); an unapplied "each place it appears" strike naming no target.
+- Found on the way: the release-point history marks no title positive law; the editorial context and `--resolve-before` now take positive-law status from the pinned index (the engine's default resolver already did). A dropped release point that was never fully indexed no longer corrupts the full-text index (earlier in this step).
+
+| | Tuning | Dev, first | Dev, now |
+| --- | --- | --- | --- |
+| Targets graded | 1,269 | 7,612 | 7,108 |
+| Pending / other laws in the window (not graded) | 14 / 19 | 134 / – | 328 / 310 |
+| CLEAN | 370 (29.2%) | 1,555 (20.4%) | 1,461 (20.6%) |
+| CLEAN and wrong in substance | 0 | 120 (7.77%) | 27 (1.85%; 95% interval 1.33–2.75% with the off-target one) |
+| Raw (any difference) | 44 | 250 (16.08%) | 185 (12.66%) |
+
+The dev set's 9,589 classification rows are 7,746 distinct law-section targets, less 134 pending at the first measurement: 7,612.
+
+The 27 remaining (plus 1 off target):
+- 15 are OLRC departing from the literal instruction with no note explaining it (a skipped clause, a corrected comma, a stray quotation mark, "180 days December 27, 2020"). They count as wrong until hand-labelled; `tests/oracle/labels.json` is tier 3, so they go to Espen as a separate proposal.
+- 3 are another law's delayed amendments (Pub. L. 116-283 title XVIII) executed in the window but listed in OLRC's notes a release point earlier, so the notes cannot show them.
+- 9 others: "this part" translated to "this subchapter" (no Act-unit to Code-unit map yet), a subsection heading the engine built into the text, an "Omitted" placeholder, the LIBOR Act citation the resolver does not know, 49 U.S.C. 46102 and 46107 (Pub. L. 115-254 § 1991(f)), 42 U.S.C. 1395m and 300u-11, and #110 (unclear).
+Without the 15 OLRC departures: 12 of 1,461 (0.82%) on target.
