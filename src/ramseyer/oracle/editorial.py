@@ -105,9 +105,11 @@ def _inserted_without_heading(chain: tuple[str, ...], inserted: list[tuple[list[
     mine = []
     for path, text in inserted:
         at = tuple(x.strip("()") for x in path)
+        lines = [ln.lstrip("“ ") for ln in text.split("\n")]
+        if at and lines and lines[0].startswith(f"({at[-1]})"):
+            at = at[:-1]              # text that replaces the unit itself ("striking subsection (b) and inserting ...")
         if len(at) >= len(chain) or at != chain[:len(at)]:
             continue
-        lines = [ln.lstrip("“ ") for ln in text.split("\n")]
         if not any(ln.startswith(f"({chain[len(at)]})") for ln in lines):
             continue
         mine += [ln for ln in lines if ln.startswith(f"({chain[-1]})")]

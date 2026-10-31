@@ -159,3 +159,14 @@ def test_an_act_reference_resolving_to_a_subsection():
     after = sec(sub("a", "of paragraph (2)(B) of section 1395w–104(o) of this title at a time"))
     ctx = Context(pl="1-2", title="42", resolve=lambda cite: "/us/usc/t42/s1395w–104/o")
     assert kind(pred, after, ctx) .startswith("editorial")
+
+
+def test_a_supplied_heading_on_a_unit_the_law_replaces_whole():
+    # Pub. L. 116-260 div. Q § 224 (15 U.S.C. 1062): "striking subsection (b) and inserting “(b)\n“(1) ...": the
+    # inserted text is the unit itself, set at its parent's level, and gives (b) no heading.
+    pred = sec('<subsection><num value="b">(b)</num><content>The applicant shall reply.</content></subsection>')
+    after = sec(sub("b", "The applicant shall reply.", heading="Refusal of registration"))
+    law = [(["(b)"], "“(b) The applicant shall reply.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
+    lost = [(["(b)"], "“(b) Refusal of registration.—The applicant shall reply.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=lost)) is None
