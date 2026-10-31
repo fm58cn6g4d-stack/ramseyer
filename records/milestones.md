@@ -921,3 +921,23 @@ The test result fails the gate, and is about four times the dev rate: the dev fi
 
 - The test set becomes a second dev set ("dev 2"): its cases may now be inspected and fixed, starting with the one law that accounts for half its false cleans. The sealed set (281 laws, never run) is the only held-out measurement left, run once at the end of the round. The test figure above (8.17%) stands as the one held-out measurement of this round's dev fixes.
 - A law's own quotation marks are kept literally: a stray closing mark the law has (38 U.S.C. 119) and quotation marks nested inside a quotation as the law prints them (18 U.S.C. 1839) stay in the predicted text, as OLRC prints them with "So in original".
+
+### Dev 2 (2026-10-31, claude/m6e-dev2)
+
+Changes, each with a test (case by case in `records/m6e_dev2_false_clean.md`):
+- **Literal marks** (Espen's decision): a quotation the law opens inside another keeps the law's own marks; a stray closing mark inside a quoted block is kept as the law's text.
+- **Not yet executed:** a section whose text R_after leaves as at R_before, with no note citing the law, is not graded (new outcome "unexecuted"). OLRC listed Pub. L. 116-283 in release point 116-344 but executed its title 46 amendments only in 117-17; the rule takes no account of the prediction, and on dev it removed no CLEAN prediction.
+- **Reproducible runs** (review of #10): a materialized release point was reused whatever code had built it. It now sits under a stamp of the code that builds it, and a stale one is removed. `--rerun N` repeats a run with its own checkpoint and fresh release points; `scripts/compare_runs.py` compares two runs section by section. Two dev runs at c9ef141 agree on all 8,228 sections (outcome, status, editorial reading, and the predicted, R_before and R_after texts). The two dev answers that moved between the a97de33 and 5d2d585 runs most likely came from such a reused file; the old files are gone, so this is not proved.
+- **Parser:** (aa) follows (z) (all of Pub. L. 114-328 § 502(aa) onward was read under (z)(3)); "Subsection (b) and subsection (d) of section ..."; an "Effective as of ..., and as if included therein as enacted," clause no longer hides the Act a lead-in amends; "The heading of such section"; "Paragraph (2) of such subsection"; an "Effective on the date that is 2 years after ...—" lead-in delays its items; "clauses (i) through (v)" is a roman range; "The heading of such section 1005 is amended to read" replaces the heading only; drafting slips ("Section (d)(1) of such section is amending") applied by intent and marked WARN; quoted words in headers and a space inside "<term>" rendered as the law has them.
+- **Engine:** "through the period" passes over a citation's period ("122 Stat."); inserting a quoted term keeps its marks; a word-internal apostrophe is the Code's ’.
+- **Comparison:** a supplied heading is matched on the unit's own place (review of #10), including a unit the law replaces whole; bracketed "Repealed" placeholders; "the date of enactment of this clause"; fractions; Unicode encoding; an Act reference set in the Code citation the law itself prints; "Transfer and Amendment of Section" notes are delayed amendments.
+- The NDAA stratum now finds the FY2021 NDAA, whose name has a line break.
+
+| At 4b0677b | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,461 | 1,392 |
+| CLEAN and wrong in substance | 0 | 23 (1.57%) | 29 (2.08%; 95% interval 1.45–2.97%) |
+| Before (dev at 5d2d585, dev 2 at c9ef141) | 0 | 24 (1.64%) | 49 (3.54%) |
+| Not yet executed (not graded) | 55 | 332 | 476 |
+
+All 29 dev 2 false cleans were among the 49; none is new. The dev figure is before #9's labels (this branch predates them); 12 of its 23 are labelled there. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).
