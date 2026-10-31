@@ -235,3 +235,22 @@ def test_the_heading_of_a_section_amended_to_read_replaces_the_heading_only():
                     "to read as follows:\n“§ 1. Alpha rule”.")
     assert [r.status for r in res] == ["CLEAN", "CLEAN"]
     assert "Alpha rule" in text and "review every term" in text
+
+
+def test_subsection_and_subsection_of_a_section_are_two_scopes():
+    # Pub. L. 114-289 § 501(d) (54 U.S.C. 311103): the edit fell on the whole section.
+    from ramseyer.parse import parse_text
+    ins = parse_text("SEC. 2. X.\nSubsection (b) and subsection (d) of section 1 of title 99, United States Code, are "
+                     "amended by striking “Council” each place it appears and inserting “Chair of the Council”.\n").instructions
+    assert [i.target.path for i in ins] == [["(b)"], ["(d)"]]
+
+
+def test_subsection_aa_follows_subsection_z():
+    # Pub. L. 114-328 § 502: "(oo) ... Section 8081 ... is amended by striking the second sentence" was read under
+    # "(z)(3)", a table-of-contents edit, so the sentence was never struck (10 U.S.C. 8081).
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(z) Beta.—Section 2 of title 99, United States Code, is amended—\n(1) by striking “b”; and\n"
+         "(2) in the table, by striking the item relating to section 3.\n(aa) Gamma.—Section 4 of title 99, United "
+         "States Code, is amended by striking the second sentence.\n")
+    ins = parse_text(t).instructions
+    assert [(i.id, i.op) for i in ins][-1] == ("sec2.aa#0", "STRIKE")

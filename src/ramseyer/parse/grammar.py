@@ -244,6 +244,10 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
     h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
+    # "Subsection (b) and subsection (d) of section 311103 ... are amended" is "Subsections (b) and (d) of ..." (Pub. L.
+    # 114-289 § 501(d)); read as the last unit alone, the edit fell on the whole section.
+    h = re.sub(r"\b([Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause|[Ii]tem) ((?:\([\w.-]+\))+) and "
+               r"(?i:\1) ((?:\([\w.-]+\))+)", lambda m: f"{m.group(1)}s {m.group(2)} and {m.group(3)}", h)
     # "The second sentence of paragraph (1) of section 3(a) of the ... Act is amended": the target is the paragraph,
     # restricted to that sentence (Pub. L. 114-94 § 78001(a)).
     sentence = re.match(r"^\s*[Tt]he (?P<n>first|second|third|fourth|last) sentence of ", h)
