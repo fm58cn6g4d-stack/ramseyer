@@ -58,7 +58,7 @@ def test_an_act_reference_counts_only_as_the_code_section_the_resolver_finds():
 def test_a_heading_olrc_supplied_counts_only_outside_positive_law():
     pred = sec(sub("e", "The Director shall act."))
     after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
-    law = ["“(e) The Director shall act.”"]                                     # the law's text has no heading
+    law = [([], "“(e) The Director shall act.”")]                               # the law's text has no heading
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
     assert kind(pred, after, Context(pl="1-2", positive_law=True, inserted=law)) is None
     assert kind(pred, after, Context(pl="1-2", inserted=law)) is None          # not known: not accepted
@@ -71,9 +71,18 @@ def test_a_heading_the_engine_lost_is_not_excused():
     # Review of #10: the prediction lacks a heading the law's own text gives; R_after has it. Not OLRC's work.
     pred = sec(sub("e", "The Director shall act."))
     after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
-    law = ["“(e) Policymaking.—The Director shall act.”"]
+    law = [([], "“(e) Policymaking.—The Director shall act.”")]
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) is None
     assert kind(pred, after, Context(pl="1-2", positive_law=False)) is None   # the unit is not in the law's text
+
+
+def test_a_supplied_heading_is_matched_on_the_units_own_place():
+    # Review of #10: text inserted elsewhere in the section that happens to have an "(e)" says nothing of this (e).
+    pred = sec(sub("e", "The Director shall act."))
+    after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
+    elsewhere = [(["(c)"], "“(e) The Director shall act.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=elsewhere)) is None
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=[(["(e)"], "“(1) Text.”")])) is None
 
 
 def test_a_catchline_counts_as_olrc_s_unless_the_law_amends_a_heading():
@@ -133,7 +142,7 @@ def test_a_supplied_heading_is_found_on_a_unit_the_engine_built_without_an_ident
     # Units built from bill text carry no identifier (Pub. L. 116-260 div. Q § 224, 15 U.S.C. 1062(b)).
     pred = sec('<subsection><num value="b">(b)</num><content>The applicant shall reply.</content></subsection>')
     after = sec(sub("b", "The applicant shall reply.", heading="Refusal of registration"))
-    law = ["“(b)\n“(1) If the applicant ...", "“(b) The applicant shall reply.”"]
+    law = [([], "“(b)\n“(1) If the applicant ..."), ([], "“(b) The applicant shall reply.”")]
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
 
 

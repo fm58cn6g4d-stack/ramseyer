@@ -43,7 +43,9 @@ class Context:
     # The enactment date of an Act named in the text ("CARES Act"), or of this law (None), as "2020-03-27"; None
     # when unknown, and then no date is accepted for the phrase.
     date_of: Callable[[str | None], str | None] = lambda act: None
-    inserted: list[str] = field(default_factory=list)   # the law's quoted text inserted in the section
+    # The law's quoted text inserted in the section, with the path of the unit each instruction inserts it in
+    # (["(b)", "(2)"]; [] for the section itself).
+    inserted: list[tuple[list[str], str]] = field(default_factory=list)
 
     @property
     def cite(self) -> str:
@@ -94,12 +96,23 @@ def _chain(u, root) -> tuple[str, ...]:
     return tuple(reversed(out))
 
 
-def _inserted_without_heading(label: str, inserted: list[str]) -> bool:
-    """The law's inserted text gives the unit "(label)" and gives it no heading ("(e) The Director ...", not "(e)
-    Policymaking.—The Director ..."): a heading at R_after is then OLRC's, not one the engine lost."""
-    lines = [ln.lstrip("“ ") for t in inserted for ln in t.split("\n")]
-    mine = [ln for ln in lines if ln.startswith(f"({label})")]
-    return bool(mine) and not any(re.match(rf"^\({re.escape(label)}\)\s*[A-Z][^.—]{{0,160}}\.—", ln) for ln in mine)
+def _inserted_without_heading(chain: tuple[str, ...], inserted: list[tuple[list[str], str]]) -> bool:
+    """The law's text inserted where the unit is gives it no heading ("(e) The Director ...", not "(e)
+    Policymaking.—The Director ..."): a heading at R_after is then OLRC's, not one the engine lost. Only text
+    inserted in one of the unit's ancestors counts, and only if it begins the unit's own line of descent there:
+    paragraph (b)(2)(C) is found in text inserted in subsection (b) that has a "(2)" and a "(C)", never in text
+    inserted in subsection (c)."""
+    mine = []
+    for path, text in inserted:
+        at = tuple(x.strip("()") for x in path)
+        if len(at) >= len(chain) or at != chain[:len(at)]:
+            continue
+        lines = [ln.lstrip("“ ") for ln in text.split("\n")]
+        if not any(ln.startswith(f"({chain[len(at)]})") for ln in lines):
+            continue
+        mine += [ln for ln in lines if ln.startswith(f"({chain[-1]})")]
+    label = re.escape(chain[-1])
+    return bool(mine) and not any(re.match(rf"^\({label}\)\s*[A-Z][^.—]{{0,160}}\.—", ln) for ln in mine)
 
 
 def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
@@ -129,7 +142,7 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
             mine = pred_units.get(_chain(u, after_el))
             mh = _heading(mine) if mine is not None else None
             if mine is not None and (mh is None or not "".join(mh.itertext()).strip()) and \
-                    _inserted_without_heading(_chain(u, after_el)[-1], ctx.inserted):
+                    _inserted_without_heading(_chain(u, after_el), ctx.inserted):
                 _drop(h)                             # a heading OLRC supplied: the law's own text has none
     out = []
     for el in (pred_el, after_el):

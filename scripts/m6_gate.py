@@ -232,7 +232,7 @@ def main() -> int:
                 new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
                 resolve=resolve_at_after, title=title.group(1) if title else "",
                 date_of=lambda act: enacted_date(law.pl if act is None else act_law(act)),
-                inserted=[t for tr in run.traces if tr.section == ident
+                inserted=[(tr.instruction.target.path, t) for tr in run.traces if tr.section == ident
                           for t in (tr.instruction.new_text, tr.instruction.replace) if t])
             return editorial.kind(work.el, after_xml, ctx)
         kinds = {o.identifier: editorial_kind(o.identifier) for o in outs
