@@ -249,6 +249,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     # "Effective as of November 25, 2015, and as if included therein as enacted, the ... Act ... is amended as
     # follows:" (Pub. L. 114-328 § 1081(c)): the date clause names no target; left in, it hid the Act, and the items
     # below fell back to the last citation (title 10).
+    # Drafting slips read by their plain intent, and flagged (the edit is WARN, never CLEAN): "Section (d)(1) of such
+    # section is amending by inserting" (Pub. L. 119-37 § 7307(c), 38 U.S.C. 3737; OLRC executed it as intended).
+    if re.match(r"^\s*Section (\([a-z]+\)(?:\(\w+\))*) of such section\b", h):
+        flags.append("drafting slip: “Section (…)” of such section read as a subsection")
+        h = re.sub(r"^\s*Section (\([a-z]+\))", r"Subsection \1", h)
+    if re.search(r"\b(?:is|are) amending\b", h):
+        flags.append("drafting slip: “is amending” read as “is amended”")
+        h = re.sub(r"\b(is|are) amending\b", r"\1 amended", h)
     eff = re.match(r"^\s*[Ee]ffective (?:as of|on) (?:[A-Z][a-z]+ \d{1,2}, \d{4}|the date [^,]+)"
                    r"(?:, and as if included (?:therein|in [^,]+) (?:as enacted|on the date of [^,]+))?,\s*", h)
     if eff:

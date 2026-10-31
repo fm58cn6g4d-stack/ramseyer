@@ -623,7 +623,8 @@ class Engine:
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":
-            loose = [f for f in ins.flags if f.startswith(("expected a quoted block", "nonstandard verb")) or
+            loose = [f for f in ins.flags if f.startswith(("expected a quoted block", "nonstandard verb", "drafting slip"))
+                     or
                      (f.startswith("unconsumed") and not MARGINS.fullmatch(f[len("unconsumed: "):].strip()))]
             if loose:
                 # The parser left part of the instruction unread, or read an unusual verb as a usual one: a clean

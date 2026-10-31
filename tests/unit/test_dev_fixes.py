@@ -320,3 +320,10 @@ def test_clauses_i_through_v_is_a_roman_range():
     from ramseyer.parse.grammar import _expand
     assert _expand("clauses (i) through (v)") == ["(i)", "(ii)", "(iii)", "(iv)", "(v)"]
     assert _expand("subsections (i) through (k)") == ["(i)", "(j)", "(k)"]
+
+
+def test_a_drafting_slip_is_applied_by_intent_and_warned():
+    # Pub. L. 119-37 § 7307(c) (38 U.S.C. 3737): "Section (d)(1) of such section is amending by inserting ...".
+    xml_text, res = run("(a) Alpha.—Section 1 of title 99, United States Code, is amended by striking “ at least annually”.\n"
+                        "(c) Beta.—Section (a) of such section is amending by inserting “every” after “review each”.")
+    assert [r.status for r in res] == ["CLEAN", "WARN"] and "review each every term" in xml_text
