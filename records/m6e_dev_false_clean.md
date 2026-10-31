@@ -194,7 +194,7 @@ Totals: real 16, whitespace only 12, oracle 59, editorial 32, unclear 1.
 - #110 117-103 34 U.S.C. 21711
 ## Hand labels proposed (PR #9), after review
 
-After the third dev run, 13 of the remaining false cleans are OLRC's text departing from the enacted law, checked against the enrolled bill (labels in `tests/oracle/labels.json`, tier 3):
+After the third dev run, 12 of the remaining false cleans are OLRC's text departing from the enacted law, checked against the enrolled bill (labels in `tests/oracle/labels.json`, tier 3):
 
 | Law | Section | Evidence |
 | --- | --- | --- |
@@ -210,9 +210,9 @@ After the third dev run, 13 of the remaining false cleans are OLRC's text depart
 | 116-260 | 42 U.S.C. 16273 | R_after reads "180 days December 27, 2020,": "after" dropped |
 | 117-81 | 10 U.S.C. 2714 | the enrolled § 341(a) ends § 2714 "nonfluorinated carbon atoms." and writes its catchline in sentence case; R_after adds a closing mark and title case |
 | 117-81 | 10 U.S.C. 2715 | R_after reads "section:the" |
-| 117-263 | 10 U.S.C. 4025 | the enrolled § 844(1)(A) inserts “that—” then “(1) have”; R_after reads "that—”" with a closing mark the text does not have |
 
 Not labelled, on review (session_01UQzgBt7HmNwxNAYBzGkbux):
 - 38 U.S.C. 119 (Pub. L. 116-171): the law's own text has the stray "”." and OLRC keeps it ("So in original. The quotation marks and second period probably should not appear", GovInfo 2023). Our rule that drops an unmatched closing mark on a block line removed it: ours. OLRC is not consistent here (it drops such a mark in 38 U.S.C. 547, Pub. L. 116-315 § 7002), so the rule's policy (keep the law's literal marks, or drop them) is an open question for a follow-up.
 - 18 U.S.C. 1839 (Pub. L. 114-153): OLRC keeps the law's inner single quotation marks with a "So in original" footnote; our engine sets them as double. Counted as ours.
+- 10 U.S.C. 4025 (Pub. L. 117-263 § 844(1)(A)): the enacted text reads ``that-- '' ``(1) have''; OLRC prints "that—”", taking the closing mark as inserted text. Whether a law's own quotation marks are kept literally is one open question with 38 U.S.C. 119 and 18 U.S.C. 1839 (for Espen: keep the literal marks, or read them by intent); until it is settled, the three count as false cleans.
 - 8 U.S.C. 1101 (#11, an OLRC-added ";") is no longer a false clean in the third run (no CLEAN prediction there now), so it needs no label.
