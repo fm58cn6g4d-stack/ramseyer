@@ -53,12 +53,13 @@ SETS = {   # name: (manifest, oracle db, output tag, heading)
     # Sealed (red team F5): built after the second red-team round; measured, never inspected case by case.
     "govinfo2023": (MANIFEST.with_name("heldout_govinfo_2023.json"), store.ORACLE_DB.with_name("govinfo_2023.sqlite"),
                     "m6b_govinfo2023", " (sealed held-out: 2023 laws on GovInfo's 2022/2023 editions)"),
-    # M6e: laws from 113-21 on, on the release-point history (scripts/build_history_oracle.py). dev may be tuned on;
-    # test is measured only; sealed is measured once per round and never inspected case by case.
+    # M6e: laws from 113-21 on, on the release-point history (scripts/build_history_oracle.py). dev and dev 2 (the
+    # former test set) may be tuned on; sealed is measured once per round and never inspected case by case.
     "history_dev": (MANIFEST.with_name("history_dev.json"), store.ORACLE_DB.with_name("history_cache"),
                     "m6e_dev", " (2013-2026 history: dev)"),
+    # Measured once as a held-out set (8.17%, records/milestones.md); since 2026-10-31 a second dev set (Espen).
     "history_test": (MANIFEST.with_name("history_test.json"), store.ORACLE_DB.with_name("history_cache"),
-                     "m6e_test", " (2013-2026 history: test, measured only)"),
+                     "m6e_test", " (2013-2026 history: dev 2, formerly test)"),
     "history_sealed": (MANIFEST.with_name("history_sealed.json"), store.ORACLE_DB.with_name("history_cache"),
                        "m6e_sealed", " (2013-2026 history: sealed, measured once per round)"),
 }

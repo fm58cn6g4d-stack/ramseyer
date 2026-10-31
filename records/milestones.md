@@ -916,3 +916,8 @@ GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a 
 | NDAAs / other laws | – | 3.95% / 9.05% |
 
 The test result fails the gate, and is about four times the dev rate: the dev fixes did not generalize. The errors are concentrated: one law accounts for 60 of the 118 (and 2,598 of the set's 2,623 "unexpected change" outcomes, a single systematic failure); 35 of 280 laws have any. Without that one law, 58 of 1,221 (4.75%). Which law, and why, has not been looked at: the test set is measured only. How to proceed (keep the test set held out and widen dev, or make it the new dev set and rely on the sealed set) is Espen's call.
+
+### Decisions after the test measurement (Espen, 2026-10-31)
+
+- The test set becomes a second dev set ("dev 2"): its cases may now be inspected and fixed, starting with the one law that accounts for half its false cleans. The sealed set (281 laws, never run) is the only held-out measurement left, run once at the end of the round. The test figure above (8.17%) stands as the one held-out measurement of this round's dev fixes.
+- A law's own quotation marks are kept literally: a stray closing mark the law has (38 U.S.C. 119) and quotation marks nested inside a quotation as the law prints them (18 U.S.C. 1839) stay in the predicted text, as OLRC prints them with "So in original".
