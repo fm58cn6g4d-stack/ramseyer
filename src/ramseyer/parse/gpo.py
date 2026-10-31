@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 
 from lxml import etree
 
+from ramseyer.data import congress
+
 NS = "http://schemas.gpo.gov/xml/uslm"
 # GPO identifier segments -> ramseyer's bill-location prefixes (parse/segment.py LEVEL_PREFIX).
 PREFIX = {"d": "div", "t": "title", "st": "subt", "pt": "part", "spt": "subpart", "ch": "ch", "sch": "subch",
@@ -87,3 +89,26 @@ def section_of(href: str) -> str | None:
     """"/us/usc/t10/s1501/a/1" -> "/us/usc/t10/s1501"."""
     m = re.match(r"^(/us/usc/t\w+/s[^/]+)", href or "")
     return m.group(1) if m else None
+
+
+def uslm_path(fetcher, cfg, pl: str):
+    """The path of a public law's USLM (Congress.gov's "United States Legislative Markup" version), or None."""
+    import json
+    c, n = pl.split("-")
+    law = json.loads(fetcher.get(f"{cfg.congress_api}law/{c}/pub/{n}?format=json&api_key={cfg.api_key}").text())
+    bill = law.get("bill") or {}
+    if not bill:
+        return None
+    versions = congress.text_versions(fetcher, int(bill["congress"]), bill["type"].lower(), int(bill["number"]))
+    urls = congress.xml_urls([v for v in versions if v.get("type") == "Public Law"], "United States Legislative Markup")
+    if not urls:
+        return None
+    r = fetcher.get(urls[0])
+    return r.path if r.status == 200 and r.path.read_bytes()[:200].find(b"<pLaw") >= 0 else None
+
+
+def approved_date(path) -> str | None:
+    """The law's approval date from its USLM metadata, "2013-12-26"."""
+    root = etree.parse(str(path)).getroot()
+    el = root.find(f".//{{{NS}}}approvedDate")
+    return el.text.strip() if el is not None and el.text else None

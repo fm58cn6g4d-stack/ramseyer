@@ -34,7 +34,7 @@ from ramseyer.oracle import editorial, harness, store
 from ramseyer.oracle.govinfo_overlay import GovInfoOverlay
 from ramseyer.oracle.history import History, ReleaseIndexes
 from ramseyer.oracle.corpus import MANIFEST, Corpus
-from ramseyer.parse import parse_text
+from ramseyer.parse import gpo, parse_text
 from ramseyer.parse.grammar import Ctx, apply_head, lift_quotes
 from ramseyer.parse.xmltext import render
 from ramseyer.resolve import popular
@@ -170,6 +170,22 @@ def main() -> int:
         return o.identifier in (by_law.get(o.pl, ()) if by_law is not None else touched)
     labels = json.loads(harness.LABELS.read_text()) if harness.LABELS.exists() else {}
 
+    @lru_cache(maxsize=None)
+    def enacted_date(pl_or_date: str | None) -> str | None:
+        """A law's approval date from its USLM ("2020-03-27"); a date passes through; None when unknown."""
+        if pl_or_date is None or re.fullmatch(r"\d{4}-\d{2}-\d{2}", pl_or_date):
+            return pl_or_date
+        path = gpo.uslm_path(f, cfg, pl_or_date)
+        return gpo.approved_date(path) if path is not None else None
+
+    def act_law(name: str) -> str | None:
+        """The public law (or, for an older Act, the date) an Act's popular name points to, if exactly one."""
+        ids = {i for e in pop.get(popular.norm_name(name), []) for i in e.get("identities", [])}
+        if len(ids) != 1:
+            return None
+        i = next(iter(ids))
+        return i[3:] if i.startswith("pl:") else i.split(":")[1] if i.startswith("act:") else None
+
     def after_law(law, outs, before, after) -> dict:
         """Everything the report needs from this law's run, taken while its release points are open; the run is
         then let go (a set of hundreds of laws does not fit in memory, and reopening release points is slow)."""
@@ -213,7 +229,10 @@ def main() -> int:
                 pl=law.pl, positive_law=(title.group(1) in resolver.positive) if title else None,   # as above
                 heading_amended=any(tr.section == ident and tr.instruction.op == "AMEND_HEADING" for tr in run.traces),
                 new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
-                resolve=resolve_at_after, title=title.group(1) if title else "")
+                resolve=resolve_at_after, title=title.group(1) if title else "",
+                date_of=lambda act: enacted_date(law.pl if act is None else act_law(act)),
+                inserted=[t for tr in run.traces if tr.section == ident
+                          for t in (tr.instruction.new_text, tr.instruction.replace) if t])
             return editorial.kind(work.el, after_xml, ctx)
         kinds = {o.identifier: editorial_kind(o.identifier) for o in outs
                  if o.outcome == "mismatch" or (o.outcome in ("extra", "unexpected_change") and o.status == "CLEAN"

@@ -17,9 +17,8 @@ import json
 import sys
 
 from ramseyer import config
-from ramseyer.data import congress
 from ramseyer.data.http import Fetcher
-from ramseyer.parse.gpo import readings, section_of
+from ramseyer.parse.gpo import readings, section_of, uslm_path
 
 # ramseyer's operation -> the GPO amendingAction types that describe it.
 VERBS = {"STRIKE": {"delete"}, "STRIKE_INSERT": {"delete", "insert", "substitute", "amend"},
@@ -29,20 +28,6 @@ VERBS = {"STRIKE": {"delete"}, "STRIKE_INSERT": {"delete", "insert", "substitute
          "STRIKE_UNIT": {"delete", "repeal"}, "REPEAL": {"repeal", "delete"},
          "AMEND_HEADING": {"delete", "insert", "amend", "substitute"}, "STRIKE_THROUGH": {"delete", "insert"}}
 TAGS = {"history_dev": "m6e_dev", "history_test": "m6e_test", "history_sealed": "m6e_sealed", "tuning": "m6"}
-
-
-def uslm_path(f: Fetcher, cfg, pl: str):
-    c, n = pl.split("-")
-    law = json.loads(f.get(f"{cfg.congress_api}law/{c}/pub/{n}?format=json&api_key={cfg.api_key}").text())
-    bill = law.get("bill") or {}
-    if not bill:
-        return None
-    versions = congress.text_versions(f, int(bill["congress"]), bill["type"].lower(), int(bill["number"]))
-    urls = congress.xml_urls([v for v in versions if v.get("type") == "Public Law"], "United States Legislative Markup")
-    if not urls:
-        return None
-    r = f.get(urls[0])
-    return r.path if r.status == 200 and r.path.read_bytes()[:200].find(b"<pLaw") >= 0 else None
 
 
 def main() -> int:

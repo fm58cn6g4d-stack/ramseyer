@@ -20,11 +20,12 @@ from lxml import etree
 from ramseyer.data.indexer import text_of
 from ramseyer.oracle.harness import normalize
 
-DATE = r"(?:January|February|March|April|May|June|July|August|September|October|November|December) \d{1,2}, \d{4}"
 DATE_PHRASE = re.compile(
     r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph|subparagraph|sentence|"
-    r"title|subtitle|division|part|chapter)|the [A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year \d{4})?"
-    r"(?:, \d{4})?)")
+    r"title|subtitle|division|part|chapter)|the (?P<act>[A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year "
+    r"\d{4})?(?:, \d{4})?))")
+MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
+          "November", "December")
 # "section 4 of the Indian Self-Determination and Education Assistance Act" -> "section 5304 of title 25"
 ACT_REF = re.compile(r"section (\d+[A-Za-z]*(?:[–-]\d+[A-Za-z]*)?)((?:\([^()\s]+\))*) of (the [A-Z][^,;:()\[\]]*?Act"
                      r"(?: of \d{4})?)")
@@ -39,6 +40,10 @@ class Context:
     new_notes: list[str] = field(default_factory=list)  # notes at R_after not at R_before
     resolve: Callable[[str], str | None] = lambda cite: None  # "Section 4 of the X Act" -> "/us/usc/t25/s5304"
     title: str = ""                                 # the section's title number, "42"
+    # The enactment date of an Act named in the text ("CARES Act"), or of this law (None), as "2020-03-27"; None
+    # when unknown, and then no date is accepted for the phrase.
+    date_of: Callable[[str | None], str | None] = lambda act: None
+    inserted: list[str] = field(default_factory=list)   # the law's quoted text inserted in the section
 
     @property
     def cite(self) -> str:
@@ -89,6 +94,14 @@ def _chain(u, root) -> tuple[str, ...]:
     return tuple(reversed(out))
 
 
+def _inserted_without_heading(label: str, inserted: list[str]) -> bool:
+    """The law's inserted text gives the unit "(label)" and gives it no heading ("(e) The Director ...", not "(e)
+    Policymaking.—The Director ..."): a heading at R_after is then OLRC's, not one the engine lost."""
+    lines = [ln.lstrip("“ ") for t in inserted for ln in t.split("\n")]
+    mine = [ln for ln in lines if ln.startswith(f"({label})")]
+    return bool(mine) and not any(re.match(rf"^\({re.escape(label)}\)\s*[A-Z][^.—]{{0,160}}\.—", ln) for ln in mine)
+
+
 def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
     """Both sections as comparable text: footnote markers removed, heading case and closing punctuation ("—", ".—")
     set aside, and, in a title that is not positive law, the catchline (unless the law amends a heading) and any
@@ -115,8 +128,9 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
                 continue
             mine = pred_units.get(_chain(u, after_el))
             mh = _heading(mine) if mine is not None else None
-            if mine is not None and (mh is None or not "".join(mh.itertext()).strip()):
-                _drop(h)                             # a heading OLRC supplied (the law's text has none)
+            if mine is not None and (mh is None or not "".join(mh.itertext()).strip()) and \
+                    _inserted_without_heading(_chain(u, after_el)[-1], ctx.inserted):
+                _drop(h)                             # a heading OLRC supplied: the law's own text has none
     out = []
     for el in (pred_el, after_el):
         for h in list(el.iter("{*}heading")):
@@ -138,7 +152,12 @@ def _pattern(pred: str, ctx: Context | None) -> re.Pattern:
     and each Act reference our resolver codifies may also read as its Code citation."""
     spans: list[tuple[int, int, str]] = []
     for m in DATE_PHRASE.finditer(pred):
-        spans.append((m.start(), m.end(), f"(?:{DATE},?|{re.escape(m.group(0))})"))
+        # Only the enactment date of the Act the phrase names (this law's for "this Act"), as OLRC sets it in.
+        iso = ctx.date_of(m.group("act")) if ctx is not None else None
+        if iso:
+            y, mo, d = (int(x) for x in iso.split("-"))
+            spans.append((m.start(), m.end(),
+                          f"(?:{re.escape(f'{MONTHS[mo - 1]} {d}, {y}')},?|{re.escape(m.group(0))})"))
     if ctx is not None:
         for m in ACT_REF.finditer(pred):
             if any(s < m.end() and m.start() < e for s, e, _ in spans):
@@ -201,16 +220,19 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
     after_el = etree.fromstring(after_xml.encode("utf-8"))
     pred, after = texts(pred_el, after_el, ctx)
     if pred == after:
-        return "editorial"
+        return "editorial: headings, footnotes or bracketed citations"
     if ctx is not None and _probable_intent(pred, after, ctx):
         return "editorial: executed to reflect the probable intent of Congress (OLRC note)"
+    placeholder = False
     if ctx is not None:                                 # "(f) Repealed. Pub. L. 113–76, ..., 128 Stat. 424"
         # OLRC may set the placeholder as the unit's heading, which texts() lower-cases.
-        after = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?", "",
-                       after, flags=re.I)
-        after = re.sub(r"\s+", " ", after).strip()
+        stripped = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?",
+                          "", after, flags=re.I)
+        placeholder = stripped != after
+        after = re.sub(r"\s+", " ", stripped).strip()
     if _pattern(pred, ctx).fullmatch(after):
-        return "editorial"
+        return "editorial: a Repealed placeholder" if placeholder and pred == after else \
+            "editorial: enactment date, Code citation or placeholder"
     if re.sub(r"\s", "", pred) == re.sub(r"\s", "", after):
         return "whitespace"
     if _footnote_digits(pred, after):
