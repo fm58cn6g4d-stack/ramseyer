@@ -968,3 +968,5 @@ Changes, each with a test: a later release point confirms a predicted change in 
 | CLEAN predicted changes a later release carries (not graded) / graded | 0 / 0 | 0 / 0 | 59 / 0 |
 
 All of #13's labels still apply at 81cf65f (their hashes match this run). Dev's 9: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Dev 2's 18 are listed in `records/m6e_dev2_false_clean.md`.
+
+**After the review of #14 (d0cb4b3):** a later release confirms a predicted change only up to footnote markers OLRC added or removed (never one number for another) and the case of words on its heading lines. Dev 2 re-measured at d0cb4b3: unchanged, 18 of 1,392 (1.29%) with the labels, which the gate now applies itself; 59 CLEAN predicted changes confirmed by a later release, 0 graded. Tuning and dev have no CLEAN predicted changes in "not yet executed", so their figures cannot move.

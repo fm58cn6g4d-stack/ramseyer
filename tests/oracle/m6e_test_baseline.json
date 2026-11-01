@@ -23,7 +23,8 @@
   "mismatch_engine": 2000,
   "mismatch_resolver": 197,
   "mismatch_parser": 114,
-  "mismatch_unclassified": 126,
-  "mismatch_verify": 17
+  "mismatch_editorial": 9,
+  "mismatch_verify": 17,
+  "mismatch_unclassified": 117
  }
 }
