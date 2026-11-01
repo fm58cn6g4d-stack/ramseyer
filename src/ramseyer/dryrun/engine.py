@@ -86,24 +86,35 @@ def nested_to_double(s: str) -> str:
 
     A quotation closes at the first ’ not followed by a letter, except that a plural possessive (“Victims’ ” followed
     by a space) is skipped when a later ’ before the next ‘ is followed by closing punctuation: ‘Special Victims’
-    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not."""
-    out, i = [], 0
-    for m in re.finditer(r"(?<![\w])‘", s):
-        if m.start() < i:
-            continue
-        rest = s[m.end():]
-        nxt = rest.find("‘")
-        span = rest if nxt < 0 else rest[:nxt]
-        closes = [c.start() for c in re.finditer(r"’(?!\w)", span)]
-        if not closes:
-            continue
-        end = closes[0]
-        if span[end - 1:end] == "s" and span[end + 1:end + 2] == " ":
-            later = [c for c in closes[1:] if re.match(r"’(?:[)\].,;:”—]|$)", span[c:])]
-            end = later[0] if later else end
-        out.append(s[i:m.start()] + "“" + span[:end] + "”")
-        i = m.end() + end + 1
-    return "".join(out) + s[i:]
+    Counsel’) is one quotation (Pub. L. 113-66 § 1716), while ‘State’ includes the Indians’ lands is not.
+
+    Only the outermost quotation is set as “ ”. One the law opens inside another keeps the law's own marks, as OLRC
+    prints them ("So in original"): ‘Trademark Act of 1946’ inside ‘An Act ...’, Pub. L. 114-153 § 2, 18 U.S.C.
+    1839). An opening ‘ the law never closes is still the outer quotation's. Marks already set as “ ” count as
+    quotations, so a second pass changes nothing."""
+    out = list(s)
+    stack: list[tuple[str, int]] = []                  # ("d", i) for “, ("s", i) for ‘
+    for i, ch in enumerate(s):
+        if ch == "“":
+            stack.append(("d", i))
+        elif ch == "”":
+            if stack and stack[-1][0] == "d":
+                stack.pop()
+        elif ch == "‘" and not (i > 0 and re.match(r"\w", s[i - 1])):
+            stack.append(("s", i))
+        elif ch == "’" and stack and stack[-1][0] == "s" and not re.match(r"\w", s[i + 1:i + 2]):
+            if s[i - 1:i] == "s" and s[i + 1:i + 2] == " ":
+                rest = s[i + 1:]
+                nxt = rest.find("‘")
+                span = rest if nxt < 0 else rest[:nxt]
+                if re.search(r"’(?:[)\].,;:”—]|$)", span):
+                    continue                            # a plural possessive inside the quotation
+            _, o = stack.pop()
+            if not stack:
+                out[o], out[i] = "“", "”"
+    if stack and stack[0][0] == "s":
+        out[stack[0][1]] = "“"                          # never closed: still the outermost quotation
+    return "".join(out)
 
 
 def fold(s: str, case: bool = False) -> tuple[str, list[int]]:
@@ -464,15 +475,12 @@ def block_lines(block: str) -> list[str]:
             s = s[1:]
         lines.append(s)
     if lines:
-        lines[-1] = re.sub(r"”[\s.;,:]*(?:and|or)?[\s.;,:]*$", "", lines[-1])
-    # Inner quotation marks are ‘ ’ in a bill, so a ” still unmatched on a line closes the block a second time: a
-    # drafting slip OLRC drops (“... Hawaii.”.” in the middle of a block, Pub. L. 116-315 § 7002; “... general.”;”;”,
-    # Pub. L. 117-263 § 502).
+        # The block's own close, however often the law repeats it (“... general.”;”;”, Pub. L. 117-263 § 502).
+        lines[-1] = re.sub(r"(?:”[\s.;,:]*)+(?:and|or)?[\s.;,:]*$", "", lines[-1])
+    # A ” still unmatched on a line in the middle of a block is the law's own text and is kept, as OLRC prints it
+    # with "So in original" (38 U.S.C. 119, Pub. L. 116-171; Espen, 2026-10-31). Where OLRC drops such a mark
+    # (Pub. L. 116-315 § 7002, 38 U.S.C. 547) it departs from the law's text.
     lines = [x for x in lines if not x.startswith(TABLE_OMITTED)]   # parse/xmltext.py: never statute text
-    for i, x in enumerate(lines):
-        while x.count("”") > x.count("“") and re.search(r"”[\s.;,:]*$", x):
-            x = re.sub(r"”[\s.;,:]*$", "", x).rstrip()
-        lines[i] = x
     return [nested_to_double(x) for x in lines if x]
 
 
@@ -615,7 +623,8 @@ class Engine:
         if r.status == "CLEAN":
             r.status, r.detail = self._review(ins, r)
         if r.status == "CLEAN":
-            loose = [f for f in ins.flags if f.startswith(("expected a quoted block", "nonstandard verb")) or
+            loose = [f for f in ins.flags if f.startswith(("expected a quoted block", "nonstandard verb", "drafting slip"))
+                     or
                      (f.startswith("unconsumed") and not MARGINS.fullmatch(f[len("unconsumed: "):].strip()))]
             if loose:
                 # The parser left part of the instruction unread, or read an unusual verb as a usual one: a clean
@@ -1164,7 +1173,9 @@ class Engine:
         if ins.new_text is None:
             return Result(ins.id, "UNPARSED", "insertion with no quoted text to insert")
         new = nested_to_double(ins.new_text)
-        if "\n" in new or new.startswith("\u201c"):
+        # A quoted block is one the law opens with “; a “ the conversion made from the law's ‘ is the inserted text's own
+        # quotation (inserting “‘Parapan American’,” lost its marks and comma, Pub. L. 116-189 § 4, 36 U.S.C. 220506).
+        if "\n" in new or ins.new_text.startswith("\u201c"):
             new = " ".join(block_lines(new))
         new = self._tr(new)
         positional = any(f.startswith("anchor is positional") for f in ins.flags)
@@ -1190,6 +1201,12 @@ class Engine:
         if through in (".", ";", ":"):
             # "and all that follows through the period": the next one after the start.
             nxt = hay.find(through, start + len(ins.find or ""), allowed_end)
+            # A period that closes an abbreviation or a citation ("122 Stat. 4567", "10 U.S.C. 2228", "Pub. L.") ends
+            # no sentence (Pub. L. 114-328 § 954(b)(2), 10 U.S.C. 2228(e)(2)).
+            while through == "." and nxt >= 0 and re.search(r"(?:\bStat|\bU\.S\.C|\bU\.S|\bPub|\bL|\bNo|\bNos|\bSec|"
+                                                         r"\bseq|\bInc|\bCo|\bCorp|\bv|\b[A-Z])$", hay[:nxt]) and \
+                    re.match(r"\.\s*[\w(§]", hay[nxt:nxt + 4]) and not re.match(r"\.\s*[A-Z][a-z]", hay[nxt:nxt + 4]):
+                nxt = hay.find(through, nxt + 1, allowed_end)
             if nxt < 0:
                 return Result(ins.id, "NOT_FOUND", f"no “{through}” after the start")
             end = nxt + 1

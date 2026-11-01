@@ -138,8 +138,11 @@ SUCH = re.compile(rf"\b[Ss]ections? (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})?
                   r"(?:\s*\((?P<paren>\d+ U\.S\.C\. [^()]*(?:\([^()]*\)[^()]*)*)\))?")
 SUCH_UNIT_OF = rf"(?P<unit>[Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause)s? (?P<labels>{LABELS}) of "
 # "Subsection (d) of such section", "Paragraph (1) of subsection (c) of such section"
-SUCH_SECTION = re.compile(rf"^(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
+# "The heading of such section is amended" (Pub. L. 114-328 § 1134(c)(1), 5 U.S.C. 5524a) names it too.
+SUCH_SECTION = re.compile(rf"^(?:The (?:section )?heading (?:of|for) )?"
+                          rf"(?P<chain>(?:{SUCH_UNIT_OF.replace('?P<unit>', '').replace('?P<labels>', '')})*)"
                           rf"[Ss]uch section(?: (?P<num>{SECTION_NUM}))?\b")
+SUCH_SUBSECTION_OF = re.compile(rf"^(?P<unit>[Pp]aragraph|[Ss]ubparagraph|[Cc]lause)s? (?P<labels>{LABELS}) of such subsection\b")
 SUCH_SECTION_NUM = re.compile(rf"\b[Ss]uch section (?P<num>\d+[\w\u2013.-]*?)(?=[,\s]|$)")
 PAREN_SECTION = re.compile(rf"^[Ss]ection (?P<sec>\d+[\w\u2013.-]*)(?P<path>{LABELS})? \((?P<paren>\d+ U\.S\.C\. [^()]*"
                            r"(?:\([^()]*\)[^()]*)*)\)")
@@ -243,7 +246,27 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
     h = re.sub(r"^[^\u201c\u2014]{1,160}?\.\u2014", "", h) if re.match(r"^[A-Z][^.\u2014]{0,160}\.\u2014", h) else h
     # Neither "Except as provided in paragraph (2)," nor "(as defined in section 102 of title 10 ...)" names the target.
     h = re.sub(r"^\s*[Ee]xcept as (?:otherwise )?(?:expressly )?provided in [^,]+,\s*", "", h)
+    # "Effective as of November 25, 2015, and as if included therein as enacted, the ... Act ... is amended as
+    # follows:" (Pub. L. 114-328 § 1081(c)): the date clause names no target; left in, it hid the Act, and the items
+    # below fell back to the last citation (title 10).
+    # Drafting slips read by their plain intent, and flagged (the edit is WARN, never CLEAN): "Section (d)(1) of such
+    # section is amending by inserting" (Pub. L. 119-37 § 7307(c), 38 U.S.C. 3737; OLRC executed it as intended).
+    if re.match(r"^\s*Section (\([a-z]+\)(?:\(\w+\))*) of such section\b", h):
+        flags.append("drafting slip: “Section (…)” of such section read as a subsection")
+        h = re.sub(r"^\s*Section (\([a-z]+\))", r"Subsection \1", h)
+    if re.search(r"\b(?:is|are) amending\b", h):
+        flags.append("drafting slip: “is amending” read as “is amended”")
+        h = re.sub(r"\b(is|are) amending\b", r"\1 amended", h)
+    eff = re.match(r"^\s*[Ee]ffective (?:as of|on) (?:[A-Z][a-z]+ \d{1,2}, \d{4}|the date [^,]+)"
+                   r"(?:, and as if included (?:therein|in [^,]+) (?:as enacted|on the date of [^,]+))?,\s*", h)
+    if eff:
+        h = h[eff.end():]
+        h = h[:1].upper() + h[1:]                                  # what remains starts the sentence
     h = re.sub(r"\(as defined in [^()]*(?:\([^()]*\)[^()]*)*\)", "", h)
+    # "Subsection (b) and subsection (d) of section 311103 ... are amended" is "Subsections (b) and (d) of ..." (Pub. L.
+    # 114-289 § 501(d)); read as the last unit alone, the edit fell on the whole section.
+    h = re.sub(r"\b([Ss]ubsection|[Pp]aragraph|[Ss]ubparagraph|[Cc]lause|[Ss]ubclause|[Ii]tem) ((?:\([\w.-]+\))+) and "
+               r"(?i:\1) ((?:\([\w.-]+\))+)", lambda m: f"{m.group(1)}s {m.group(2)} and {m.group(3)}", h)
     # "The second sentence of paragraph (1) of section 3(a) of the ... Act is amended": the target is the paragraph,
     # restricted to that sentence (Pub. L. 114-94 § 78001(a)).
     sentence = re.match(r"^\s*[Tt]he (?P<n>first|second|third|fourth|last) sentence of ", h)
@@ -312,6 +335,14 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
             ctx.target.section = m["num"]
         for u in reversed(list(re.finditer(SUCH_UNIT_OF, m["chain"]))):     # outermost unit is named last
             _set_path(ctx, u["unit"].lower(), u["labels"])
+        ctx.qualifiers, ctx.is_target_set = [], True
+    elif (m := SUCH_SUBSECTION_OF.match(h.strip())) and (last := ctx.memory.get("last")) is not None and \
+            last.path:
+        # "Paragraph (2) of such subsection is amended" (Pub. L. 116-158 § 1(b)(2), 50 U.S.C. 3955): the subsection
+        # the last instruction reached, in its section.
+        ctx.target = last.model_copy(deep=True)
+        ctx.target.path, ctx.path = [], [(0, last.path[0])]
+        _set_path(ctx, m["unit"].lower(), m["labels"])
         ctx.qualifiers, ctx.is_target_set = [], True
     elif (m := SUCH_SECTION_NUM.search(h)) and (ctx.memory.get("last") is not None or _usc_base(ctx) is not None):
         # "In subsection (a)(2) of such section 710a, as so redesignated—": the section named in the title in context.
@@ -529,7 +560,10 @@ def _expand(labels_phrase: str) -> list[str]:
         x, y = a.strip("()"), b.strip("()")
         if x.isdigit() and y.isdigit():
             out += [f"({i})" for i in range(int(x), int(y) + 1)]
-        elif is_roman(x) and is_roman(y) and max(len(x), len(y)) > 1 and roman_to_int(x) < roman_to_int(y):
+        elif is_roman(x) and is_roman(y) and roman_to_int(x) < roman_to_int(y) and (
+                max(len(x), len(y)) > 1 or re.search(r"\b(?:sub)?clauses?\b", labels_phrase, re.I)):
+            # "clauses (i) through (v)" is roman even with single-letter ends (Pub. L. 119-21 § 10601(a)(2),
+            # 16 U.S.C. 3841(a)(3)): read as letters, only (i) and (v) were replaced.
             # "(i) through (iii)": a roman range (a range of single letters is read as letters below)
             out += [f"({r if x.islower() else r.upper()})" for r in
                     (int_to_roman(i) for i in range(roman_to_int(x), roman_to_int(y) + 1))]
@@ -815,6 +849,15 @@ def parse_unit_text(node: Node, ctx: Ctx, ordinal_base: int = 0) -> tuple[list[I
         elif any(qq.endswith("heading") or qq == "heading" for qq in ictx.qualifiers) and op in (
                 "STRIKE_INSERT", "STRIKE", "INSERT_AFTER", "INSERT_BEFORE", "STRIKE_THROUGH", "ADD_END"):
             pflags.append(f"heading edit ({op})")
+            op = "AMEND_HEADING"
+        elif op == "REPLACE_UNIT" and any(qq.endswith("heading") or qq == "heading" for qq in ictx.qualifiers) and \
+                parsed.get("new_text") and "\n" not in parsed["new_text"].strip():
+            # "The heading of such section 1005 is amended to read as follows: “§ 1005. Army, ...”." (Pub. L.
+            # 116-283 § 925(k)(1)(B)): the heading alone, never the whole unit. A section's number is not its heading.
+            line = re.sub(r"^“|”[.;]?$", "", parsed.pop("new_text").strip()).strip()
+            parsed["replace"] = re.sub(r"^§+\s*[\w.\u2013-]+\.\s*", "", line)
+            parsed["unit"] = "heading" if ictx.path else "section heading"
+            pflags.append("heading replaced")
             op = "AMEND_HEADING"
         if listed and TRAILING_OK.match(rest.rstrip(":")):
             for j, d in enumerate(listed):

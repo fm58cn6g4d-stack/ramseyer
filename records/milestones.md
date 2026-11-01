@@ -920,3 +920,37 @@ GPO agrees with 6,505 of the 6,515 CLEAN instructions it cites a section for; a 
 The test result fails the gate, and is about four times the dev rate: the dev fixes did not generalize. The errors are concentrated: one law accounts for 60 of the 118 (and 2,598 of the set's 2,623 "unexpected change" outcomes, a single systematic failure); 35 of 280 laws have any. Without that one law, 58 of 1,221 (4.75%). Which law, and why, has not been looked at: the test set is measured only. How to proceed (keep the test set held out and widen dev, or make it the new dev set and rely on the sealed set) is Espen's call.
 
 Re-measured after the review of #10 (code at 5d2d585, which only makes the editorial checker stricter): 115 of 1,444 (7.96%; 95% interval 6.67–9.46% with the off-target ones); NDAAs 10 of 253 (3.95%), other laws 105 of 1,193 (8.80%). Pub. L. 116-283 still accounts for 60; without it 55 of 1,221 (4.50%). Targets, pending and other-law counts and the raw figures are unchanged. CLEAN predictions in the groups not graded: dev 70 pending and 30 on targets other laws also changed; test 81 and 20. Three earlier test false cleans now pass as editorial; as on dev, those cases were not inspected.
+
+### Decisions after the test measurement (Espen, 2026-10-31)
+
+- The test set becomes a second dev set ("dev 2"): its cases may now be inspected and fixed, starting with the one law that accounts for half its false cleans. The sealed set (281 laws, never run) is the only held-out measurement left, run once at the end of the round. The test figure above (8.17%) stands as the one held-out measurement of this round's dev fixes.
+- A law's own quotation marks are kept literally: a stray closing mark the law has (38 U.S.C. 119) and quotation marks nested inside a quotation as the law prints them (18 U.S.C. 1839) stay in the predicted text, as OLRC prints them with "So in original".
+
+### Dev 2 (2026-10-31, claude/m6e-dev2)
+
+Changes, each with a test (case by case in `records/m6e_dev2_false_clean.md`):
+- **Literal marks** (Espen's decision): a quotation the law opens inside another keeps the law's own marks; a stray closing mark inside a quoted block is kept as the law's text.
+- **Not yet executed:** a section whose text R_after leaves as at R_before, with no note citing the law, is not graded (new outcome "unexecuted"). OLRC listed Pub. L. 116-283 in release point 116-344 but executed its title 46 amendments only in 117-17; the rule takes no account of the prediction, and on dev it removed no CLEAN prediction.
+- **Reproducible runs** (review of #10): a materialized release point was reused whatever code had built it. It now sits under a stamp of the code that builds it, and a stale one is removed. `--rerun N` repeats a run with its own checkpoint and fresh release points; `scripts/compare_runs.py` compares two runs section by section. Two dev runs at c9ef141 agree on all 8,228 sections (outcome, status, editorial reading, and the predicted, R_before and R_after texts). The two dev answers that moved between the a97de33 and 5d2d585 runs most likely came from such a reused file; the old files are gone, so this is not proved.
+- **Parser:** (aa) follows (z) (all of Pub. L. 114-328 § 502(aa) onward was read under (z)(3)); "Subsection (b) and subsection (d) of section ..."; an "Effective as of ..., and as if included therein as enacted," clause no longer hides the Act a lead-in amends; "The heading of such section"; "Paragraph (2) of such subsection"; an "Effective on the date that is 2 years after ...—" lead-in delays its items; "clauses (i) through (v)" is a roman range; "The heading of such section 1005 is amended to read" replaces the heading only; drafting slips ("Section (d)(1) of such section is amending") applied by intent and marked WARN; quoted words in headers and a space inside "<term>" rendered as the law has them.
+- **Engine:** "through the period" passes over a citation's period ("122 Stat."); inserting a quoted term keeps its marks; a word-internal apostrophe is the Code's ’.
+- **Comparison:** a supplied heading is matched on the unit's own place (review of #10), including a unit the law replaces whole; bracketed "Repealed" placeholders; "the date of enactment of this clause"; fractions; Unicode encoding; an Act reference set in the Code citation the law itself prints; "Transfer and Amendment of Section" notes are delayed amendments.
+- The NDAA stratum now finds the FY2021 NDAA, whose name has a line break.
+
+| At 4b0677b | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,461 | 1,392 |
+| CLEAN and wrong in substance | 0 | 23 (1.57%) | 29 (2.08%; 95% interval 1.45–2.97%) |
+| Before (dev at 5d2d585, dev 2 at c9ef141) | 0 | 24 (1.64%) | 49 (3.54%) |
+| Not yet executed (not graded) | 55 | 332 | 476 |
+
+**After the review of #12 (code at c6c1983):** a CLEAN prediction of a change in a section OLRC had not executed at R_after is graded unless a later release point in the history carries the predicted text; only then is it left out. Of the CLEAN predictions that fell in "not yet executed" at 4b0677b, tuning and dev had none; dev 2 had 59, all predicting a change: 55 carried by a later release point, 4 not (38 U.S.C. 7412, Pub. L. 113-146; 46 U.S.C. 51707, 70116 and 70001, Pub. L. 116-283), which are now graded and counted wrong.
+
+| At c6c1983 (main merged, #9's labels applied by the gate) | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,461 | 1,396 |
+| CLEAN and wrong in substance | 0 | **11 (0.75%), PASS** | 33 (2.36%; 95% interval 1.69–3.30%) |
+| Not yet executed (not graded) | 55 | 329 | 429 |
+| of them CLEAN predicted changes a later release carries / graded because none does | 0 / 0 | 0 / 0 | 55 / 4 |
+
+All 29 dev 2 false cleans were among the 49; none is new. Two of them (#8, #21) were only partly fixed. The dev figure is before #9's labels. After merging main, all 12 labels still apply at 4b0677b (their predicted and R_after hashes match this run's), and all 12 are among the 23: **with them, dev is 11 of 1,461 (0.75%), under the 1% target.** The 11: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 38 U.S.C. 547 (OLRC drops the law's stray mark; a label candidate under literal marks), 10 U.S.C. 4025 (still wrong under literal marks; to be looked at), and 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).

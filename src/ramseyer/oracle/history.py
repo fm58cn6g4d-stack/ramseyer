@@ -162,6 +162,15 @@ class History:
                                "WHERE m.seq=? AND v.identifier=? ORDER BY v.vid", (seq, identifier))
         return [zlib.decompress(x).decode("utf-8") for (x,) in rows]
 
+    def section_versions_after(self, identifier: str, label: str) -> list[tuple[str, str]]:
+        """(first release point label, XML) of each version of the section published after `label`, in order."""
+        rows = self.db.execute(
+            "SELECT r.label, v.xml_zlib FROM versions v JOIN version_releases m ON m.vid=v.vid "
+            "JOIN releases r ON r.seq=m.seq WHERE v.identifier=? AND m.seq>? AND m.seq=(SELECT min(m2.seq) FROM "
+            "version_releases m2 WHERE m2.vid=v.vid AND m2.seq>?) ORDER BY m.seq",
+            (identifier, self.seq(label), self.seq(label)))
+        return [(lab, zlib.decompress(x).decode("utf-8")) for lab, x in rows]
+
     def title_sections(self, title: str, label: str):
         """(identifier, parent_identifier, seq_in_title, positive_law, xml) for every section of a title at a release
         point, in reading order."""
@@ -275,6 +284,16 @@ def materialize(history: History, label: str, titles: list[str], db_path: Path, 
     return rp
 
 
+def code_stamp() -> str:
+    """A hash of the code a materialized release point depends on: this module and the indexer it loads with."""
+    import hashlib
+    root = Path(__file__).resolve().parents[1]
+    h = hashlib.sha256()
+    for path in sorted([Path(__file__).resolve(), *(root / "data").glob("*.py")]):
+        h.update(path.name.encode() + b"\0" + path.read_bytes())
+    return h.hexdigest()[:12]
+
+
 class ReleaseIndexes:
     """Release points of a history oracle set, opened as indexes on demand: each is materialized (with the titles the
     set needs there) into its own file on first use, and only the most recent `keep` are kept on disk. Laws are graded
@@ -282,6 +301,17 @@ class ReleaseIndexes:
 
     def __init__(self, history: History, titles: dict[str, list[str]], cache_dir: Path, keep: int = 4, log=print):
         from collections import OrderedDict
+        import shutil
+        # A materialized release point is reused only by the code that built it: files built by other code live under
+        # another stamp and are removed (M6e review of #10: a reused file built by older code changed two dev answers
+        # between runs at the same engine code).
+        stamp = code_stamp()
+        for old in cache_dir.glob("code-*") if cache_dir.exists() else []:
+            if old.name != f"code-{stamp}":
+                shutil.rmtree(old, ignore_errors=True)
+        for old in cache_dir.glob("*.sqlite*") if cache_dir.exists() else []:
+            old.unlink()                              # unstamped files from before the stamp
+        cache_dir = cache_dir / f"code-{stamp}"
         self.history, self.titles, self.dir, self.keep, self.log = history, titles, cache_dir, keep, log
         self.open: OrderedDict = OrderedDict()
         cache_dir.mkdir(parents=True, exist_ok=True)

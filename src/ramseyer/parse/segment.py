@@ -50,10 +50,10 @@ def candidates(enum: str) -> list[str]:
         return ["paragraph"]
     if enum.islower():
         if len(enum) == 2 and enum[0] == enum[1] and not is_roman(enum):
-            return ["item"]
+            return ["item", "subsection"]          # "(aa)" after "(z)" (Pub. L. 114-328 § 502(aa)–(oo))
         return (["subsection", "clause"] if is_roman(enum) else ["subsection"]) + (["item"] if len(enum) == 2 else [])
     if len(enum) == 2 and enum[0] == enum[1] and not is_roman(enum):
-        return ["subitem"]
+        return ["subitem", "subparagraph"]
     return ["subparagraph", "subclause"] if is_roman(enum) else ["subparagraph"]
 
 
@@ -66,6 +66,8 @@ def successor(level: str, enum: str) -> str:
     if len(enum) == 2 and enum[0] == enum[1]:
         c = chr(ord(enum[0]) + 1)
         return c + c
+    if enum in ("z", "Z"):
+        return "aa" if enum == "z" else "AA"       # drafting style runs (y), (z), (aa), (bb)
     if enum[-1] in "zZ":
         return enum + enum[-1]
     return enum[:-1] + chr(ord(enum[-1]) + 1)

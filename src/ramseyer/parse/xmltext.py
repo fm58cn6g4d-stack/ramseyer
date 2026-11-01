@@ -49,7 +49,11 @@ def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True)
             pass
         elif c.tag == "term":            # defined terms print in quotes
             o, cl = ("\u2018", "\u2019") if inner else (quote_open, quote_close)
-            parts.append(o + inline(c, inner=True, top=False) + cl)
+            # A space at a term's edge is markup, not the term: "<term>promotion board </term>means" (Pub. L.
+            # 116-283 § 505) prints “promotion board” means.
+            t = inline(c, inner=True, top=False)
+            lead, trail = t[:len(t) - len(t.lstrip())], t[len(t.rstrip()):]
+            parts.append(lead + o + t.strip() + cl + trail)
         else:
             parts.append(inline(c, inner=inner, top=False))
         parts.append(c.tail or "")
@@ -59,7 +63,9 @@ def inline(el, quote_open="\u201c", quote_close="\u201d", inner=False, top=True)
 
 def _head_line(el, in_block=False) -> str:
     enum = (el.findtext("enum") or "").strip()
-    header = " ".join("".join(el.find("header").itertext()).split()) if el.find("header") is not None else ""
+    # Quoted words in a header keep their marks ("(a) Certain “hit-to-kill” technology", Pub. L. 114-92 § 1671, 10 U.S.C.
+    # 130h): inside a quoted block they are the block's inner quotation, as in its text.
+    header = " ".join(inline(el.find("header"), inner=bool(in_block)).split()) if el.find("header") is not None else ""
     tag = el.tag
     if tag in HEADINGS:
         return f"{HEADINGS[tag]} {enum.rstrip('.')}—{header.upper() if tag in ('division', 'title') else header}"
@@ -86,7 +92,7 @@ def _render(el, lines: list[str], in_block: bool) -> None:
         else:
             enum = (el.findtext("enum") or "").strip()
             header_el = el.find("header")
-            header = " ".join("".join(header_el.itertext()).split()) if header_el is not None else ""
+            header = " ".join(inline(header_el, inner=q).split()) if header_el is not None else ""   # quotes kept
             line = enum
             if header:
                 line += f" {header}.—"

@@ -16,6 +16,9 @@ RULE = re.compile(r"\b[Tt]he amendments? made by (?P<what>this (?:section|subsec
 DELAYED = re.compile(r"\b(?:\d+|one|two|three|four|five|six|\w+-\w+) (?:days?|months?|years?) after|"
                      r"\bon (?:January|February|March|April|May|June|July|August|September|October|November|December) "
                      r"\d{1,2}, \d{4}|\bthe date that is .{0,40}after")
+# "(1) In general.—Effective on the date that is 2 years after the date of enactment of this Act—" over the
+# instructions it governs (Pub. L. 117-151 § 2(i), 11 U.S.C. 1182).
+LEAD = re.compile(r"^Effective (?P<when>[^—:]{0,200}?)(?:—|,\s)")
 NOT_DELAYED = re.compile(r"\bon the date of (?:the )?enactment|as (?:if|though) enacted|\bapply to\b")
 
 
@@ -52,6 +55,9 @@ def flag_delayed(roots: list[Node], instructions: list[Instruction]) -> int:
             when = re.split(r",? and (?:shall )?apply\b", m["when"])[0]
             if DELAYED.search(when) and not NOT_DELAYED.search(when):
                 scopes += [(s, m.group(0)[:160]) for s in _scopes(n, m["what"])]
+        lead = LEAD.match(n.text or "")
+        if lead and DELAYED.search(lead["when"]) and not NOT_DELAYED.search(lead["when"]):
+            scopes.append((n.loc, (n.text or "")[:160]))
     flagged = 0
     for ins in instructions:
         hit = next((why for s, why in scopes if ins.bill_loc == s or ins.bill_loc.startswith(s + ".")), None)

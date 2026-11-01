@@ -58,7 +58,7 @@ def test_an_act_reference_counts_only_as_the_code_section_the_resolver_finds():
 def test_a_heading_olrc_supplied_counts_only_outside_positive_law():
     pred = sec(sub("e", "The Director shall act."))
     after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
-    law = ["“(e) The Director shall act.”"]                                     # the law's text has no heading
+    law = [([], "“(e) The Director shall act.”")]                               # the law's text has no heading
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
     assert kind(pred, after, Context(pl="1-2", positive_law=True, inserted=law)) is None
     assert kind(pred, after, Context(pl="1-2", inserted=law)) is None          # not known: not accepted
@@ -71,9 +71,18 @@ def test_a_heading_the_engine_lost_is_not_excused():
     # Review of #10: the prediction lacks a heading the law's own text gives; R_after has it. Not OLRC's work.
     pred = sec(sub("e", "The Director shall act."))
     after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
-    law = ["“(e) Policymaking.—The Director shall act.”"]
+    law = [([], "“(e) Policymaking.—The Director shall act.”")]
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) is None
     assert kind(pred, after, Context(pl="1-2", positive_law=False)) is None   # the unit is not in the law's text
+
+
+def test_a_supplied_heading_is_matched_on_the_units_own_place():
+    # Review of #10: text inserted elsewhere in the section that happens to have an "(e)" says nothing of this (e).
+    pred = sec(sub("e", "The Director shall act."))
+    after = sec(sub("e", "The Director shall act.", heading="Policymaking"))
+    elsewhere = [(["(c)"], "“(e) The Director shall act.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=elsewhere)) is None
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=[(["(e)"], "“(1) Text.”")])) is None
 
 
 def test_a_catchline_counts_as_olrc_s_unless_the_law_amends_a_heading():
@@ -133,7 +142,7 @@ def test_a_supplied_heading_is_found_on_a_unit_the_engine_built_without_an_ident
     # Units built from bill text carry no identifier (Pub. L. 116-260 div. Q § 224, 15 U.S.C. 1062(b)).
     pred = sec('<subsection><num value="b">(b)</num><content>The applicant shall reply.</content></subsection>')
     after = sec(sub("b", "The applicant shall reply.", heading="Refusal of registration"))
-    law = ["“(b)\n“(1) If the applicant ...", "“(b) The applicant shall reply.”"]
+    law = [([], "“(b)\n“(1) If the applicant ..."), ([], "“(b) The applicant shall reply.”")]
     assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
 
 
@@ -150,3 +159,37 @@ def test_an_act_reference_resolving_to_a_subsection():
     after = sec(sub("a", "of paragraph (2)(B) of section 1395w–104(o) of this title at a time"))
     ctx = Context(pl="1-2", title="42", resolve=lambda cite: "/us/usc/t42/s1395w–104/o")
     assert kind(pred, after, ctx) .startswith("editorial")
+
+
+def test_a_supplied_heading_on_a_unit_the_law_replaces_whole():
+    # Pub. L. 116-260 div. Q § 224 (15 U.S.C. 1062): "striking subsection (b) and inserting “(b)\n“(1) ...": the
+    # inserted text is the unit itself, set at its parent's level, and gives (b) no heading.
+    pred = sec('<subsection><num value="b">(b)</num><content>The applicant shall reply.</content></subsection>')
+    after = sec(sub("b", "The applicant shall reply.", heading="Refusal of registration"))
+    law = [(["(b)"], "“(b) The applicant shall reply.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=law)) .startswith("editorial")
+    lost = [(["(b)"], "“(b) Refusal of registration.—The applicant shall reply.”")]
+    assert kind(pred, after, Context(pl="1-2", positive_law=False, inserted=lost)) is None
+
+
+def test_a_bracketed_repealed_placeholder_and_this_clause():
+    # 10 U.S.C. 652: "[(5) Repealed. Pub. L. 114–92, ...]"; 33 U.S.C. 2263: "the date of enactment of this clause".
+    pred = sec(sub("a", "Alpha.") + sub("b", "Beta."))
+    after = sec(sub("a", "Alpha.") + sub("b", "Beta.") +
+                "<p>[(5) Repealed. Pub. L. 1–2, div. A, title V, § 524(a)(2), Nov. 25, 2015, 129 Stat. 818.]</p>")
+    assert kind(pred, after, Context(pl="1-2")) is not None
+    after2 = sec(sub("a", "carried out after June 10, 2014, or later"))
+    pred2 = sec(sub("a", "carried out after the date of enactment of this clause, or later"))
+    assert kind(pred2, after2, Context(pl="1-2", date_of=lambda act: "2014-06-10" if act is None else None)) is not None
+
+
+def test_an_act_reference_with_its_own_code_citation():
+    # 38 U.S.C. 2021, 7 U.S.C. 3195, 4 U.S.C. 7 (dev 2): the law prints the Code citation; OLRC sets it in place.
+    pred = sec(sub("a", "pursuant to section 8(o)(19) of the Alpha Act of 1937 (42 U.S.C. 1437f(o)(19)) or the"))
+    after = sec(sub("a", "pursuant to section 1437f(o)(19) of title 42 or the"))
+    assert kind(pred, after, Context(pl="1-2", title="38")) is not None
+    assert kind(pred, sec(sub("a", "pursuant to section 1437g(o)(19) of title 42 or the")),
+                Context(pl="1-2", title="38")) is None                    # another section: not the law's citation
+    pred = sec(sub("a", "employees subject to the Act of March 4, 1940 (7 U.S.C. 331);"))
+    assert kind(pred, sec(sub("a", "employees subject to section 331 of this title;")),
+                Context(pl="1-2", title="7")) is not None

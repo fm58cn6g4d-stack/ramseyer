@@ -52,6 +52,9 @@ def normalize(original: str) -> Normalized:
                     chars[j] = "“" if k % 2 == 0 else "”"
                     k += 1
         text = "".join(chars)
+    # An apostrophe inside a word is the Code's ’ ("person's" in Pub. L. 116-283 § 505, 10 U.S.C. 628a): a typeface
+    # convention, as `` and '' are, never a quotation mark. One character for one, so the offsets stay aligned.
+    text = re.sub(r"(?<=[A-Za-z])'(?=[A-Za-z])", "’", text)
     return Normalized(text, offs)
 
 

@@ -162,3 +162,68 @@ def test_a_section_another_law_also_amended_in_the_window_is_not_graded(tmp_path
     rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
     assert [o.outcome for o in rep.outcomes] == ["ungradable"] and "0-9" in rep.outcomes[0].detail
     assert (rep.metrics["targets"], rep.metrics["ungradable"]) == (0, 1)
+
+
+def test_a_section_the_law_has_not_reached_at_r_after_is_not_graded(tmp_path):
+    # OLRC may list a law in a release point before executing it in every title (Pub. L. 116-283's title 46
+    # amendments: listed in 116-344, executed in 117-17). A section unchanged at R_after with no note citing the law
+    # is not graded; one with such a note is.
+    db = tmp_path / "o.sqlite"
+    ix = Indexer(db)
+    cited = '<notes><note topic="amendments"><heading>Amendments</heading><p>Pub. L. 1–2 struck text.</p></note></notes>'
+    for label, body in (("1-1", sec("2", "Beta gamma.") + sec("3", "Gamma.")),
+                        ("1-2", sec("2", "Beta gamma.") + sec("3", "Gamma.").replace("</section>", cited + "</section>"))):
+        z = tmp_path / f"{label}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("usc99.xml", doc(body))
+        ix.mark_complete(ix.load_release_point(z, label, None, "t", log=lambda s: None))
+    law = CorpusLaw(pl="1-2", name="t", bill="1 hr 1", enrolled_url="x", enrolled_sha256="x", rp_before="1-1",
+                    rp_after="1-2", titles=["99"], reason="t",
+                    rows=[ClassifiedRow(title="99", section=s, description="", law_section="1") for s in ("2", "3")])
+    corpus = Corpus(built="t", selection="t", release_points=[], laws=[law])
+
+    def p(law, before):
+        return [Prediction(identifier=f"/us/usc/t99/s{s}", status="CLEAN", text=f"§ {s}. H{s}\nDelta.")
+                for s in ("2", "3")]
+    # A predicted change no later release point carries is graded, never dropped: a change the law did not make is
+    # what a misdirected instruction looks like (review of #12).
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
+    assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "mismatch", "s3": "mismatch"}
+    assert rep.outcomes[0].detail.startswith(harness.UNCONFIRMED)
+    assert (rep.metrics["unexecuted"], rep.metrics["unexecuted_clean_graded"], rep.metrics["false_clean"]) == (0, 1, 2)
+    # A later release point that carries the predicted text shows OLRC executed the law there: not graded.
+    later = lambda law, ident: [("1-3", "§ 2. H2\nDelta.")] if ident.endswith("s2") else []
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={}, later=later)
+    assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "unexecuted", "s3": "mismatch"}
+    assert "1-3" in rep.outcomes[0].detail and rep.metrics["unexecuted_clean_confirmed_later"] == 1
+    # No change predicted: nothing of ours can be wrong there, and it is not graded either.
+    same = lambda law, before: [Prediction(identifier="/us/usc/t99/s2", status="CLEAN", text="§ 2. H2\nBeta gamma.")]
+    rep = harness.evaluate(corpus, same, "t", lambda label: Index(db, label), labels={})
+    assert [o.outcome for o in rep.outcomes if o.identifier.endswith("s2")] == ["unexecuted"]
+
+
+def test_materialized_release_points_are_stamped_with_the_code_that_built_them(tmp_path):
+    # A file built by other code is never reused (review of #10): it sits under another stamp and is removed.
+    from ramseyer.oracle.history import ReleaseIndexes, code_stamp
+    stale = tmp_path / "code-000000000000"
+    stale.mkdir()
+    (stale / "1-1.sqlite").write_text("x")
+    (tmp_path / "1-2.sqlite").write_text("x")
+    ri = ReleaseIndexes(None, {}, tmp_path, log=lambda s: None)
+    assert ri.dir == tmp_path / f"code-{code_stamp()}" and ri.dir.is_dir()
+    assert not stale.exists() and not (tmp_path / "1-2.sqlite").exists()
+
+
+def test_unicode_encoding_never_decides_a_comparison():
+    assert harness.normalize("Attaché Program") == harness.normalize("Attaché Program")
+
+
+def test_a_fraction_is_its_digits():
+    assert harness.normalize("the first 5 ½ percent") == harness.normalize("the first 5 1/2 percent")
+    assert harness.normalize("multiplying 7⁄10") == harness.normalize("multiplying 7/10")
+
+
+def test_a_transfer_and_amendment_note_is_a_delayed_amendment():
+    # 10 U.S.C. 930 (Pub. L. 114-328 § 5443): effective on a date the President designates.
+    assert harness.DELAYED_NOTE.match("Transfer and Amendment of Section\nPub. L. 114–328 ... provided that, effective")
+    assert not harness.DELAYED_NOTE.match("Amendments\n2016—Pub. L. 114–328 substituted")

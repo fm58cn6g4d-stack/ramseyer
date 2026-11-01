@@ -21,14 +21,20 @@ from ramseyer.data.indexer import text_of
 from ramseyer.oracle.harness import normalize
 
 DATE_PHRASE = re.compile(
-    r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph|subparagraph|sentence|"
-    r"title|subtitle|division|part|chapter)|the (?P<act>[A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year "
+    r"(?:the )?date of (?:the )?enactment of (?:this (?:Act|section|subsection|paragraph|subparagraph|clause|"
+    r"subclause|item|sentence|title|subtitle|division|part|chapter)|the (?P<act>[A-Z][\w ,.’'()-]*?Act(?: of \d{4})?(?: for Fiscal Year "
     r"\d{4})?(?:, \d{4})?))")
 MONTHS = ("January", "February", "March", "April", "May", "June", "July", "August", "September", "October",
           "November", "December")
 # "section 4 of the Indian Self-Determination and Education Assistance Act" -> "section 5304 of title 25"
 ACT_REF = re.compile(r"section (\d+[A-Za-z]*(?:[–-]\d+[A-Za-z]*)?)((?:\([^()\s]+\))*) of (the [A-Z][^,;:()\[\]]*?Act"
                      r"(?: of \d{4})?)")
+# "section 8(o)(19) of the United States Housing Act of 1937 (42 U.S.C. 1437f(o)(19))", "the Act of March 4, 1940 (7
+# U.S.C. 331)": the law prints the Code citation itself, and OLRC sets "section 1437f(o)(19) of title 42" in its place.
+PAREN_REF = re.compile(r"(?:section \d+[A-Za-z]*(?:[–-]\d+[A-Za-z]*)?(?:\([^()\s]+\))* of (?:title [IVXLC\d]+ of )?"
+                       r"the [A-Z][^,;:()\[\]]*?Act(?: of \d{4})?|the Act of [A-Z][a-z]+ \d{1,2}, \d{4}) "
+                       r"\((?:Public Law [^;()]+; )?(?:\d+ Stat\. [\d–-]+; )?(?P<t>\d+) U\.S\.C\. "
+                       r"(?P<s>\d+[\w–-]*?)(?P<sub>(?:\([^()\s]+\))*)\)")
 UNIT = ("section", "subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem")
 
 
@@ -43,7 +49,9 @@ class Context:
     # The enactment date of an Act named in the text ("CARES Act"), or of this law (None), as "2020-03-27"; None
     # when unknown, and then no date is accepted for the phrase.
     date_of: Callable[[str | None], str | None] = lambda act: None
-    inserted: list[str] = field(default_factory=list)   # the law's quoted text inserted in the section
+    # The law's quoted text inserted in the section, with the path of the unit each instruction inserts it in
+    # (["(b)", "(2)"]; [] for the section itself).
+    inserted: list[tuple[list[str], str]] = field(default_factory=list)
 
     @property
     def cite(self) -> str:
@@ -94,12 +102,25 @@ def _chain(u, root) -> tuple[str, ...]:
     return tuple(reversed(out))
 
 
-def _inserted_without_heading(label: str, inserted: list[str]) -> bool:
-    """The law's inserted text gives the unit "(label)" and gives it no heading ("(e) The Director ...", not "(e)
-    Policymaking.—The Director ..."): a heading at R_after is then OLRC's, not one the engine lost."""
-    lines = [ln.lstrip("“ ") for t in inserted for ln in t.split("\n")]
-    mine = [ln for ln in lines if ln.startswith(f"({label})")]
-    return bool(mine) and not any(re.match(rf"^\({re.escape(label)}\)\s*[A-Z][^.—]{{0,160}}\.—", ln) for ln in mine)
+def _inserted_without_heading(chain: tuple[str, ...], inserted: list[tuple[list[str], str]]) -> bool:
+    """The law's text inserted where the unit is gives it no heading ("(e) The Director ...", not "(e)
+    Policymaking.—The Director ..."): a heading at R_after is then OLRC's, not one the engine lost. Only text
+    inserted in one of the unit's ancestors counts, and only if it begins the unit's own line of descent there:
+    paragraph (b)(2)(C) is found in text inserted in subsection (b) that has a "(2)" and a "(C)", never in text
+    inserted in subsection (c)."""
+    mine = []
+    for path, text in inserted:
+        at = tuple(x.strip("()") for x in path)
+        lines = [ln.lstrip("“ ") for ln in text.split("\n")]
+        if at and lines and lines[0].startswith(f"({at[-1]})"):
+            at = at[:-1]              # text that replaces the unit itself ("striking subsection (b) and inserting ...")
+        if len(at) >= len(chain) or at != chain[:len(at)]:
+            continue
+        if not any(ln.startswith(f"({chain[len(at)]})") for ln in lines):
+            continue
+        mine += [ln for ln in lines if ln.startswith(f"({chain[-1]})")]
+    label = re.escape(chain[-1])
+    return bool(mine) and not any(re.match(rf"^\({label}\)\s*[A-Z][^.—]{{0,160}}\.—", ln) for ln in mine)
 
 
 def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
@@ -129,7 +150,7 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
             mine = pred_units.get(_chain(u, after_el))
             mh = _heading(mine) if mine is not None else None
             if mine is not None and (mh is None or not "".join(mh.itertext()).strip()) and \
-                    _inserted_without_heading(_chain(u, after_el)[-1], ctx.inserted):
+                    _inserted_without_heading(_chain(u, after_el), ctx.inserted):
                 _drop(h)                             # a heading OLRC supplied: the law's own text has none
     out = []
     for el in (pred_el, after_el):
@@ -159,6 +180,10 @@ def _pattern(pred: str, ctx: Context | None) -> re.Pattern:
             spans.append((m.start(), m.end(),
                           f"(?:{re.escape(f'{MONTHS[mo - 1]} {d}, {y}')},?|{re.escape(m.group(0))})"))
     if ctx is not None:
+        for m in PAREN_REF.finditer(pred):
+            where = f"(?:title {re.escape(m['t'])}" + ("|this title)" if m["t"] == ctx.title else ")")
+            spans.append((m.start(), m.end(), f"(?:{re.escape(m.group(0))}|section {re.escape(m['s'] + m['sub'])} of "
+                                              f"{where})"))
         for m in ACT_REF.finditer(pred):
             if any(s < m.end() and m.start() < e for s, e, _ in spans):
                 continue
@@ -226,7 +251,8 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
     placeholder = False
     if ctx is not None:                                 # "(f) Repealed. Pub. L. 113–76, ..., 128 Stat. 424"
         # OLRC may set the placeholder as the unit's heading, which texts() lower-cases.
-        stripped = re.sub(rf"\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?",
+        # It may be bracketed: "[(5) Repealed. Pub. L. 114–92, ..., 129 Stat. 818.]" (10 U.S.C. 652).
+        stripped = re.sub(rf"\[?\((\w+)\) Repealed\. {re.escape(ctx.cite)}\b.{{0,160}}?\d+ Stat\. \d+(?:[–-]\d+)?\.?\]?",
                           "", after, flags=re.I)
         placeholder = stripped != after
         after = re.sub(r"\s+", " ", stripped).strip()

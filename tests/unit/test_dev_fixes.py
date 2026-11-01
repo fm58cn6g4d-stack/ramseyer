@@ -48,14 +48,15 @@ def test_a_plural_possessive_inside_a_nested_quotation():
         "the term “State” includes the Indians’ lands"
 
 
-def test_a_closing_quotation_mark_repeated_by_the_drafter_is_dropped():
-    # Pub. L. 116-315 § 7002 closes a quoted block twice in its middle (“... Hawaii.”.” then “(6) ...”); Pub. L.
-    # 117-263 § 502 ends one “... general.”;”;”. OLRC drops the extra marks.
+def test_a_stray_closing_mark_inside_a_block_is_kept_and_a_repeated_close_dropped():
+    # A ” the law leaves in the middle of a block is its own text and is kept (38 U.S.C. 119, Pub. L. 116-171; Espen,
+    # 2026-10-31: literal marks). A close the law repeats at the block's end is the block's close (“... general.”;”;”,
+    # Pub. L. 117-263 § 502).
     text, _ = run("Section 1 of title 99, United States Code, is amended by adding at the end the following:\n"
                   "“(c) Definitions.—In this section:\n“(1) The term ‘alpha’ means the alpha of the State.”.\n"
                   "“(2) The term ‘beta’ means beta.”;”;")
-    assert "the alpha of the State. (2) The term “beta” means beta." in text and "”" not in text.split("(c)")[1] \
-        .replace("“alpha”", "").replace("“beta”", "")
+    assert "the alpha of the State.”. (2) The term “beta” means beta." in text
+    assert not text.rstrip().endswith("”;")
 
 
 def test_an_inserted_em_dash_takes_no_space_before_it():
@@ -197,3 +198,143 @@ def test_a_references_clause_scoped_to_a_subsection():
                      "355–1(h)) is amended in paragraph (8) by striking “x” and inserting “y”.\n(b) Two.—Section 351 "
                      "(98 U.S.C. 262) is amended by striking “a” and inserting “b”.\n").instructions
     assert [(i.id, i.target.act) for i in ins] == [("sec3101.a.2#0", "Placeholder Act"), ("sec3101.b#0", None)]
+
+
+def test_nested_quotation_keeps_the_laws_own_marks():
+    # Pub. L. 114-153 § 2 (18 U.S.C. 1839): a quotation the law opens inside another keeps its single marks, and the
+    # outer one the law never closes is still set as double. Synthetic placeholder text.
+    from ramseyer.dryrun.engine import nested_to_double
+    s = "the Act entitled ‘An Act to foo, (referred to as the ‘Alpha Act’ or the ‘Beta Act’)"
+    want = "the Act entitled “An Act to foo, (referred to as the ‘Alpha Act’ or the ‘Beta Act’)"
+    assert nested_to_double(s) == want
+    assert nested_to_double(want) == want
+    assert nested_to_double("the term ‘State’ includes the Indians’ lands") == \
+        "the term “State” includes the Indians’ lands"
+
+
+def test_an_apostrophe_inside_a_word_is_the_codes():
+    # Pub. L. 116-283 § 505 (10 U.S.C. 628a): "person's" in the enrolled text, "person’s" in the Code.
+    from ramseyer.parse.normalize import normalize
+    n = normalize("the alpha's beta, ``gamma'' and 'delta'")
+    assert n.text == "the alpha’s beta, “gamma” and 'delta'" and len(n.offsets) == len(n.text) + 1
+
+
+def test_a_space_at_a_defined_terms_edge_goes_outside_its_marks():
+    # Pub. L. 116-283 § 505: "<term>promotion board </term>means". Synthetic placeholder text.
+    from lxml import etree
+    from ramseyer.parse.xmltext import inline
+    el = etree.fromstring("<text>the term <term>alpha beta </term>means gamma</text>")
+    assert inline(el) == "the term “alpha beta” means gamma"
+    assert inline(etree.fromstring("<text>striking <quote> and beta</quote></text>")) == "striking “ and beta”"
+
+
+def test_the_heading_of_a_section_amended_to_read_replaces_the_heading_only():
+    # Pub. L. 116-283 § 925(k)(1)(B) (37 U.S.C. 1005): read as a whole-section replacement, the text was lost.
+    text, res = run("(a) In general.—Section 1 of title 99, United States Code, is amended by striking “review each "
+                    "term” and inserting “review every term”.\n(b) Heading.—The heading of such section 1 is amended "
+                    "to read as follows:\n“§ 1. Alpha rule”.")
+    assert [r.status for r in res] == ["CLEAN", "CLEAN"]
+    assert "Alpha rule" in text and "review every term" in text
+
+
+def test_subsection_and_subsection_of_a_section_are_two_scopes():
+    # Pub. L. 114-289 § 501(d) (54 U.S.C. 311103): the edit fell on the whole section.
+    from ramseyer.parse import parse_text
+    ins = parse_text("SEC. 2. X.\nSubsection (b) and subsection (d) of section 1 of title 99, United States Code, are "
+                     "amended by striking “Council” each place it appears and inserting “Chair of the Council”.\n").instructions
+    assert [i.target.path for i in ins] == [["(b)"], ["(d)"]]
+
+
+def test_subsection_aa_follows_subsection_z():
+    # Pub. L. 114-328 § 502: "(oo) ... Section 8081 ... is amended by striking the second sentence" was read under
+    # "(z)(3)", a table-of-contents edit, so the sentence was never struck (10 U.S.C. 8081).
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(z) Beta.—Section 2 of title 99, United States Code, is amended—\n(1) by striking “b”; and\n"
+         "(2) in the table, by striking the item relating to section 3.\n(aa) Gamma.—Section 4 of title 99, United "
+         "States Code, is amended by striking the second sentence.\n")
+    ins = parse_text(t).instructions
+    assert [(i.id, i.op) for i in ins][-1] == ("sec2.aa#0", "STRIKE")
+
+
+def test_an_effective_date_clause_does_not_hide_the_act_amended():
+    # Pub. L. 114-328 § 1081(c)(6): "Section 1079(a) is amended" of the FY2016 NDAA was applied to 10 U.S.C. 1079.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(b) Gamma.—Section 2218 of title 10, United States Code, is amended by striking “a”.\n"
+         "(c) Alpha.—Effective as of November 25, 2015, and as if included therein as enacted, the Beta Act of 2015 "
+         "(Public Law 114–92) is amended as follows:\n(1) Section 563(a) is amended by striking “b”.\n")
+    last = parse_text(t).instructions[-1]
+    assert (last.target.kind, last.target.act, last.target.section) == ("act", "Beta Act of 2015", "563")
+
+
+def test_the_heading_of_such_section():
+    # Pub. L. 114-328 § 1134(c)(1) (5 U.S.C. 5524a): the catchline edit had no target and was never applied.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(a) In general.—Subsection (a) of section 1 of title 99, United States Code, is amended by "
+         "striking “a”.\n(c) Clerical amendments.—\n(1) Section heading.—The heading of such section is amended by "
+         "inserting “and beta” after “alpha”.\n")
+    last = parse_text(t).instructions[-1]
+    assert (last.op, last.target.title, last.target.section, last.target.path) == ("AMEND_HEADING", "99", "1", [])
+
+
+def test_paragraph_of_such_subsection():
+    # Pub. L. 116-158 § 1(b)(2) (50 U.S.C. 3955): "Paragraph (2) of such subsection is amended" had no target.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 1. X.\n(a) Termination.—Subsection (a)(1) of section 3 of title 99, United States Code, is amended by "
+         "striking “z”.\n(b) Covered.—\n(1) Alpha.—Paragraph (1) of subsection (b) of such section is amended by "
+         "striking “a”.\n(2) Beta.—Paragraph (2) of such subsection is amended—\n(A) in subparagraph (A), by striking "
+         "“b”; and\n(B) by adding at the end the following:\n“(C) Gamma.”.\n")
+    ins = parse_text(t).instructions
+    assert [(i.target.section, i.target.path) for i in ins[2:]] == [("3", ["(b)", "(2)", "(A)"]), ("3", ["(b)", "(2)"])]
+
+
+def test_through_the_period_skips_a_citation_period():
+    # Pub. L. 114-328 § 954(b)(2) (10 U.S.C. 2228(e)(2)): "through the period" stopped at "122 Stat." and left
+    # "4567; 10 U.S.C. 2228 note)." behind. Synthetic placeholder text.
+    xml = XML.replace("Reviews shall be made at least annually.",
+                      "Reviews shall include a copy of the alpha report (Public Law 1–2; 122 Stat. 4567; 10 U.S.C. 1 note).")
+    text, res = run("Subsection (a) of section 1 of title 99, United States Code, is amended by striking “a copy of” "
+                    "and all that follows through the period and inserting “a summary of the beta report.”.", xml)
+    assert res[0].status == "CLEAN" and "include a summary of the beta report. The" in text and "4567" not in text
+
+
+def test_inserting_a_quoted_term_keeps_its_marks():
+    # Pub. L. 116-189 § 4 (36 U.S.C. 220506): inserting “‘Parapan American’,” after “‘Pan-American’,”.
+    xml = XML.replace("Reviews shall be made at least annually.", "The words “Alpha”, “Pan-American”, and “Beta” are reserved.")
+    text, res = run("Section 1 of title 99, United States Code, is amended by inserting “‘Parapan American’,” after "
+                    "“‘Pan-American’,”.", xml)
+    assert res[0].status == "CLEAN" and "“Pan-American”, “Parapan American”, and “Beta”" in text
+
+
+def test_an_effective_on_lead_in_delays_its_items():
+    # Pub. L. 117-151 § 2(i)(1) (11 U.S.C. 1182): a two-year sunset was executed at once.
+    from ramseyer.parse import parse_text
+    t = ("SEC. 2. X.\n(i) Sunsets.—\n(1) In general.—Effective on the date that is 2 years after the date of enactment "
+         "of this Act—\n(A) section 1(1) of title 99, United States Code, is amended to read as follows:\n“(1) Alpha.”.\n"
+         "(j) Other.—Section 2 of title 99, United States Code, is amended by striking “b”.\n")
+    ins = parse_text(t).instructions
+    assert [any(f.startswith("delayed effective date") for f in i.flags) for i in ins] == [True, False]
+
+
+def test_clauses_i_through_v_is_a_roman_range():
+    # Pub. L. 119-21 § 10601(a)(2) (16 U.S.C. 3841(a)(3)): only clauses (i) and (v) were replaced.
+    from ramseyer.parse.grammar import _expand
+    assert _expand("clauses (i) through (v)") == ["(i)", "(ii)", "(iii)", "(iv)", "(v)"]
+    assert _expand("subsections (i) through (k)") == ["(i)", "(j)", "(k)"]
+
+
+def test_a_drafting_slip_is_applied_by_intent_and_warned():
+    # Pub. L. 119-37 § 7307(c) (38 U.S.C. 3737): "Section (d)(1) of such section is amending by inserting ...".
+    xml_text, res = run("(a) Alpha.—Section 1 of title 99, United States Code, is amended by striking “ at least annually”.\n"
+                        "(c) Beta.—Section (a) of such section is amending by inserting “every” after “review each”.")
+    assert [r.status for r in res] == ["CLEAN", "WARN"] and "review each every term" in xml_text
+
+
+def test_quoted_words_in_a_header_keep_their_marks():
+    # Pub. L. 114-92 § 1671 (10 U.S.C. 130h): "(a) Certain “Hit-to-kill” technology" lost its marks.
+    from lxml import etree
+    from ramseyer.parse.xmltext import _render
+    el = etree.fromstring('<subsection><enum>(a)</enum><header>Certain <quote>alpha-beta</quote> gamma</header>'
+                          '<text>Delta.</text></subsection>')
+    lines = []
+    _render(el, lines, True)
+    assert lines[0] == "(a) Certain ‘alpha-beta’ gamma.—Delta."

@@ -25,6 +25,8 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
+from lxml import etree
+
 from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index, LookupError_
@@ -53,12 +55,13 @@ SETS = {   # name: (manifest, oracle db, output tag, heading)
     # Sealed (red team F5): built after the second red-team round; measured, never inspected case by case.
     "govinfo2023": (MANIFEST.with_name("heldout_govinfo_2023.json"), store.ORACLE_DB.with_name("govinfo_2023.sqlite"),
                     "m6b_govinfo2023", " (sealed held-out: 2023 laws on GovInfo's 2022/2023 editions)"),
-    # M6e: laws from 113-21 on, on the release-point history (scripts/build_history_oracle.py). dev may be tuned on;
-    # test is measured only; sealed is measured once per round and never inspected case by case.
+    # M6e: laws from 113-21 on, on the release-point history (scripts/build_history_oracle.py). dev and dev 2 (the
+    # former test set) may be tuned on; sealed is measured once per round and never inspected case by case.
     "history_dev": (MANIFEST.with_name("history_dev.json"), store.ORACLE_DB.with_name("history_cache"),
                     "m6e_dev", " (2013-2026 history: dev)"),
+    # Measured once as a held-out set (8.17%, records/milestones.md); since 2026-10-31 a second dev set (Espen).
     "history_test": (MANIFEST.with_name("history_test.json"), store.ORACLE_DB.with_name("history_cache"),
-                     "m6e_test", " (2013-2026 history: test, measured only)"),
+                     "m6e_test", " (2013-2026 history: dev 2, formerly test)"),
     "history_sealed": (MANIFEST.with_name("history_sealed.json"), store.ORACLE_DB.with_name("history_cache"),
                        "m6e_sealed", " (2013-2026 history: sealed, measured once per round)"),
 }
@@ -107,6 +110,9 @@ def main() -> int:
     ap.add_argument("--set", choices=sorted(SETS), default="tuning")
     ap.add_argument("--resolve-before", action="store_true",
                     help="resolve each law against its R_before release point instead of the pinned index (tuning)")
+    ap.add_argument("--rerun", type=int, default=0,
+                    help="a repeat run N of the same code and data, with its own checkpoint, outputs (tagged _rerunN) "
+                         "and freshly built release points, to check that a run reproduces (compare_runs.py)")
     ap.add_argument("--refresh-labels", action="store_true",
                     help="re-stamp the hashes of hand labels on this set after checking each difference by hand")
     args = ap.parse_args()
@@ -122,6 +128,8 @@ def main() -> int:
     if args.law:
         corpus.laws = [corpus.law(pl) for pl in args.law]
         tag += "_laws"
+    if args.rerun:
+        tag += f"_rerun{args.rerun}"
     if args.set.startswith("govinfo") and not args.heldout:
         # Sections outside the answer key are fetched from the same edition on demand (red team F6).
         open_index = lru_cache(maxsize=None)(lambda label: GovInfoOverlay(store.index(label, db), int(label[-4:]), f,
@@ -129,8 +137,16 @@ def main() -> int:
     elif args.set.startswith("history_"):
         # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
         # One cache directory per set: a set may need more titles at a release point than another set built there.
-        open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
-                                    {rp.label: rp.titles for rp in corpus.release_points}, db / args.set,
+        history = History(cfg.var / "history" / "history.sqlite")
+
+        def later(law, ident):
+            """The section's texts at release points after the law's R_after (harness.evaluate: "unexecuted")."""
+            from ramseyer.data.indexer import text_of
+            return [(lab, text_of(etree.fromstring(x.encode("utf-8"))))
+                    for lab, x in history.section_versions_after(ident, law.rp_after)]
+        open_index = ReleaseIndexes(history,
+                                    {rp.label: rp.titles for rp in corpus.release_points},
+                                    db / (args.set + (f"_rerun{args.rerun}" if args.rerun else "")),
                                     log=lambda s: None)
     else:
         open_index = lru_cache(maxsize=None)(lambda label: store.index(label, db))
@@ -231,7 +247,7 @@ def main() -> int:
                 new_notes=[t for t in notes(after, ident) if t not in set(notes(before, ident))],
                 resolve=resolve_at_after, title=title.group(1) if title else "",
                 date_of=lambda act: enacted_date(law.pl if act is None else act_law(act)),
-                inserted=[t for tr in run.traces if tr.section == ident
+                inserted=[(tr.instruction.target.path, t) for tr in run.traces if tr.section == ident
                           for t in (tr.instruction.new_text, tr.instruction.replace) if t])
             return editorial.kind(work.el, after_xml, ctx)
         kinds = {o.identifier: editorial_kind(o.identifier) for o in outs
@@ -284,6 +300,12 @@ def main() -> int:
             "statuses": dict(collections.Counter(tr.result.status if tr.result else
                                                  f"unattributed:{tr.resolution.outcome}" for tr in run.traces)),
             "labels": law_labels,
+            # Per section graded or predicted: hashes of the predicted, R_before and R_after texts, so two runs can be
+            # compared section by section (scripts/compare_runs.py).
+            "hashes": {o.identifier: [harness.text_hash(run.working[o.identifier].render())
+                                      if o.identifier in run.working else None,
+                                      harness.text_hash(harness.section_text(before, o.identifier)[0]),
+                                      harness.text_hash(harness.section_text(after, o.identifier)[0])] for o in outs},
             "traces": [{"pl": law.pl, "section": tr.section, "id": tr.instruction.id, "op": tr.instruction.op,
                         "unit": tr.instruction.unit, "find": tr.instruction.find, "new": tr.instruction.new_text,
                         "replace": tr.instruction.replace, "flags": tr.instruction.flags,
@@ -299,7 +321,7 @@ def main() -> int:
     for path in sorted(SRC.rglob("*.py")) + [Path(__file__), manifest, touched_path, harness.LABELS]:
         if path.exists():
             digest.update(str(path.relative_to(ROOT)).encode() + b"\0" + path.read_bytes())
-    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump]).encode())
+    digest.update(json.dumps([args.set, args.heldout, args.resolve_before, args.law, args.dump, args.rerun]).encode())
     # The data, too: the release points graded against, the pinned index the resolver reads, OLRC's classification
     # tables and each enrolled bill as fetched (the materialized release points derive from the history and the code).
     digest.update(json.dumps(data_fingerprint(cfg, args.set, db), sort_keys=True).encode())
@@ -308,7 +330,8 @@ def main() -> int:
         digest.update(law.pl.encode() + f.get(law.enrolled_url).path.read_bytes())
     extras: dict[str, dict] = {}
     rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None, after_law=after_law,
-                           checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras)
+                           checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras,
+                           later=later if args.set.startswith("history_") else None)
     for x in extras.values():
         statuses.update(x["statuses"])
         missing_status.extend(x["missing_status"])
@@ -366,7 +389,7 @@ def main() -> int:
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
-         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
+         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; not yet executed by OLRC in the section at R_after (not graded) {m.get('unexecuted', 0)}, of them CLEAN predicted changes a later release point carries {m.get('unexecuted_clean_confirmed_later', 0)} (a CLEAN predicted change no later release carries is graded: {m.get('unexecuted_clean_graded', 0)}); extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
          f"{n_editorial} differ only editorially or in whitespace (kinds below)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%} (substantive: OLRC editorial differences excluded)",
          (substantive + off_sub) / max(m["clean"] + m["clean_off_target"], 1) < FALSE_CLEAN_TARGET,
@@ -413,7 +436,8 @@ def main() -> int:
         tg, n, k = tally(os_)
         lo, hi = wilson(k, n)
         return f"| {name} | {tg} | {n} | {k} | {k / max(n, 1):.2%} | {lo:.2%}–{hi:.2%} |"
-    ndaa = {l.pl for l in corpus.laws if "National Defense Authorization" in (l.name or "")}
+    # Names may carry line breaks ("William M. (Mac) Thornberry National \r\nDefense Authorization Act ...").
+    ndaa = {l.pl for l in corpus.laws if "National Defense Authorization" in " ".join((l.name or "").split())}
     strata = ["| Laws | Targets | CLEAN (incl. off target) | Wrong in substance | Rate | 95% interval |",
               "| --- | --- | --- | --- | --- | --- |",
               row("all", rep.outcomes), row("National Defense Authorization Acts", [o for o in rep.outcomes if o.pl in ndaa]),
