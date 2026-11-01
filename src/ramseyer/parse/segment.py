@@ -11,7 +11,9 @@ HEADING_RE = re.compile(r"^(DIVISION|TITLE|Subtitle|SUBTITLE|PART|Part|Subpart|S
                         r"SUBCHAPTER)\s+([A-Z0-9]+)\s*[—–-]+\s*(.*)$")
 SECTION_RE = re.compile(r"^(?:SEC\.|SECTION)\s+(\d+[A-Za-z]*(?:[–-]\d+)?)\.\s*(.*)$")
 ENUM_RE = re.compile(r"^\(([0-9]+[A-Za-z]?|[ivxl]{1,7}|[IVXL]{1,7}|[a-z]{1,3}|[A-Z]{1,3})\)\s*(.*)$", re.S)
-HEADER_RE = re.compile(r"^([^“”—]{1,240}?)\.—(.*)$", re.S)
+# A header may hold short balanced quoted words ("Certain “hit-to-kill” technology", Pub. L. 114-92 § 1671, 10 U.S.C.
+# 130h); an unbalanced mark, or one around a dash, is quoted instruction text, never a header.
+HEADER_RE = re.compile(r"^((?:[^“”—]|“[^“”—]{1,80}”){1,240}?)\.—(.*)$", re.S)
 BLOCK_CLOSE_RE = re.compile(r"”(?:\s*[.;,:]?\s*(?:and|or)?|\.”)?\s*$")
 TOC_ENTRY_RE = re.compile(r"^(?:Sec\.|Sections?\s|Subtitle|Part|Chapter|TITLE|DIVISION|Division|Title)\b")
 LEVEL_PREFIX = {"division": "div", "title": "title", "subtitle": "subt", "part": "part", "subpart": "subpart",

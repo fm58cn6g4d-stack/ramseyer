@@ -154,6 +154,8 @@ def title_case(s: str) -> str:
     the first; the part of a hyphenated compound after the hyphen is left as drafted (measured: lowercase in 210
     of 378 subsection headings of titles 10, 14 and 46)."""
     def cap(w):
+        if w[:1] in "“‘" and len(w) > 1:               # “hit-to-kill” → “Hit-to-kill” (10 U.S.C. 130h)
+            return w[0] + cap(w[1:])
         return w if w.isupper() and len(w) > 1 else w[:1].upper() + w[1:]
     out = []
     for i, w in enumerate(s.split(" ")):

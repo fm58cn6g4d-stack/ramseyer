@@ -338,3 +338,13 @@ def test_quoted_words_in_a_header_keep_their_marks():
     lines = []
     _render(el, lines, True)
     assert lines[0] == "(a) Certain ‘alpha-beta’ gamma.—Delta."
+
+
+def test_a_heading_with_quoted_words_is_a_heading():
+    # Pub. L. 114-92 § 1671 (10 U.S.C. 130h): "(a) Certain ‘hit-to-kill’ technology and telemetry data.—None ..." was
+    # built as text, not a heading, so it kept the law's case. Synthetic placeholder text.
+    from lxml import etree
+    from ramseyer.dryrun.engine import build_units
+    units, _ = build_units("“(a) Certain ‘alpha-beta’ gamma data.—None of the funds.", positive_law=True, dash=True)
+    head = units[0].find("{*}heading")
+    assert head is not None and head.text.strip() == "Certain “Alpha-beta” Gamma Data.—"
