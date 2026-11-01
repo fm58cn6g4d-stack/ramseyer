@@ -107,13 +107,43 @@ def carried_later(predicted: str | None, versions: list[tuple[str, str]]) -> str
 
 
 def same_but_footnotes_and_case(a: str | None, b: str | None) -> bool:
-    """Each differing stretch of the two texts reads the same once footnote markers (1 or 2 digits, standing alone
-    or attached to a word) are removed and case is ignored."""
-    def clean(toks):
-        return [re.sub(r"(?<=\D)\d{1,2}$", "", t).lower() for t in toks if not re.fullmatch(r"\d{1,2}", t)]
-    x, y = (normalize(a) or "").split(), (normalize(b) or "").split()
-    return all(tag == "equal" or clean(x[i1:i2]) == clean(y[j1:j2])
-               for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes())
+    """The predicted text a and a later release's text b differ only in OLRC's footnote markers (a one- or two-digit
+    marker added or removed, standing alone or attached to a word) and in the case of words on b's heading lines.
+    A number changed for another ("30 days" and "60 days", "section 12" and "section 13") or a word's case outside a
+    heading is a difference (review of #14)."""
+    x = (normalize(a) or "").split()
+    y, heading = [], []
+    for line in (b or "").splitlines():
+        toks = (normalize(line) or "").split()
+        is_head = bool(toks) and (toks[0].startswith("§") or line.rstrip().endswith("\u2014"))
+        y += toks
+        heading += [is_head] * len(toks)
+
+    def marker(t):
+        return re.fullmatch(r"\d{1,2}", t) is not None
+
+    def footnoted(p, q):                 # "Delta." and "Delta.1": one is the other with a marker attached
+        return any(len(u) > len(v) and u.startswith(v) and re.fullmatch(r"\d{1,2}", u[len(v):]) and
+                   re.search(r"\D$", v) for u, v in ((p, q), (q, p)))
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes():
+        if tag == "equal":
+            continue
+        if tag in ("insert", "delete"):
+            if all(marker(t) for t in x[i1:i2] + y[j1:j2]):
+                continue
+            return False
+        # A marker OLRC added stands alone in the later text; one it removed, in the prediction, but only where the
+        # later text has none there, so a number replaced by another never reads as two markers.
+        ys = [k for k in range(j1, j2) if not marker(y[k])]
+        xs = [k for k in range(i1, i2) if not (marker(x[k]) and len(ys) == j2 - j1)]
+        if len(xs) != len(ys):
+            return False
+        for i, j in zip(xs, ys):
+            p, q = x[i], y[j]
+            if p == q or footnoted(p, q) or (heading[j] and p.lower() == q.lower()):
+                continue
+            return False
+    return True
 
 
 def cites_law(law: CorpusLaw, after: Index, ident: str) -> bool:
