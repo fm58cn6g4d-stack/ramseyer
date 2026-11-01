@@ -10,6 +10,8 @@
   "pending": 14,
   "ungradable": 19,
   "unexecuted": 55,
+  "unexecuted_clean_confirmed_later": 0,
+  "unexecuted_clean_graded": 0,
   "match_rate": 0.4679,
   "clean": 370,
   "false_clean": 44,
