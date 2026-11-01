@@ -96,3 +96,26 @@ Each was checked against the enrolled text: the prediction follows the law, and 
 Not proposed: 54 U.S.C. 308704 (paragraph (a)(2) is gone at R_after, but no provision of Pub. L. 114-328 strikes it and OLRC's note does not explain it); it stays counted as wrong.
 
 Effect at c6c1983: dev 2 from 33 to 24 of 1,396 (1.72%); dev from 11 to 10 of 1,461 (0.68%).
+
+## Round 2 (81cf65f)
+
+With #13's labels, dev 2 is 18 of 1,392 (1.29%). The 18:
+
+- 113-143 21 U.S.C. 822
+- 113-79 16 U.S.C. 2003
+- 114-322 33 U.S.C. 1383
+- 114-322 33 U.S.C. 2908
+- 114-328 54 U.S.C. 308704
+- 114-81 16 U.S.C. 1826b
+- 114-95 20 U.S.C. 6332
+- 116-283 10 U.S.C. 146
+- 116-283 10 U.S.C. 9084
+- 116-283 14 U.S.C. 561
+- 116-61 38 U.S.C. 3683
+- 117-151 11 U.S.C. 101
+- 117-169 42 U.S.C. 1395w–116
+- 117-169 42 U.S.C. 1395w–132
+- 117-58 23 U.S.C. 164
+- 117-58 42 U.S.C. 6325
+- 117-58 49 U.S.C. 22406
+- 119-21 7 U.S.C. 2012
