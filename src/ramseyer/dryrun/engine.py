@@ -1089,8 +1089,10 @@ class Engine:
         split = self._split(ins, scope) if not ins.target.qualifiers and ins.find else None
         if split is not None:
             return split
-        new = self._tr(nested_to_double(ins.replace if ins.replace is not None else
-                                        "\n".join(block_lines(ins.new_text or ""))))
+        rep = ins.replace
+        if rep is not None and "\n" in rep:
+            rep = " ".join(block_lines(rep))       # a replacement that runs into a quoted block: its lines, not its marks
+        new = self._tr(nested_to_double(rep if rep is not None else "\n".join(block_lines(ins.new_text or ""))))
         positional = any(f.startswith("positional") for f in ins.flags)
         return self._edit(ins, scope, path, nested_to_double(ins.find or ""), lambda old: new, positional)
 

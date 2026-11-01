@@ -359,3 +359,11 @@ def test_the_sixth_sentence():
                     "(1) by striking “ends” and inserting “stops”; and\n"
                     "(2) by inserting “, or later” before the period at the end.", xml)
     assert [r.status for r in res] == ["CLEAN", "CLEAN"] and "Six stops here, or later. Seven." in text
+
+
+def test_a_closing_mark_before_a_block_is_the_laws():
+    # Pub. L. 117-263 § 844(1)(A) (10 U.S.C. 4025): inserting “that—” and then “(1) have” prints "that—” (1) have", as
+    # OLRC has it (literal marks). Synthetic placeholder text.
+    text, res = run("Section 1 of title 99, United States Code, is amended—\n(1) in subsection (a)—\n(A) by striking "
+                    "“shall review” and inserting “shall—”\n“(1) review”;")
+    assert "shall—” (1) review each term" in text

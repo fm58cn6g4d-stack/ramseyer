@@ -663,8 +663,11 @@ def _parse_clause(c: str, quotes: list[str], block: str | None) -> dict | None:
             find = get("a") if pid == "P2" else PUNCT[gd["punct"]]
             replace = get("b") if gd.get("b") is not None else (PUNCT[gd["punct2"]] if gd.get("punct2") else None)
             if replace and block and re.search(r"[:\u2014]\s*$", replace) and not gd.get("block"):
-                # "inserting “may not be used at the following:”" and then the block of new units it introduces.
-                replace = "\u201c" + replace + "\n" + block
+                # "inserting “may not be used at the following:”" and then the block of new units it introduces. The
+                # mark that closes the first part is the law's own and is kept (literal marks, Espen 2026-10-31):
+                # “that—” then “(1) have” reads "that—” (1) have", as OLRC prints it (Pub. L. 117-263 § 844(1)(A),
+                # 10 U.S.C. 4025).
+                replace = "\u201c" + replace + "\u201d\n" + block
             out |= {"op": op, "find": find, "replace": replace, "new_text": block if uses_block else None}
             if pid == "P2p" or gd.get("atend"):
                 out["flags"] = ["positional: " + m.group(0).split(" and inserting")[0][len("striking "):]]
