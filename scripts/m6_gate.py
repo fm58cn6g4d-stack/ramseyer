@@ -140,14 +140,22 @@ def main() -> int:
         history = History(cfg.var / "history" / "history.sqlite")
 
         def later(law, ident):
-            """The section's texts at release points after the law's R_after (harness.evaluate: "unexecuted"),
-            through the next Congress: OLRC's lag runs months, and a later text may carry other laws' changes
-            (review of #12)."""
+            """The predicted text and the section's texts at release points after the law's R_after
+            (harness.evaluate: "unexecuted"), through the next Congress: OLRC's lag runs months, and a later text may
+            carry other laws' changes (review of #12). OLRC's footnote markers are removed from both XMLs, so the
+            texts compare word for word (review of #14)."""
+            from copy import deepcopy
             from ramseyer.data.indexer import text_of
+
+            def bare(el):
+                editorial.strip_footnotes(el)
+                return text_of(el)
+            work = runs[law.pl][0].working.get(ident) if law.pl in runs else None
+            mine = bare(deepcopy(work.el)) if work is not None and not work.removed and work.el is not None else None
             limit = int(law.pl.split("-")[0]) + 1
-            return [(lab, text_of(etree.fromstring(x.encode("utf-8"))))
-                    for lab, x in history.section_versions_after(ident, law.rp_after)
-                    if int(lab.split("-")[0]) <= limit]
+            return mine, [(lab, bare(etree.fromstring(x.encode("utf-8"))))
+                          for lab, x in history.section_versions_after(ident, law.rp_after)
+                          if int(lab.split("-")[0]) <= limit]
         open_index = ReleaseIndexes(history,
                                     {rp.label: rp.titles for rp in corpus.release_points},
                                     db / (args.set + (f"_rerun{args.rerun}" if args.rerun else "")),

@@ -119,3 +119,12 @@ With #13's labels, dev 2 is 18 of 1,392 (1.29%). The 18:
 - 117-58 42 U.S.C. 6325
 - 117-58 49 U.S.C. 22406
 - 119-21 7 U.S.C. 2012
+
+## After the review of #14 (later-release confirmation)
+
+A later release point now confirms a predicted change only when the two texts are the same word for word, apart from
+the case of words on the later text's heading lines. OLRC's footnote markers are removed from both XMLs before the
+comparison, not guessed from the text, so a lone number added or dropped ("within 30 days" and "within days") is a
+difference. Re-measured on the three dev 2 laws with CLEAN predicted changes OLRC had not yet executed (113-146,
+113-188, 116-283; `--set history_test --law ...`): all 4,339 sections give the same outcome as before, with 59
+confirmed later and 0 graded. Dev 2 stays at 18 of 1,392. Tuning and dev have no such cases.
