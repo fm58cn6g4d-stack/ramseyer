@@ -25,6 +25,8 @@ import time
 from functools import lru_cache
 from pathlib import Path
 
+from lxml import etree
+
 from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index, LookupError_
@@ -135,7 +137,14 @@ def main() -> int:
     elif args.set.startswith("history_"):
         # Release points are materialized from the history on demand, a few at a time (oracle/history.py).
         # One cache directory per set: a set may need more titles at a release point than another set built there.
-        open_index = ReleaseIndexes(History(cfg.var / "history" / "history.sqlite"),
+        history = History(cfg.var / "history" / "history.sqlite")
+
+        def later(law, ident):
+            """The section's texts at release points after the law's R_after (harness.evaluate: "unexecuted")."""
+            from ramseyer.data.indexer import text_of
+            return [(lab, text_of(etree.fromstring(x.encode("utf-8"))))
+                    for lab, x in history.section_versions_after(ident, law.rp_after)]
+        open_index = ReleaseIndexes(history,
                                     {rp.label: rp.titles for rp in corpus.release_points},
                                     db / (args.set + (f"_rerun{args.rerun}" if args.rerun else "")),
                                     log=lambda s: None)
@@ -321,7 +330,8 @@ def main() -> int:
         digest.update(law.pl.encode() + f.get(law.enrolled_url).path.read_bytes())
     extras: dict[str, dict] = {}
     rep = harness.evaluate(corpus, predictor, "ramseyer M6", open_index, labels=None, after_law=after_law,
-                           checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras)
+                           checkpoint=cfg.var / f"{tag}_checkpoint.jsonl", key=digest.hexdigest(), extras=extras,
+                           later=later if args.set.startswith("history_") else None)
     for x in extras.values():
         statuses.update(x["statuses"])
         missing_status.extend(x["missing_status"])
@@ -379,7 +389,7 @@ def main() -> int:
         ("Predicted post-amendment text matches the next release point (measured)", True,
          f"targets {m['targets']}: matched {m['matched']}, mismatched {m['mismatched']}, missed {m['missed']} "
          f"(match rate {m['match_rate']}; {m['matched']}/{graded} of predicted targets); pending-effective-date "
-         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; not yet executed by OLRC in the section at R_after (not graded) {m.get('unexecuted', 0)}; extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
+         f"{m['pending']}; also changed by other laws in the window (not graded) {m.get('ungradable', 0)}; not yet executed by OLRC in the section at R_after (not graded) {m.get('unexecuted', 0)}, of them CLEAN predicted changes a later release point carries {m.get('unexecuted_clean_confirmed_later', 0)} (a CLEAN predicted change no later release carries is graded: {m.get('unexecuted_clean_graded', 0)}); extra {m['extra']}, unexpected change {m['unexpected_change']}; of the mismatches, "
          f"{n_editorial} differ only editorially or in whitespace (kinds below)"),
         (f"False-clean rate under {FALSE_CLEAN_TARGET:.0%} (substantive: OLRC editorial differences excluded)",
          (substantive + off_sub) / max(m["clean"] + m["clean_off_target"], 1) < FALSE_CLEAN_TARGET,

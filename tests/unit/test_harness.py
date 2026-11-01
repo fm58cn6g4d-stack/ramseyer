@@ -185,9 +185,21 @@ def test_a_section_the_law_has_not_reached_at_r_after_is_not_graded(tmp_path):
     def p(law, before):
         return [Prediction(identifier=f"/us/usc/t99/s{s}", status="CLEAN", text=f"§ {s}. H{s}\nDelta.")
                 for s in ("2", "3")]
+    # A predicted change no later release point carries is graded, never dropped: a change the law did not make is
+    # what a misdirected instruction looks like (review of #12).
     rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
+    assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "mismatch", "s3": "mismatch"}
+    assert rep.outcomes[0].detail.startswith(harness.UNCONFIRMED)
+    assert (rep.metrics["unexecuted"], rep.metrics["unexecuted_clean_graded"], rep.metrics["false_clean"]) == (0, 1, 2)
+    # A later release point that carries the predicted text shows OLRC executed the law there: not graded.
+    later = lambda law, ident: [("1-3", "§ 2. H2\nDelta.")] if ident.endswith("s2") else []
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={}, later=later)
     assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "unexecuted", "s3": "mismatch"}
-    assert (rep.metrics["targets"], rep.metrics["unexecuted"]) == (1, 1)
+    assert "1-3" in rep.outcomes[0].detail and rep.metrics["unexecuted_clean_confirmed_later"] == 1
+    # No change predicted: nothing of ours can be wrong there, and it is not graded either.
+    same = lambda law, before: [Prediction(identifier="/us/usc/t99/s2", status="CLEAN", text="§ 2. H2\nBeta gamma.")]
+    rep = harness.evaluate(corpus, same, "t", lambda label: Index(db, label), labels={})
+    assert [o.outcome for o in rep.outcomes if o.identifier.endswith("s2")] == ["unexecuted"]
 
 
 def test_materialized_release_points_are_stamped_with_the_code_that_built_them(tmp_path):

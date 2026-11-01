@@ -162,6 +162,15 @@ class History:
                                "WHERE m.seq=? AND v.identifier=? ORDER BY v.vid", (seq, identifier))
         return [zlib.decompress(x).decode("utf-8") for (x,) in rows]
 
+    def section_versions_after(self, identifier: str, label: str) -> list[tuple[str, str]]:
+        """(first release point label, XML) of each version of the section published after `label`, in order."""
+        rows = self.db.execute(
+            "SELECT r.label, v.xml_zlib FROM versions v JOIN version_releases m ON m.vid=v.vid "
+            "JOIN releases r ON r.seq=m.seq WHERE v.identifier=? AND m.seq>? AND m.seq=(SELECT min(m2.seq) FROM "
+            "version_releases m2 WHERE m2.vid=v.vid AND m2.seq>?) ORDER BY m.seq",
+            (identifier, self.seq(label), self.seq(label)))
+        return [(lab, zlib.decompress(x).decode("utf-8")) for lab, x in rows]
+
     def title_sections(self, title: str, label: str):
         """(identifier, parent_identifier, seq_in_title, positive_law, xml) for every section of a title at a release
         point, in reading order."""

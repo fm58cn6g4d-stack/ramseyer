@@ -95,6 +95,15 @@ def truth(law: CorpusLaw, before: Index, after: Index) -> dict[str, dict]:
     return out
 
 
+UNCONFIRMED = "not executed at R_after; no later release point carries the predicted change; "
+
+
+def carried_later(predicted: str | None, versions: list[tuple[str, str]]) -> str | None:
+    """The first later release point (label) whose text of the section is the predicted text, or None."""
+    want = normalize(predicted)
+    return next((label for label, text in versions if normalize(text) == want), None)
+
+
 def cites_law(law: CorpusLaw, after: Index, ident: str) -> bool:
     """Any of the section's notes at R_after cites the law. A section whose text R_after leaves as it was, with no
     note citing the law, shows no sign that OLRC has executed the law there yet: OLRC may list a law as
@@ -175,7 +184,8 @@ def label_stage(label, predicted: str | None, after: str | None) -> str | None:
 def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Prediction]], name: str,
              open_index: Callable[[str], Index], labels: dict | None = None,
              after_law: Callable[[CorpusLaw, list[SectionOutcome], Index, Index], dict] | None = None,
-             checkpoint: Path | None = None, key: str = "", extras: dict[str, dict] | None = None) -> Report:
+             checkpoint: Path | None = None, key: str = "", extras: dict[str, dict] | None = None,
+             later: Callable[[CorpusLaw, str], list[tuple[str, str]]] | None = None) -> Report:
     """Grade every law of the corpus.
 
     after_law(law, its outcomes, R_before, R_after) runs while the law's release points are open and returns
@@ -225,10 +235,17 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="pending", status=p.status if p else None,
                                    stage=None, detail="amendment set out in a note (delayed effective date); "
                                                       "R_after text is unchanged by design")
-            elif t.get("unexecuted"):
+            elif t.get("unexecuted") and (p is None or normalize(p.text) == normalize(t["before"]) or
+                                          (seen := carried_later(p.text, later(law, ident) if later else []))):
+                # Not graded only where nothing of ours could be wrong (no change predicted), or where a later release
+                # point carries the predicted text (OLRC executed the law there). A predicted change no release
+                # carries is graded below: a change the law did not make is what a misdirected instruction looks
+                # like (review of #12).
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="unexecuted", status=p.status if p else None,
                                    stage=None, detail="R_after shows no sign of the law in this section: text "
-                                                      "unchanged from R_before and no note cites it")
+                                                      "unchanged from R_before and no note cites it" +
+                                                      (f"; the predicted text is at {seen}" if p is not None and
+                                                       normalize(p.text) != normalize(t["before"]) else ""))
             elif p is None:
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="missed", status=None, stage=None,
                                    detail="classified to this law; no prediction")
@@ -238,7 +255,8 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                     (None if same else "unclassified")
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="match" if same else "mismatch",
                                    status=p.status, stage=stage,
-                                   detail="" if same else first_difference(p.text, t["after"]))
+                                   detail=(UNCONFIRMED if t.get("unexecuted") else "") +
+                                   ("" if same else first_difference(p.text, t["after"])))
             law_outcomes.append(o)
             counts[o.outcome] += 1
         for ident, p in preds.items():
@@ -282,6 +300,11 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         "pending": sum(o.outcome == "pending" for o in outcomes),
         "ungradable": sum(o.outcome == "ungradable" for o in outcomes),
         "unexecuted": sum(o.outcome == "unexecuted" for o in outcomes),
+        # Of the targets OLRC had not executed at R_after: CLEAN predictions of a change that a later release point
+        # carries (not graded), and those no release carries (graded, so a misdirected change counts as wrong).
+        "unexecuted_clean_confirmed_later": sum(o.outcome == "unexecuted" and o.status == "CLEAN" and
+                                                "the predicted text is at" in o.detail for o in outcomes),
+        "unexecuted_clean_graded": sum(o.status == "CLEAN" and o.detail.startswith(UNCONFIRMED) for o in outcomes),
         "match_rate": round(sum(o.outcome == "match" for o in outcomes) / targets, 4) if targets else 0.0,
         "clean": len(clean),
         "false_clean": len(false_clean),
