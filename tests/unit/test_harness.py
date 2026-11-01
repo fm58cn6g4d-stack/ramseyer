@@ -227,3 +227,11 @@ def test_a_transfer_and_amendment_note_is_a_delayed_amendment():
     # 10 U.S.C. 930 (Pub. L. 114-328 § 5443): effective on a date the President designates.
     assert harness.DELAYED_NOTE.match("Transfer and Amendment of Section\nPub. L. 114–328 ... provided that, effective")
     assert not harness.DELAYED_NOTE.match("Amendments\n2016—Pub. L. 114–328 substituted")
+
+
+def test_a_later_release_carries_the_change_in_olrc_s_form():
+    # 46 U.S.C. 51707, 70001 (Pub. L. 116-283): footnote markers and heading case are OLRC's; a changed word is not.
+    pred = "§ 2. H2\nThe Non-Federal share. Delta."
+    assert harness.carried_later(pred, [("1-3", "§ 2. H2\nThe Non-federal share. 1 Delta.1")]) == "1-3"
+    assert harness.carried_later(pred, [("1-3", "§ 2. H2\nThe Federal share. Delta.")]) is None
+    assert harness.carried_later(pred, [("1-3", "§ 2. H2\nThe Non-Federal share. 12345 Delta.")]) is None

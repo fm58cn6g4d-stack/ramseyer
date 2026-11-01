@@ -140,10 +140,14 @@ def main() -> int:
         history = History(cfg.var / "history" / "history.sqlite")
 
         def later(law, ident):
-            """The section's texts at release points after the law's R_after (harness.evaluate: "unexecuted")."""
+            """The section's texts at release points after the law's R_after (harness.evaluate: "unexecuted"),
+            through the next Congress: OLRC's lag runs months, and a later text may carry other laws' changes
+            (review of #12)."""
             from ramseyer.data.indexer import text_of
+            limit = int(law.pl.split("-")[0]) + 1
             return [(lab, text_of(etree.fromstring(x.encode("utf-8"))))
-                    for lab, x in history.section_versions_after(ident, law.rp_after)]
+                    for lab, x in history.section_versions_after(ident, law.rp_after)
+                    if int(lab.split("-")[0]) <= limit]
         open_index = ReleaseIndexes(history,
                                     {rp.label: rp.titles for rp in corpus.release_points},
                                     db / (args.set + (f"_rerun{args.rerun}" if args.rerun else "")),

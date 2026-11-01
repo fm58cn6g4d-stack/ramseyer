@@ -8,6 +8,7 @@ predictions for sections the law does not touch are "extra".
 from __future__ import annotations
 
 import collections
+import difflib
 import hashlib
 import json
 import re
@@ -99,9 +100,20 @@ UNCONFIRMED = "not executed at R_after; no later release point carries the predi
 
 
 def carried_later(predicted: str | None, versions: list[tuple[str, str]]) -> str | None:
-    """The first later release point (label) whose text of the section is the predicted text, or None."""
-    want = normalize(predicted)
-    return next((label for label, text in versions if normalize(text) == want), None)
+    """The first later release point (label) whose text of the section is the predicted text, or None. OLRC's
+    footnote markers and heading case are its own ("§ 51707 ... 1", "Non-federal share" for the law's "Non-Federal
+    share", 46 U.S.C. 51707, 70001); any other difference, a misdirected change among them, is not carried."""
+    return next((label for label, text in versions if same_but_footnotes_and_case(predicted, text)), None)
+
+
+def same_but_footnotes_and_case(a: str | None, b: str | None) -> bool:
+    """Each differing stretch of the two texts reads the same once footnote markers (1 or 2 digits, standing alone
+    or attached to a word) are removed and case is ignored."""
+    def clean(toks):
+        return [re.sub(r"(?<=\D)\d{1,2}$", "", t).lower() for t in toks if not re.fullmatch(r"\d{1,2}", t)]
+    x, y = (normalize(a) or "").split(), (normalize(b) or "").split()
+    return all(tag == "equal" or clean(x[i1:i2]) == clean(y[j1:j2])
+               for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes())
 
 
 def cites_law(law: CorpusLaw, after: Index, ident: str) -> bool:
