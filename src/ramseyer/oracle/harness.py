@@ -100,50 +100,35 @@ UNCONFIRMED = "not executed at R_after; no later release point carries the predi
 
 
 def carried_later(predicted: str | None, versions: list[tuple[str, str]]) -> str | None:
-    """The first later release point (label) whose text of the section is the predicted text, or None. OLRC's
-    footnote markers and heading case are its own ("§ 51707 ... 1", "Non-federal share" for the law's "Non-Federal
-    share", 46 U.S.C. 51707, 70001); any other difference, a misdirected change among them, is not carried."""
-    return next((label for label, text in versions if same_but_footnotes_and_case(predicted, text)), None)
+    """The first later release point (label) whose text of the section is the predicted text, or None. Both texts
+    come with OLRC's footnote markers removed from their XML (scripts/m6_gate.py, `later`); heading case is OLRC's
+    own ("Non-federal share" for the law's "Non-Federal share", 46 U.S.C. 70001). Any other difference, a
+    misdirected change among them, is not carried."""
+    return next((label for label, text in versions if same_but_heading_case(predicted, text)), None)
 
 
-def same_but_footnotes_and_case(a: str | None, b: str | None) -> bool:
-    """The predicted text a and a later release's text b differ only in OLRC's footnote markers (a one- or two-digit
-    marker added or removed, standing alone or attached to a word) and in the case of words on b's heading lines.
-    A number changed for another ("30 days" and "60 days", "section 12" and "section 13") or a word's case outside a
-    heading is a difference (review of #14)."""
+def marker_free(later, law: CorpusLaw, ident: str, predicted: str | None) -> tuple[str | None, list]:
+    """The predicted text and the later release points' texts, all with OLRC's footnote markers removed (the
+    `later` callback's), or the predicted text as it is with no later texts when there is no callback."""
+    if later is None:
+        return predicted, []
+    mine, versions = later(law, ident)
+    return (mine if mine is not None else predicted), versions
+
+
+def same_but_heading_case(a: str | None, b: str | None) -> bool:
+    """The predicted text a and a later release's text b are the same word for word, but for the case of words on
+    b's heading lines (a line opening with "§" or ending in an em dash). Every number counts: footnote markers are
+    removed from the XML before this, never guessed from the text (review of #14: "30 days" is not "60 days", and
+    "within 30 days" is not "within days")."""
     x = (normalize(a) or "").split()
     y, heading = [], []
     for line in (b or "").splitlines():
         toks = (normalize(line) or "").split()
-        is_head = bool(toks) and (toks[0].startswith("§") or line.rstrip().endswith("\u2014"))
+        is_head = bool(toks) and (toks[0].startswith("\u00a7") or line.rstrip().endswith("\u2014"))
         y += toks
         heading += [is_head] * len(toks)
-
-    def marker(t):
-        return re.fullmatch(r"\d{1,2}", t) is not None
-
-    def footnoted(p, q):                 # "Delta." and "Delta.1": one is the other with a marker attached
-        return any(len(u) > len(v) and u.startswith(v) and re.fullmatch(r"\d{1,2}", u[len(v):]) and
-                   re.search(r"\D$", v) for u, v in ((p, q), (q, p)))
-    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, x, y, autojunk=False).get_opcodes():
-        if tag == "equal":
-            continue
-        if tag in ("insert", "delete"):
-            if all(marker(t) for t in x[i1:i2] + y[j1:j2]):
-                continue
-            return False
-        # A marker OLRC added stands alone in the later text; one it removed, in the prediction, but only where the
-        # later text has none there, so a number replaced by another never reads as two markers.
-        ys = [k for k in range(j1, j2) if not marker(y[k])]
-        xs = [k for k in range(i1, i2) if not (marker(x[k]) and len(ys) == j2 - j1)]
-        if len(xs) != len(ys):
-            return False
-        for i, j in zip(xs, ys):
-            p, q = x[i], y[j]
-            if p == q or footnoted(p, q) or (heading[j] and p.lower() == q.lower()):
-                continue
-            return False
-    return True
+    return len(x) == len(y) and all(p == q or (h and p.lower() == q.lower()) for p, q, h in zip(x, y, heading))
 
 
 def cites_law(law: CorpusLaw, after: Index, ident: str) -> bool:
@@ -227,7 +212,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
              open_index: Callable[[str], Index], labels: dict | None = None,
              after_law: Callable[[CorpusLaw, list[SectionOutcome], Index, Index], dict] | None = None,
              checkpoint: Path | None = None, key: str = "", extras: dict[str, dict] | None = None,
-             later: Callable[[CorpusLaw, str], list[tuple[str, str]]] | None = None) -> Report:
+             later: Callable[[CorpusLaw, str], tuple[str | None, list[tuple[str, str]]]] | None = None) -> Report:
     """Grade every law of the corpus.
 
     after_law(law, its outcomes, R_before, R_after) runs while the law's release points are open and returns
@@ -278,7 +263,7 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
                                    stage=None, detail="amendment set out in a note (delayed effective date); "
                                                       "R_after text is unchanged by design")
             elif t.get("unexecuted") and (p is None or normalize(p.text) == normalize(t["before"]) or
-                                          (seen := carried_later(p.text, later(law, ident) if later else []))):
+                                          (seen := carried_later(*marker_free(later, law, ident, p.text)))):
                 # Not graded only where nothing of ours could be wrong (no change predicted), or where a later release
                 # point carries the predicted text (OLRC executed the law there). A predicted change no release
                 # carries is graded below: a change the law did not make is what a misdirected instruction looks

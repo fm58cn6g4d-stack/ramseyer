@@ -66,7 +66,8 @@ def _heading(el):
     return next((c for c in el if _local(c) == "heading"), None)
 
 
-def _strip_footnotes(el) -> None:
+def strip_footnotes(el) -> None:
+    """Remove OLRC's footnote markers and footnotes from an element, in place."""
     marks = el.xpath(".//*[local-name()='ref'][@class='footnoteRef'] | .//*[local-name()='note'][@type='footnote']"
                      " | .//*[local-name()='sup'][re:test(., '^\\s*\\d+\\s*$')]",
                      namespaces={"re": "http://exslt.org/regular-expressions"})
@@ -129,7 +130,7 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
     heading OLRC supplied where the prediction has none."""
     pred_el, after_el = copy.deepcopy(pred_el), copy.deepcopy(after_el)
     for el in (pred_el, after_el):
-        _strip_footnotes(el)
+        strip_footnotes(el)
     if ctx is not None and ctx.positive_law is False:
         # Units are paired by their chain of numbers from the section: units the engine built from bill text carry
         # no identifier (Pub. L. 116-260 div. Q § 224, 15 U.S.C. 1062(b)).

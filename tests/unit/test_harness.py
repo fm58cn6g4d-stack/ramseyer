@@ -192,7 +192,7 @@ def test_a_section_the_law_has_not_reached_at_r_after_is_not_graded(tmp_path):
     assert rep.outcomes[0].detail.startswith(harness.UNCONFIRMED)
     assert (rep.metrics["unexecuted"], rep.metrics["unexecuted_clean_graded"], rep.metrics["false_clean"]) == (0, 1, 2)
     # A later release point that carries the predicted text shows OLRC executed the law there: not graded.
-    later = lambda law, ident: [("1-3", "§ 2. H2\nDelta.")] if ident.endswith("s2") else []
+    later = lambda law, ident: (None, [("1-3", "§ 2. H2\nDelta.")] if ident.endswith("s2") else [])
     rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={}, later=later)
     assert {o.identifier[-2:]: o.outcome for o in rep.outcomes} == {"s2": "unexecuted", "s3": "mismatch"}
     assert "1-3" in rep.outcomes[0].detail and rep.metrics["unexecuted_clean_confirmed_later"] == 1
@@ -230,20 +230,33 @@ def test_a_transfer_and_amendment_note_is_a_delayed_amendment():
 
 
 def test_a_later_release_carries_the_change_in_olrc_s_form():
-    # 46 U.S.C. 51707, 70001 (Pub. L. 116-283): footnote markers and heading case are OLRC's; a changed word is not.
+    # 46 U.S.C. 70001 (Pub. L. 116-283): heading case is OLRC's; a changed word is not. Footnote markers are removed
+    # from both XMLs before the comparison (scripts/m6_gate.py, later).
     pred = "§ 2. H2\n(C) Non-Federal share.—\nThe loans. Delta."
-    assert harness.carried_later(pred, [("1-3", "§ 2. H2\n(C) Non-federal share.—\nThe loans. 1 Delta.1")]) == "1-3"
+    assert harness.carried_later(pred, [("1-3", "§ 2. H2\n(C) Non-federal share.—\nThe loans. Delta.")]) == "1-3"
     assert harness.carried_later(pred, [("1-3", "§ 2. H2\n(C) Federal share.—\nThe loans. Delta.")]) is None
-    assert harness.carried_later(pred, [("1-3", "§ 2. H2\n(C) Non-Federal share.—\nThe loans. 12345 Delta.")]) is None
 
 
 def test_a_later_release_never_confirms_a_changed_number_or_body_case():
-    # Review of #14: "30 days" is not "60 days", "section 12" is not "section 13", "2021.2" is not "2021.12".
-    same = harness.same_but_footnotes_and_case
+    # Review of #14: "30 days" is not "60 days", "section 12" is not "section 13", "2021.2" is not "2021.12", and a
+    # number added or dropped is a difference too: footnote markers are removed from the XML, never guessed.
+    same = harness.same_but_heading_case
     assert not same("within 30 days of", "within 60 days of")
     assert not same("under section 12 of", "under section 13 of")
     assert not same("Act of 2021.2 the", "Act of 2021.12 the")
+    assert not same("within 30 days of", "within days of")
+    assert not same("within days of", "within 30 days of")
+    assert not same("the end of the period.", "the end of the period.1")
     assert not same("the Federal share", "the federal share")                    # case outside a heading
     assert same("(C) Non-Federal share.—\nThe loans", "(C) Non-federal share.—\nThe loans")  # a heading line
-    assert same("the end of the period.", "the end of the period.1")            # an attached marker
-    assert same("under subsection (a) of", "under subsection 1 (a) of")          # a standing marker
+
+
+def test_footnote_markers_come_out_of_the_xml_not_the_text():
+    from lxml import etree
+    from ramseyer.data.indexer import text_of
+    from ramseyer.oracle.editorial import strip_footnotes
+    el = etree.fromstring('<section xmlns="http://xml.house.gov/schemas/uslm/1.0"><content>within 30 days of the '
+                          'period.<ref class="footnoteRef" idref="fn1">1</ref></content>'
+                          '<note type="footnote" id="fn1"><sup>1</sup> So in original.</note></section>')
+    strip_footnotes(el)
+    assert text_of(el).split() == "within 30 days of the period.".split()
