@@ -71,3 +71,7 @@ Three fixes made on the way are not among the 49: they came from the first look 
 - 116-283's remaining (#30, #31, #33): 10 U.S.C. 146 (OLRC keeps the law's ‘Office’ single), 10 U.S.C. 9084 (an empty section at R_after), 14 U.S.C. 561 (a detached footnote marker).
 
 The next measurement (tuning, dev and dev 2 at the fixed code) is recorded in `records/milestones.md`.
+
+## After the review of #12 (c6c1983)
+
+Four CLEAN predictions that the "not yet executed" rule had left ungraded predict a change no later release point carries, and are now graded as wrong: 38 U.S.C. 7412 (Pub. L. 113-146) and 46 U.S.C. 51707, 70116 and 70001 (Pub. L. 116-283). Dev 2 is 33 of 1,396 (2.36%). They are not yet classified.

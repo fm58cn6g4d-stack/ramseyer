@@ -944,4 +944,13 @@ Changes, each with a test (case by case in `records/m6e_dev2_false_clean.md`):
 | Before (dev at 5d2d585, dev 2 at c9ef141) | 0 | 24 (1.64%) | 49 (3.54%) |
 | Not yet executed (not graded) | 55 | 332 | 476 |
 
+**After the review of #12 (code at c6c1983):** a CLEAN prediction of a change in a section OLRC had not executed at R_after is graded unless a later release point in the history carries the predicted text; only then is it left out. Of the CLEAN predictions that fell in "not yet executed" at 4b0677b, tuning and dev had none; dev 2 had 59, all predicting a change: 55 carried by a later release point, 4 not (38 U.S.C. 7412, Pub. L. 113-146; 46 U.S.C. 51707, 70116 and 70001, Pub. L. 116-283), which are now graded and counted wrong.
+
+| At c6c1983 (main merged, #9's labels applied by the gate) | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,461 | 1,396 |
+| CLEAN and wrong in substance | 0 | **11 (0.75%), PASS** | 33 (2.36%; 95% interval 1.69–3.30%) |
+| Not yet executed (not graded) | 55 | 329 | 429 |
+| of them CLEAN predicted changes a later release carries / graded because none does | 0 / 0 | 0 / 0 | 55 / 4 |
+
 All 29 dev 2 false cleans were among the 49; none is new. Two of them (#8, #21) were only partly fixed. The dev figure is before #9's labels. After merging main, all 12 labels still apply at 4b0677b (their predicted and R_after hashes match this run's), and all 12 are among the 23: **with them, dev is 11 of 1,461 (0.75%), under the 1% target.** The 11: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 38 U.S.C. 547 (OLRC drops the law's stray mark; a label candidate under literal marks), 10 U.S.C. 4025 (still wrong under literal marks; to be looked at), and 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).
