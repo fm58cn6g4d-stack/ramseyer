@@ -193,3 +193,12 @@ def test_an_act_reference_with_its_own_code_citation():
     pred = sec(sub("a", "employees subject to the Act of March 4, 1940 (7 U.S.C. 331);"))
     assert kind(pred, sec(sub("a", "employees subject to section 331 of this title;")),
                 Context(pl="1-2", title="7")) is not None
+
+
+def test_a_footnote_on_a_period_the_law_set_on_its_own_line():
+    # 49 U.S.C. 22406 (Pub. L. 117-58 § 21301(h)): the law's "appropriations\n“." is OLRC's "appropriations.1".
+    pred = sec(sub("a", "Authorization of appropriations\n. There is authorized"))
+    after = sec(sub("a", "Authorization of appropriations.1 There is authorized"))
+    assert kind(pred, after, Context(pl="1-2")) == "editorial: footnote markers"
+    assert kind(sec(sub("a", "Authorization of appropriations\n. There is authorized")),
+                sec(sub("a", "Authorization of appropriations.12345 There is authorized")), Context(pl="1-2")) is None
