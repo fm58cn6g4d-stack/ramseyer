@@ -263,4 +263,10 @@ def kind(pred_el, after_xml: str | None, ctx: Context | None = None) -> str | No
         return "whitespace"
     if _footnote_digits(pred, after):
         return "editorial: footnote markers"
+    # The law's own stray line before a period ("“§ 22406. Authorization of appropriations\n“.", Pub. L. 117-58 §
+    # 21301(h)), which OLRC sets on the heading with a "So in original" footnote: only space before punctuation and a
+    # footnote marker differ (49 U.S.C. 22406).
+    tight = lambda t: re.sub(r"\s+(?=[.,;:])", "", t)
+    if (tight(pred) != pred or tight(after) != after) and _footnote_digits(tight(pred), tight(after)):
+        return "editorial: footnote markers"
     return None

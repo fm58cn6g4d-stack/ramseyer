@@ -954,3 +954,19 @@ Changes, each with a test (case by case in `records/m6e_dev2_false_clean.md`):
 | of them CLEAN predicted changes a later release carries / graded because none does | 0 / 0 | 0 / 0 | 55 / 4 |
 
 All 29 dev 2 false cleans were among the 49; none is new. Two of them (#8, #21) were only partly fixed. The dev figure is before #9's labels. After merging main, all 12 labels still apply at 4b0677b (their predicted and R_after hashes match this run's), and all 12 are among the 23: **with them, dev is 11 of 1,461 (0.75%), under the 1% target.** The 11: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 38 U.S.C. 547 (OLRC drops the law's stray mark; a label candidate under literal marks), 10 U.S.C. 4025 (still wrong under literal marks; to be looked at), and 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Of dev 2's 29: 11 are OLRC departures or a garbled R_after (hand-label candidates for Espen, each still to be checked against the enrolled text), 3 are OLRC editorial work M8a can settle, and the rest are open (listed in the record). By stratum: NDAAs 6 of 427 (1.41%), other laws 23 of 967 (2.38%).
+
+### Dev 2, round 2 (2026-11-01, claude/m6e-dev2-round2, code at 81cf65f)
+
+Changes, each with a test: a later release point confirms a predicted change in OLRC's form (its footnote markers and heading case only), looking ahead to the next Congress at most (the reviewer's optional note on #12); a footnote on a period the law set on its own line (49 U.S.C. 22406); a heading that holds quoted words, set in title case past the mark (10 U.S.C. 130h); sentence ordinals through "tenth" (4 U.S.C. 7: "the sixth sentence" now gives AMBIGUOUS, since sentences are not counted in a unit with subunits, rather than a false clean); the law's own closing mark before a quoted block kept under literal marks (10 U.S.C. 4025), and a multi-line replacement read by its lines.
+
+| At 81cf65f, with #9's and #13's labels | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,460 | 1,392 |
+| CLEAN and wrong in substance | 0 | **9 (0.62%)** | **18 (1.29%)** |
+| without #13's labels | 0 | 10 (0.68%) | 27 (1.94%) |
+| Round 1 (c6c1983), without #13's labels | 0 | 11 (0.75%) | 33 (2.36%) |
+| CLEAN predicted changes a later release carries (not graded) / graded | 0 / 0 | 0 / 0 | 59 / 0 |
+
+All of #13's labels still apply at 81cf65f (their hashes match this run). Dev's 9: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Dev 2's 18 are listed in `records/m6e_dev2_false_clean.md`.
+
+**After the review of #14 (d0cb4b3):** a later release confirms a predicted change only up to footnote markers OLRC added or removed (never one number for another) and the case of words on its heading lines. Dev 2 re-measured at d0cb4b3: unchanged, 18 of 1,392 (1.29%) with the labels, which the gate now applies itself; 59 CLEAN predicted changes confirmed by a later release, 0 graded. Tuning and dev have no CLEAN predicted changes in "not yet executed", so their figures cannot move.

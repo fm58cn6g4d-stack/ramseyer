@@ -15,6 +15,7 @@ from typing import Callable, Literal
 from lxml import etree
 
 from ramseyer.data.indexer import NON_OPERATIVE, SUB, USLM, local, text_of
+from ramseyer.parse.grammar import SENTENCE_ORD
 from ramseyer.parse.xmltext import TABLE_OMITTED
 from ramseyer.parse.ir import Instruction
 from ramseyer.parse.normalize import normalize
@@ -154,6 +155,8 @@ def title_case(s: str) -> str:
     the first; the part of a hyphenated compound after the hyphen is left as drafted (measured: lowercase in 210
     of 378 subsection headings of titles 10, 14 and 46)."""
     def cap(w):
+        if w[:1] in "“‘" and len(w) > 1:               # “hit-to-kill” → “Hit-to-kill” (10 U.S.C. 130h)
+            return w[0] + cap(w[1:])
         return w if w.isupper() and len(w) > 1 else w[:1].upper() + w[1:]
     out = []
     for i, w in enumerate(s.split(" ")):
@@ -708,7 +711,7 @@ class Engine:
         bounds = [0] + [m.end() for m in re.finditer(r"(?<=[.])\s+(?=[A-Z(“\"])", body)
                         if not ABBREV.search(body[:m.start()])] + [len(body)]
         spans = [(lo + bounds[i], lo + bounds[i + 1]) for i in range(len(bounds) - 1)]
-        idx = {"first": 0, "second": 1, "third": 2, "fourth": 3, "last": -1}[which]
+        idx = {**{w: i for i, w in enumerate(SENTENCE_ORD.split("|")[:-1])}, "last": -1}[which]
         try:
             return [spans[idx]]
         except IndexError:
@@ -764,10 +767,10 @@ class Engine:
         allowed = self._allowed(segs, ins, find)
         # "in the second sentence" (a target qualifier), or "the period at the end of the first sentence" (a
         # positional flag on the operation, Pub. L. 116-136 § 19006(a)).
-        named = [m.group(1) for q in ins.target.qualifiers if (m := re.match(r"(first|second|third|fourth|last) "
+        named = [m.group(1) for q in ins.target.qualifiers if (m := re.match(r"(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last) "
                                                                               r"sentence", q))]
         named += [m.group(1) for f in ins.flags if f.startswith(("positional", "anchor is positional"))
-                  and (m := re.search(r"\b(first|second|third|fourth|last) sentence\b", f))]
+                  and (m := re.search(r"\b(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last) sentence\b", f))]
         for n in named[:1]:
             allowed = self._sentence_range(hay, n, allowed)
         return allowed
@@ -1086,8 +1089,10 @@ class Engine:
         split = self._split(ins, scope) if not ins.target.qualifiers and ins.find else None
         if split is not None:
             return split
-        new = self._tr(nested_to_double(ins.replace if ins.replace is not None else
-                                        "\n".join(block_lines(ins.new_text or ""))))
+        rep = ins.replace
+        if rep is not None and "\n" in rep:
+            rep = " ".join(block_lines(rep))       # a replacement that runs into a quoted block: its lines, not its marks
+        new = self._tr(nested_to_double(rep if rep is not None else "\n".join(block_lines(ins.new_text or ""))))
         positional = any(f.startswith("positional") for f in ins.flags)
         return self._edit(ins, scope, path, nested_to_double(ins.find or ""), lambda old: new, positional)
 

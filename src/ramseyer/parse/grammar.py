@@ -17,6 +17,8 @@ from ramseyer.parse.segment import int_to_roman, is_roman, roman_to_int
 
 PH = "⟦{}⟧"                    # ⟦n⟧
 PH_RE = re.compile(r"⟦(\d+)⟧")
+# "The sixth sentence of section 7(m)" (Pub. L. 115-123 § 10102(a), 4 U.S.C. 7): ordinals past "fourth" too.
+SENTENCE_ORD = "first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth|last"
 CONFIDENCE_THRESHOLD = 0.8
 UNIT_WORDS = ("subsection", "paragraph", "subparagraph", "clause", "subclause", "item", "subitem")
 UNIT_RANK = {u: i for i, u in enumerate(UNIT_WORDS)}
@@ -160,7 +162,7 @@ HEADING_QUAL = re.compile(rf"(?:\b[Ii]n |^)[Tt]he (?:(?P<u>section|subsection|pa
 QUALIFIERS = [
     (re.compile(rf"\bin the matter (?P<w>preceding|following) (?P<u>{UNIT}) (?P<l>{LABELS})"),
      lambda m: f"matter {m['w']} {PLURAL.get(m['u'], m['u'])} {m['l']}"),
-    (re.compile(r"\bin the (?P<n>first|second|third|fourth|last) sentence"), lambda m: f"{m['n']} sentence"),
+    (re.compile(rf"\bin the (?P<n>{SENTENCE_ORD}) sentence"), lambda m: f"{m['n']} sentence"),
     # "in the heading", "In the section heading for section 430c", "The heading for section 723 of title 10 is amended",
     # "In the subsection heading for subsection (c) of section 3072"; not "in the heading of the second column".
     (HEADING_QUAL, lambda m: "heading" if not m["u"] else f"{m['u']} heading"),
@@ -269,7 +271,7 @@ def apply_head(head: str, ctx: Ctx, quotes: list[str] | None = None) -> list[str
                r"(?i:\1) ((?:\([\w.-]+\))+)", lambda m: f"{m.group(1)}s {m.group(2)} and {m.group(3)}", h)
     # "The second sentence of paragraph (1) of section 3(a) of the ... Act is amended": the target is the paragraph,
     # restricted to that sentence (Pub. L. 114-94 § 78001(a)).
-    sentence = re.match(r"^\s*[Tt]he (?P<n>first|second|third|fourth|last) sentence of ", h)
+    sentence = re.match(rf"^\s*[Tt]he (?P<n>{SENTENCE_ORD}) sentence of ", h)
     if sentence:
         h = h[sentence.end():]
         h = h[:1].upper() + h[1:]
@@ -507,7 +509,7 @@ PATTERNS: list[tuple[str, re.Pattern, str]] = [
     ("P10x", re.compile(r"^striking the (?:(?P<u>section|subsection|paragraph|subparagraph|clause|subclause) )?heading"
                         r"(?! and)"), "AMEND_HEADING"),
     ("P3p", re.compile(rf"^striking {DESCR}(?: at the end(?: of [\w ()]+?)?)?{OCC}"), "STRIKE"),
-    ("P3s", re.compile(rf"^striking the (?P<sent>first|second|third|last|fourth) sentence(?: and inserting (?:(?:the "
+    ("P3s", re.compile(rf"^striking the (?P<sent>{SENTENCE_ORD}) sentence(?: and inserting (?:(?:the "
                        rf"following:? ?)?{q('b')}|(?P<block>{FOLLOWING})))?"), "STRIKE"),
     ("P11s", re.compile(rf"^striking {ITEM}(?: and inserting (?:(?:the following:? ?)?{q('b')}|(?P<block>{FOLLOWING})))?"),
      "CONFORM_TOC"),
@@ -661,8 +663,11 @@ def _parse_clause(c: str, quotes: list[str], block: str | None) -> dict | None:
             find = get("a") if pid == "P2" else PUNCT[gd["punct"]]
             replace = get("b") if gd.get("b") is not None else (PUNCT[gd["punct2"]] if gd.get("punct2") else None)
             if replace and block and re.search(r"[:\u2014]\s*$", replace) and not gd.get("block"):
-                # "inserting “may not be used at the following:”" and then the block of new units it introduces.
-                replace = "\u201c" + replace + "\n" + block
+                # "inserting “may not be used at the following:”" and then the block of new units it introduces. The
+                # mark that closes the first part is the law's own and is kept (literal marks, Espen 2026-10-31):
+                # “that—” then “(1) have” reads "that—” (1) have", as OLRC prints it (Pub. L. 117-263 § 844(1)(A),
+                # 10 U.S.C. 4025).
+                replace = "\u201c" + replace + "\u201d\n" + block
             out |= {"op": op, "find": find, "replace": replace, "new_text": block if uses_block else None}
             if pid == "P2p" or gd.get("atend"):
                 out["flags"] = ["positional: " + m.group(0).split(" and inserting")[0][len("striking "):]]

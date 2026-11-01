@@ -338,3 +338,32 @@ def test_quoted_words_in_a_header_keep_their_marks():
     lines = []
     _render(el, lines, True)
     assert lines[0] == "(a) Certain ‘alpha-beta’ gamma.—Delta."
+
+
+def test_a_heading_with_quoted_words_is_a_heading():
+    # Pub. L. 114-92 § 1671 (10 U.S.C. 130h): "(a) Certain ‘hit-to-kill’ technology and telemetry data.—None ..." was
+    # built as text, not a heading, so it kept the law's case. Synthetic placeholder text.
+    from lxml import etree
+    from ramseyer.dryrun.engine import build_units
+    units, _ = build_units("“(a) Certain ‘alpha-beta’ gamma data.—None of the funds.", positive_law=True, dash=True)
+    head = units[0].find("{*}heading")
+    assert head is not None and head.text.strip() == "Certain “Alpha-beta” Gamma Data.—"
+
+
+def test_the_sixth_sentence():
+    # Pub. L. 115-123 § 10102(a) (4 U.S.C. 7(m)): "The sixth sentence of ..." lost its sentence; the insertion went to
+    # the last period of the subsection. Synthetic placeholder text.
+    xml = XML.replace("Reviews shall be made at least annually.",
+                      "Two. Three. Four. Five. Six ends here. Seven.")
+    text, res = run("The sixth sentence of subsection (a) of section 1 of title 99, United States Code, is amended—\n"
+                    "(1) by striking “ends” and inserting “stops”; and\n"
+                    "(2) by inserting “, or later” before the period at the end.", xml)
+    assert [r.status for r in res] == ["CLEAN", "CLEAN"] and "Six stops here, or later. Seven." in text
+
+
+def test_a_closing_mark_before_a_block_is_the_laws():
+    # Pub. L. 117-263 § 844(1)(A) (10 U.S.C. 4025): inserting “that—” and then “(1) have” prints "that—” (1) have", as
+    # OLRC has it (literal marks). Synthetic placeholder text.
+    text, res = run("Section 1 of title 99, United States Code, is amended—\n(1) in subsection (a)—\n(A) by striking "
+                    "“shall review” and inserting “shall—”\n“(1) review”;")
+    assert "shall—” (1) review each term" in text

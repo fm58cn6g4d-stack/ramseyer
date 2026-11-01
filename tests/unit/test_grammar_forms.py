@@ -69,7 +69,8 @@ def test_inline_quoted_unit_and_replacement_introducing_a_block():
     assert (u.op, u.unit, u.new_text) == ("ADD_UNIT_AFTER", "subparagraph (A)", "“(B) text.”")
     r = one("(1) by striking “may not be used here” and inserting “may not be used at the following:”\n“(1) Alpha.\n"
             "“(2) Beta.”.")[0]
-    assert r.replace.startswith("“may not be used at the following:\n“(1) Alpha.") and r.confidence == 1.0
+    # The mark closing the first part is the law's own (literal marks, Espen 2026-10-31).
+    assert r.replace.startswith("“may not be used at the following:”\n“(1) Alpha.") and r.confidence == 1.0
 
 
 def test_sentence_replaced_and_ending_punctuation():
