@@ -118,5 +118,65 @@
   "reason": "R_after reads “section:the”, a missing space",
   "pred": "97d2afee9cbbcc18",
   "after": "ef05ab9bc3bde4d3"
+ },
+ "113-79 /us/usc/t7/s7284": {
+  "stage": "editorial",
+  "reason": "OLRC set the law's own inserted citation “(7 U.S.C. 8702 et seq.)” (§ 1607) as its bracketed “[7 U.S.C. 8701 et seq.]” and added “[7 U.S.C. 9001 et seq.]”",
+  "pred": "c393a3a84340dc26",
+  "after": "6843c6851e8762f1"
+ },
+ "115-423 /us/usc/t33/s4001a": {
+  "stage": "editorial",
+  "reason": "OLRC dropped a comma it had marked “So in original”, with its footnote, after § 9(f) replaced the words before it; the law does not touch the comma",
+  "pred": "4f4dc6f04eda56c2",
+  "after": "f8bb125089ec498e"
+ },
+ "116-159 /us/usc/t23/s403": {
+  "stage": "editorial",
+  "reason": "R_after reads “$26,560,000’”: § 1103(2) inserts “$26,560,000” with no mark",
+  "pred": "5be8af356b5da20a",
+  "after": "ea01feacc9881792"
+ },
+ "116-214 /us/usc/t38/s1720J": {
+  "stage": "editorial",
+  "reason": "R_after reads “requiremen.ts”, a typo; the law has “requirements”",
+  "pred": "978444c80e405264",
+  "after": "a998b6777b53ab8c"
+ },
+ "116-283 /us/usc/t5/s2302": {
+  "stage": "editorial",
+  "reason": "R_after reads “orI13(B)”, garbled; the law's text gives “or (B)”",
+  "pred": "d3458612f55a92ac",
+  "after": "de9f661ff2744eb1"
+ },
+ "117-43 /us/usc/t18/s3014": {
+  "stage": "editorial",
+  "reason": "R_after reads “2021.12\\”, garbled; OLRC corrected it to “2021.2” at a later release point",
+  "pred": "606171742fa4d035",
+  "after": "45894a9a6d22cb48"
+ },
+ "117-86 /us/usc/t18/s3014": {
+  "stage": "editorial",
+  "reason": "R_before carries OLRC's garbled “2021.12\\”, which OLRC corrected within the window; the law does not touch it",
+  "pred": "cf1ff2674f5751b0",
+  "after": "a728a209ed742d6a"
+ },
+ "117-58 /us/usc/t49/s6701": {
+  "stage": "editorial",
+  "reason": "R_after reads “Secretary”’ with a stray mark; § 21201 inserts “The term “Secretary” means” with none",
+  "pred": "0217cd0f598bcb80",
+  "after": "7f582158ab85a8b4"
+ },
+ "119-44 /us/usc/t42/s247b–13": {
+  "stage": "editorial",
+  "reason": "R_after reads “such $4,250,000”: § 101 strikes “such sums as may be necessary ...” whole and inserts “$4,250,000 ...”",
+  "pred": "42f6d04f38a57fcb",
+  "after": "fe413c45c8c4dd5b"
+ },
+ "116-315 /us/usc/t38/s547": {
+  "stage": "editorial",
+  "reason": "the law's text has a stray closing mark in its quoted block (§ 7002), kept under literal marks (Espen, 2026-10-31); OLRC dropped it",
+  "pred": "8fec2fd9f106b393",
+  "after": "2fec8971f82f197e"
  }
 }
