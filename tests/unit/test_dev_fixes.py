@@ -348,3 +348,14 @@ def test_a_heading_with_quoted_words_is_a_heading():
     units, _ = build_units("“(a) Certain ‘alpha-beta’ gamma data.—None of the funds.", positive_law=True, dash=True)
     head = units[0].find("{*}heading")
     assert head is not None and head.text.strip() == "Certain “Alpha-beta” Gamma Data.—"
+
+
+def test_the_sixth_sentence():
+    # Pub. L. 115-123 § 10102(a) (4 U.S.C. 7(m)): "The sixth sentence of ..." lost its sentence; the insertion went to
+    # the last period of the subsection. Synthetic placeholder text.
+    xml = XML.replace("Reviews shall be made at least annually.",
+                      "Two. Three. Four. Five. Six ends here. Seven.")
+    text, res = run("The sixth sentence of subsection (a) of section 1 of title 99, United States Code, is amended—\n"
+                    "(1) by striking “ends” and inserting “stops”; and\n"
+                    "(2) by inserting “, or later” before the period at the end.", xml)
+    assert [r.status for r in res] == ["CLEAN", "CLEAN"] and "Six stops here, or later. Seven." in text
