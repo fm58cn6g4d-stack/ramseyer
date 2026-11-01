@@ -8,7 +8,6 @@ predictions for sections the law does not touch are "extra".
 from __future__ import annotations
 
 import collections
-import difflib
 import hashlib
 import json
 import re
