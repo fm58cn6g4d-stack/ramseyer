@@ -75,3 +75,24 @@ The next measurement (tuning, dev and dev 2 at the fixed code) is recorded in `r
 ## After the review of #12 (c6c1983)
 
 Four CLEAN predictions that the "not yet executed" rule had left ungraded predict a change no later release point carries, and are now graded as wrong: 38 U.S.C. 7412 (Pub. L. 113-146) and 46 U.S.C. 51707, 70116 and 70001 (Pub. L. 116-283). Dev 2 is 33 of 1,396 (2.36%). They are not yet classified.
+
+## Hand labels proposed (tier 3, for Espen)
+
+Each was checked against the enrolled text: the prediction follows the law, and OLRC's printed text departs from it or is garbled. Each label carries hashes of the predicted and R_after texts at c6c1983, so it lapses if either changes.
+
+| Law | Section | What R_after (or R_before) does | The law's text |
+| --- | --- | --- | --- |
+| 113-79 | 7 U.S.C. 7284 | OLRC sets the law's own "(7 U.S.C. 8702 et seq.)" as "[7 U.S.C. 8701 et seq.]" | § 1607 inserts the parenthetical as printed |
+| 115-423 | 33 U.S.C. 4001a | drops a comma OLRC had marked "So in original", with its footnote | § 9(f) replaces only the words before the comma |
+| 116-159 | 23 U.S.C. 403 | "$26,560,000’" | § 1103(2) inserts "$26,560,000" |
+| 116-214 | 38 U.S.C. 1720J | "requiremen.ts" | "The requirements of section 1725(c)(3)" |
+| 116-283 | 5 U.S.C. 2302 | "orI13(B)" | subparagraph (A) ends "; or" and (B) follows |
+| 117-43 | 18 U.S.C. 3014 | "2021.12\" | OLRC itself prints "2021.2" at a later release point |
+| 117-86 | 18 U.S.C. 3014 | R_before carries OLRC's "2021.12\", corrected within the window | the law does not touch it |
+| 117-58 | 49 U.S.C. 6701 | "“Secretary”’" | § 21201: "The term “Secretary” means" |
+| 119-44 | 42 U.S.C. 247b-13 | "such $4,250,000" | § 101 strikes "such sums as may be necessary ..." whole |
+| 116-315 | 38 U.S.C. 547 (dev) | drops the law's stray closing mark | § 7002's quoted block has it; kept under literal marks |
+
+Not proposed: 54 U.S.C. 308704 (paragraph (a)(2) is gone at R_after, but no provision of Pub. L. 114-328 strikes it and OLRC's note does not explain it); it stays counted as wrong.
+
+Effect at c6c1983: dev 2 from 33 to 24 of 1,396 (1.72%); dev from 11 to 10 of 1,461 (0.68%).
