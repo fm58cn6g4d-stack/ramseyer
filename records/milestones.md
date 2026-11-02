@@ -1050,3 +1050,34 @@ Espen chose, after the sealed set's FAIL, to move on to M8a (2026-11-02). Verify
 **Not yet:**
 - "Code only" cannot arise on enacted laws while the compilations already include them. It needs drafts checked before enactment (M8, M13).
 - The comparative print (M8) will show both readings.
+
+## M8: Comparative print, part 1 (2026-11-02, branch claude/m8)
+
+Espen said go for M8 on 2026-11-02. Verify-first findings are in `records/verify-first.md` (M8). This part builds the print and the first version of the local app. The check against committee reports' "changes in existing law" sections comes in part 2.
+
+**Built:**
+- **`ramseyer.comparative.redline`:** the redline of a section, built from the engine's own edits.
+  - `Working` tags every element of the section with a stable id before the engine runs. The engine keeps the elements it does not remove, so the original and edited sections line up by id.
+  - Words are compared only inside one block present in both, the block an edit touched.
+  - A unit removed or added whole is marked whole.
+  - Text set after a child unit (an XML tail) is compared too.
+- **`ramseyer.comparative.html` and `.word`:** the print as one HTML page and as a Word document.
+  - Two styles: committee (omitted text in literal bold black brackets, a unit removed whole bracketed once, new matter in italics, untouched units as "* * *") and working (struck through, underlined).
+  - Header with release point, input hash, time and version; summary counts.
+  - A marker with status and reason on every instruction that is not CLEAN.
+  - A section the bill creates is shown as structure and placement.
+- **`ramseyer analyze DRAFT --out DIR`:** writes the report folder (comparative.html, comparative-working.html, comparative.docx, instructions.json, run.json).
+- **`ramseyer app`:** the local app's first version: a page served on 127.0.0.1 only, with a per-page token for analysis. Drop a .txt, .md or bill .xml draft, click Analyze, and read the Summary, Comparative print and Working redline tabs, with a Word download. Word drafts come with M7; review buttons, ripple graph and settings with M12.
+
+**Gate (`scripts/m8_gate.py`, tuning set, 20 laws): PASS.**
+
+| Check | Result |
+| --- | --- |
+| Stripping the marks gives back the original section and the engine's prediction exactly (whitespace aside) | 927 sections, 883 with a change shown, 0 mismatches |
+| Every instruction that is not CLEAN appears with its marker | 0 missing |
+| HTML (both styles) and Word render for every law | 0 failures |
+| Golden renders for five laws (SHA-256 only, `tests/oracle/m8_golden.json`) | recorded, then reproduced unchanged |
+
+**The tagging changes no prediction:** the tuning gate re-run with tagging (`--rerun 1`) matches the run before M8 on all 1,306 sections (`scripts/compare_runs.py`, 0 differences).
+
+**Part 2:** grade the print against committee reports' "changes in existing law" sections. Omitted text comes from the report's text (black brackets), new matter from the PDF's italics, which needs a PDF reader as an optional dependency. Statutory notes and uncodified Act text also get their own parts of the print.
