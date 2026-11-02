@@ -49,3 +49,25 @@ def test_currency_is_read_from_the_edition_note_or_reported_unknown(tmp_path):
     cur = dict(ix.db.execute("SELECT title, currency FROM titles WHERE rp=?", (rp,)).fetchall())
     assert cur == {"comp2": "edition note: P.L. 115–141, Enacted March 23, 2018",
                    "comp3": "unamended: the Act as enacted", "comp4": "unknown"}
+
+
+def test_an_instruction_runs_on_the_act_and_the_reading_compares_it_with_the_code(tmp_path):
+    from ramseyer.dryrun.actside import reading, run_on_act
+    from ramseyer.parse import parse_text
+    build(tmp_path, {
+        "COMPS-1.xml": comp("1", "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1</citableAs>"
+                                 "<currentThroughPublicLaw>118–5</currentThroughPublicLaw>", "", SEC)})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    ins = parse_text("SEC. 2. AMENDMENT.\nSection 2(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                     "striking “beta” and inserting “delta”.\n").instructions[0]
+    run = run_on_act(ins, ["pl:99-1"], ix)
+    assert (run.status, run.identifier, run.currency) == ("CLEAN", "/us/sComp/99/1/s2", ["currentThroughPublicLaw: 118–5"])
+    assert reading(run, "CLEAN")[0] == "both"
+    assert reading(run, "NOT_FOUND")[0] == "act only"
+    missing = parse_text("SEC. 2. AMENDMENT.\nSection 2(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                         "striking “omega” and inserting “delta”.\n").instructions[0]
+    gone = run_on_act(missing, ["pl:99-1"], ix)
+    assert gone.status == "NOT_FOUND" and reading(gone, "NOT_FOUND")[0] == "neither"
+    assert reading(gone, "CLEAN")[0] == "code only" and "118–5" in reading(gone, "CLEAN")[1]
+    nothing = run_on_act(ins, ["pl:99-7"], ix)
+    assert nothing.status == "UNAVAILABLE" and "no compilation" in nothing.reason

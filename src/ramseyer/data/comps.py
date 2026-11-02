@@ -28,6 +28,28 @@ UNAMENDED = re.compile(r"^\[\s*This (?:law|Act) has not been amended\s*\]$", re.
 AMENDED_THROUGH = re.compile(r"^\[\s*(?:As )?Amended Through\s+(.+?)\s*\]$", re.I)
 
 
+COMPILATIONS = """CREATE TABLE IF NOT EXISTS compilations (
+    rp INTEGER NOT NULL, title TEXT NOT NULL, name TEXT, citable_as TEXT NOT NULL, currency_basis TEXT NOT NULL,
+    current_through TEXT, PRIMARY KEY (rp, title))"""
+PUBLIC_LAW = re.compile(r"^(?:Public Law|P\.L\.)\s*(\d+)[–-](\d+)")
+
+
+def files_for(db, rp: int, identity: str) -> list[str]:
+    """The compilation files (titles, "comp<fileId>") of an Act named by its identity ("pl:95-617"), from each file's
+    citableAs. Older Acts cited by chapter or Statutes page are not matched here; the caller reports them."""
+    m = re.fullmatch(r"pl:(\d+)-(\d+)", identity)
+    if not m:
+        return []
+    out = []
+    for title, cites in db.execute("SELECT title, citable_as FROM compilations WHERE rp=?", (rp,)):
+        for c in cites.split("|"):
+            p = PUBLIC_LAW.match(c.strip())
+            if p and (p.group(1), p.group(2)) == m.groups():
+                out.append(title)
+                break
+    return out
+
+
 @dataclass
 class Compilation:
     file_id: str
@@ -87,6 +109,8 @@ def load_compilations(indexer: Indexer, source: Path, label: str = "comps", sour
         if existing[1]:
             log(f"{label} already indexed")
             return existing[0]
+        db.execute(COMPILATIONS)
+        db.execute("DELETE FROM compilations WHERE rp=?", (existing[0],))
         indexer.drop_release_point(existing[0])
     if source.is_dir():
         files = [(p.name, p.read_bytes) for p in sorted(source.iterdir()) if FILE_RE.match(p.name)]
@@ -96,6 +120,7 @@ def load_compilations(indexer: Indexer, source: Path, label: str = "comps", sour
         zf = zipfile.ZipFile(source)
         files = [(Path(n).name, (lambda n=n: zf.read(n))) for n in sorted(zf.namelist()) if FILE_RE.match(Path(n).name)]
         sha = hashlib.sha256(source.read_bytes()).hexdigest()
+    db.execute(COMPILATIONS)
     rp = db.execute("INSERT INTO release_points(label, date, source_url, source_sha256, loaded_at) VALUES (?,?,?,?,?)",
                     (label, None, source_url, sha, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))).lastrowid
     for name, read in files:
@@ -106,6 +131,8 @@ def load_compilations(indexer: Indexer, source: Path, label: str = "comps", sour
         load = indexer._load_title(_as_title(raw, file_id, comp.title), rp, code)
         indexer._write(load, rp)
         currency = f"{comp.currency_basis}: {comp.current_through}" if comp.current_through else "unknown"
+        db.execute("INSERT INTO compilations VALUES (?,?,?,?,?,?)",
+                   (rp, code, comp.title, "|".join(comp.citable_as), comp.currency_basis, comp.current_through))
         db.execute("INSERT INTO titles VALUES (?,?,?,?,?,?,?,?)",
                    (rp, code, name, comp.title, None, currency, load.title_node, load.sections))
     indexer._resolve_refs(rp)
