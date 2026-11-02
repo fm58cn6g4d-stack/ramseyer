@@ -1125,3 +1125,22 @@ Espen said go for M8 on 2026-11-02. Verify-first findings are in `records/verify
 **Recall depends on how much of a bill changes text the print does not reach.** On the disjoint sample, three reports hold most of what is missed. In H.R. 976, H.R. 7688 and H.R. 2853 the bill amends mostly Act text outside the Code (NOT_EXECUTED on the Code side). For H.R. 7688, 177 of 211 instructions are NOT_EXECUTED.
 
 **The figure to quote** for laws not tuned on is the disjoint one: precision about 91–94%, recall about 41–42%. Recall should rise once the print shows Act text through M8a's compilations (plan contents 4–5).
+
+**After the review of #23.**
+
+1. **The disjoint sample with report 231 included,** before the rule:
+
+   | | Omitted | New matter |
+   | --- | --- | --- |
+   | Report | 6,670 words | 12,901 words |
+   | ramseyer | 9,856 words | 31,543 words |
+   | In both | 2,735 | 5,395 |
+   | Recall | 41.0% | 41.8% |
+   | Precision | 27.7% | 17.1% |
+
+   Recall is the same with or without it. Precision falls because none of ramseyer's 32,552 printed words for H.R. 3838 had a key to match.
+
+2. **Each report the rule skips was checked by hand;** none is a key-reader failure:
+   - **71:** "This legislation does not amend any existing Federal statute".
+   - **231:** the committee "will make the analysis available as soon as possible".
+   - **101:** "There are no changes to existing statutes made by H.R. 1823", followed by an unfilled "*******INSERT RAMSEYER*******" placeholder.
