@@ -45,11 +45,28 @@ def section_of(text: str) -> str | None:
     return body[:end.start()] if end else body
 
 
+def omitted_spans(sec: str) -> list[str]:
+    """Text in black brackets. A long omitted passage opens a bracket at each of its paragraphs and closes once at its
+    end ("[(a) ... [(1) ... [(2) ... ."]"), so every "[" inside an open bracket continues it, and "]" closes it."""
+    spans, buf, depth = [], [], False
+    for ch in sec:
+        if ch == "[":
+            depth = True
+            continue
+        if ch == "]" and depth:
+            spans.append("".join(buf))
+            buf, depth = [], False
+            continue
+        if depth:
+            buf.append(ch)
+    return spans
+
+
 def key_from(htm: str, pdf_path) -> tuple[list[str], list[str]]:
     """(omitted words, new words) printed in the report's changes section."""
     import pdfplumber
     sec = section_of(re.sub(r"<[^>]+>", "", htm)) or ""
-    omitted = [w for span in re.findall(r"\[([^\[\]]{1,200000})\]", sec) for w in words(span)]
+    omitted = [w for span in omitted_spans(sec) for w in words(span)]
     new: list[str] = []
     with pdfplumber.open(pdf_path) as pdf:
         inside = False
