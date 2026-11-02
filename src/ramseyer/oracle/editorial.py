@@ -162,7 +162,18 @@ def texts(pred_el, after_el, ctx: Context | None = None) -> tuple[str, str]:
             for c in list(h):
                 h.remove(c)
             h.text = words
+            # The law's heading closed by a period on a line of its own ("“§ 22406. Authorization of
+            # appropriations\n“.", Pub. L. 117-58 § 21301(h)): the period is the heading's, which OLRC sets in the
+            # heading with a "So in original" footnote (49 U.S.C. 22406).
+            nxt = h.getnext()
+            if nxt is not None and not len(nxt) and (nxt.text or "").strip() in (".", ".—", "—"):
+                _drop(nxt)
         text = re.sub(r"\s+", " ", normalize(text_of(el))).strip()
+        # A heading set in the unit's text rather than in its own element (R_before's "(b) (b) State Approving Agency
+        # Employees.—If ...", which OLRC set as a heading once Pub. L. 116-61 removed the doubled designation,
+        # 38 U.S.C. 3683): its words, as a heading's above.
+        text = re.sub(r"(\(\w{1,8}\)) ([A-Z][^.—“”()]{0,160}?)\.— ?",
+                      lambda m: f"{m.group(1)} {m.group(2).lower()} ", text)
         # Bracketed Code citations ("(Public Law 93–410) [30 U.S.C. 1101 et seq.]") are OLRC's, never the law's.
         text = re.sub(r"\s?\[[^\[\]]*U\.S\.C\.[^\[\]]*\]", "", text)
         out.append(text)

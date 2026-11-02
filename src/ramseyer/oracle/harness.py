@@ -8,7 +8,6 @@ predictions for sections the law does not touch are "extra".
 from __future__ import annotations
 
 import collections
-import difflib
 import hashlib
 import json
 import re
@@ -254,7 +253,13 @@ def evaluate(corpus: Corpus, predictor: Callable[[CorpusLaw, Index], list[Predic
         counts = collections.Counter()
         for ident, t in gt.items():
             p = preds.get(ident)
-            if t.get("other_laws") and not t.get("pending"):
+            if "ambiguous" in (t["before_status"], t["after_status"]):
+                # Two sections share the number (10 U.S.C. 9084 at 116-344, a "Another section 9084" footnote):
+                # which one the law's text belongs to is not something the oracle can tell.
+                o = SectionOutcome(pl=law.pl, identifier=ident, outcome="ungradable", status=p.status if p else None,
+                                   stage=None, detail="two or more sections share this identifier at "
+                                   f"{'R_before' if t['before_status'] == 'ambiguous' else 'R_after'}")
+            elif t.get("other_laws") and not t.get("pending"):
                 o = SectionOutcome(pl=law.pl, identifier=ident, outcome="ungradable", status=p.status if p else None,
                                    stage=None, detail="R_after's amendment notes credit other laws in the window "
                                                       f"too: {', '.join(t['other_laws'])}")

@@ -260,3 +260,22 @@ def test_footnote_markers_come_out_of_the_xml_not_the_text():
                           '<note type="footnote" id="fn1"><sup>1</sup> So in original.</note></section>')
     strip_footnotes(el)
     assert text_of(el).split() == "within 30 days of the period.".split()
+
+
+def test_two_sections_sharing_a_number_are_not_graded(tmp_path):
+    # 10 U.S.C. 9084 at 116-344: two sections numbered 9084 ("Another section 9084 is set out after ...").
+    db = tmp_path / "o.sqlite"
+    ix = Indexer(db)
+    for label, body in (("1-1", sec("2", "Beta gamma.")),
+                        ("1-2", sec("2", "Beta gamma.") + sec("2", "Delta."))):
+        z = tmp_path / f"{label}.zip"
+        with zipfile.ZipFile(z, "w") as zf:
+            zf.writestr("usc99.xml", doc(body))
+        ix.mark_complete(ix.load_release_point(z, label, None, "t", log=lambda s: None))
+    law = CorpusLaw(pl="1-2", name="t", bill="1 hr 1", enrolled_url="x", enrolled_sha256="x", rp_before="1-1",
+                    rp_after="1-2", titles=["99"], reason="t",
+                    rows=[ClassifiedRow(title="99", section="2", description="", law_section="1")])
+    corpus = Corpus(built="t", selection="t", release_points=[], laws=[law])
+    p = lambda law, before: [Prediction(identifier="/us/usc/t99/s2", status="CLEAN", text="§ 2. H2\nDelta.")]
+    rep = harness.evaluate(corpus, p, "t", lambda label: Index(db, label), labels={})
+    assert [o.outcome for o in rep.outcomes] == ["ungradable"] and "R_after" in rep.outcomes[0].detail

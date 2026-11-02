@@ -1090,11 +1090,31 @@ class Engine:
         if split is not None:
             return split
         rep = ins.replace
+        designated = self._designate(ins, scope)
+        if designated is not None:
+            return designated
         if rep is not None and "\n" in rep:
             rep = " ".join(block_lines(rep))       # a replacement that runs into a quoted block: its lines, not its marks
         new = self._tr(nested_to_double(rep if rep is not None else "\n".join(block_lines(ins.new_text or ""))))
         positional = any(f.startswith("positional") for f in ins.flags)
         return self._edit(ins, scope, path, nested_to_double(ins.find or ""), lambda old: new, positional)
+
+    def _designate(self, ins, scope):
+        """"by striking “(e)” and inserting “(e)(1)”" on a unit with a heading designates the text after the heading
+        as paragraph (1): OLRC sets "(e) Separate registration (1) A separate ..." (Pub. L. 113-143 § 2, 21 U.S.C.
+        822(e)). None when the instruction is not that idiom."""
+        find, rep = (ins.find or "").strip(), (ins.replace or "").strip()
+        m = re.fullmatch(re.escape(find) + r"(\(\w{1,6}\))", rep) if find else None
+        if m is None or scope is None:
+            return None
+        num, head = scope.find(NS + "num"), scope.find(NS + "heading")
+        if num is None or head is None or text_of(num).strip() != find:
+            return None
+        body = head.getnext()
+        if body is None or local(body) not in ("content", "chapeau"):
+            return None
+        body.text = m.group(1) + " " + (body.text or "").lstrip()
+        return Result(ins.id, "CLEAN", f"designated the text after the heading as {m.group(1)}", after_span=m.group(1))
 
     def _heading_append(self, ins, scope):
         """"in the section heading, by adding at the end the following: “; medical surge program”"."""
