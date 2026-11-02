@@ -113,3 +113,14 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | USLM schemas | Main branch: USLM.xsd 1.0 (namespace `http://xml.house.gov/schemas/uslm/1.0`) and USLM 2.0.0–2.1.0 (namespace `http://schemas.gpo.gov/xml/uslm`); proposed branch: 2.1.1 (committee and conference reports, `changesInExistingLaw`), 2.1.2 (CBO cost estimates) |
 | Amendment tagging in published USLM | `amendingAction` types: enact, add, amend, substitute, redesignate, repeal, repealAndReserve, insert, delete, conform, noChange, unknown. Samples use `@type` only — no `@pos`/`@posText`/`@posCount`/`@portion`. A false positive is visible ("adding" in findings prose tagged in H1000_IH) |
 | OLRC move to USLM 2.x for the Code | Cited in aih/uscode-redesign ADR-0002 (OLRC note `currency/uslmv2.html`, now 404 under the temporary site); sample titles 1, 16, 49 in USLM 2.0.12 are in that repository |
+
+## M8a: Statute Compilations (checked 2026-11-02)
+
+| Item | Finding |
+| --- | --- |
+| Path and count | `https://www.govinfo.gov/bulkdata/json/COMPS` (with `Accept: application/json`) lists 2,722 XML files (`COMPS-<fileId>.xml`) plus `COMPS.zip` (85 MB; 2,722 files, 634 MB unzipped) and a `resources` folder. The plan's "about 2,710" holds. |
+| Format | USLM 2.x (namespace `http://schemas.gpo.gov/xml/uslm`, schema 2.0.10), root `statuteCompilation`. Sections carry identifiers such as `/us/sComp/95/617/s1/a` (Congress, law number, section, subunits). |
+| Versions | Current versions only (last modified 2021–2026; 1,617 files unchanged since the October 2021 load). No dated history, so a past draft cannot be checked against the compilation as it then stood. |
+| `currentThroughPublicLaw` | Stated in 2,654 of 2,722 (97.5%). Of the 68 without it: 15 say "[This law has not been amended]" (current through the Act itself); 4 state their currency only in the "As Amended Through ..." edition note (for example "P.L.115–141, Enacted March 23, 2018"); 49 state no currency anywhere. Those 49 are loaded with currency "unknown" and every output from them says so; none is guessed. |
+| Acts in several files | 38 Acts are split across files (the Social Security Act, "Chapter 531 of the 74th Congress", in 16). Indexing by file and section identifier keeps them apart; an Act is matched to its files by `citableAs`. |
+| Citation forms | `citableAs` is "Public Law N–M" for 2,382 files; "Chapter N of the Mth Congress" (147) or a Statutes at Large page for older Acts; 190 have none and are matched by title only. |
