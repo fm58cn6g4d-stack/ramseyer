@@ -124,7 +124,8 @@ def lines(node, context: int) -> list[tuple[int, list[Block] | None, str]]:
             if out:
                 out[-1][2] += " close"
         elif b is None:
-            out.append([depth, None, ""])
+            if not (out and out[-1][1] is None):      # never two "* * *" lines in a row
+                out.append([depth, None, ""])
         elif out and out[-1][1] is not None and out[-1][0] == depth and not pending and \
                 b.kind in ("heading", "content", "chapeau") and out[-1][1][-1].kind in ("num", "heading") and \
                 b.state == out[-1][1][-1].state:
@@ -174,8 +175,9 @@ def views(run) -> list[SectionView]:
 
 
 def report(run, *, title: str, release_point: str, input_hash: str, generated: str, version: str,
-           style: str = "committee", context: int = 1) -> str:
-    """The comparative print as a standalone HTML page."""
+           style: str = "committee", context: int = 0) -> str:
+    """The comparative print as a standalone HTML page. `context`: unchanged neighbouring units shown beside a
+    changed one (0, as committee reports print it: untouched units become "* * *")."""
     secs = views(run)
     statuses = [tr.result.status for tr in run.traces if tr.result is not None]
     clean = sum(s == "CLEAN" for s in statuses)

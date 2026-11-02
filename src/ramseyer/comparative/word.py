@@ -35,7 +35,7 @@ def _add_runs(par, block, style: str, flags: str = "") -> None:
 
 
 def document(run, *, title: str, release_point: str, input_hash: str, generated: str, version: str,
-             style: str = "committee", context: int = 1) -> bytes:
+             style: str = "committee", context: int = 0) -> bytes:
     doc = Document()
     doc.styles["Normal"].font.name = "Times New Roman"
     doc.styles["Normal"].font.size = Pt(12)
