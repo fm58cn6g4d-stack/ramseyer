@@ -367,3 +367,11 @@ def test_a_closing_mark_before_a_block_is_the_laws():
     text, res = run("Section 1 of title 99, United States Code, is amended—\n(1) in subsection (a)—\n(A) by striking "
                     "“shall review” and inserting “shall—”\n“(1) review”;")
     assert "shall—” (1) review each term" in text
+
+
+def test_striking_a_designation_and_inserting_it_with_a_paragraph_after_a_heading():
+    # Pub. L. 113-143 § 2 (21 U.S.C. 822(e)): striking “(e)” and inserting “(e)(1)” on a subsection with a heading;
+    # OLRC sets the new (1) after the heading. Synthetic placeholder text.
+    text, res = run("Section 1(a) of title 99, United States Code, is amended by striking “(a)” and inserting “(a)(1)”.")
+    assert [r.status for r in res] == ["CLEAN"]
+    assert "(a) Alpha Rule.— (1) The determiner shall review" in text

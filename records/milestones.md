@@ -970,3 +970,45 @@ Changes, each with a test: a later release point confirms a predicted change in 
 All of #13's labels still apply at 81cf65f (their hashes match this run). Dev's 9: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Dev 2's 18 are listed in `records/m6e_dev2_false_clean.md`.
 
 **After the review of #14 (d0cb4b3):** a later release confirms a predicted change only up to footnote markers OLRC added or removed (never one number for another) and the case of words on its heading lines. Dev 2 re-measured at d0cb4b3: unchanged, 18 of 1,392 (1.29%) with the labels, which the gate now applies itself; 59 CLEAN predicted changes confirmed by a later release, 0 graded. Tuning and dev have no CLEAN predicted changes in "not yet executed", so their figures cannot move.
+
+### Dev 2, round 3 (2026-11-02, claude/m6e-dev2-round3, code at 31819b2)
+
+Changes, each with a test:
+- a heading set in a unit's text rather than its own element compares as a heading (38 U.S.C. 3683);
+- a heading's closing period that the law set on a line of its own is the heading's (49 U.S.C. 22406, the round 2 fix did not cover the heading form);
+- a section number two sections share at a release point is not graded (10 U.S.C. 9084, "Another section 9084 ...");
+- "striking “(e)” and inserting “(e)(1)”" on a unit with a heading designates the text after the heading (21 U.S.C. 822).
+
+| At 31819b2 | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,460 | 1,391 |
+| CLEAN and wrong in substance (labels on main) | 0 | **9 (0.62%)** | **14 (1.01%)** |
+| with #16's three labels (tier 3, for Espen) | 0 | 9 (0.62%) | 11 (0.79%) |
+| Round 2 (81cf65f / d0cb4b3) | 0 | 9 (0.62%) | 18 (1.29%) |
+
+The four targeted cases left the list and none joined it. Dev is unchanged. The gate's checkout was briefly on another branch while dev ran (04:26-04:27 UTC, laws 113-54 to 113-56; the running process had loaded its code at start); those three laws, re-run separately, give the same outcomes and text hashes on all 24 sections. Dev 2's 14 are listed in `records/m6e_dev2_false_clean.md`.
+
+### Sealed set, measured once (2026-11-02, code at 31819b2)
+
+Espen approved measuring the sealed set (281 laws, never run or inspected before) after dev 2's round 3. Run with `scripts/m6_gate.py --set history_sealed` at the code of #17. Only the headline figures were read.
+
+| | Tuning | Dev | Dev 2 | **Sealed** |
+| --- | --- | --- | --- | --- |
+| CLEAN (incl. off target) | 370 | 1,463 | 1,393 | 1,233 |
+| CLEAN and wrong in substance | 0 | 10 (0.68%) | 14 (1.01%) | **27 (2.19%)** |
+| 95% interval | | 0.37%–1.25% | 0.60%–1.68% | **1.51%–3.17%** |
+| Hand labels applied | 4 | 13 | 9 | 0 |
+| Wrong in substance without hand labels | 4 | 23 (1.57%) | 23 (1.65%) | 27 (2.19%) |
+
+**Gate: FAIL** (false-clean rate under 1%). The sealed rate is about twice dev 2's and three times dev's. Part of the gap is that hand labels exist only for inspected sets. OLRC's own slips, which the labels excuse, count as wrong on the sealed set. On the same footing, with no labels, the sets read 1.57%, 1.65% and 2.19%, and their intervals overlap. The rest is the expected overfit: dev 2 itself stood at 3.54% when it was first opened (round 1) and was fixed down to 1.01% by inspecting its cases. The sealed figure is the honest estimate of the false-clean rate on laws ramseyer has not been tuned on.
+
+The sealed set's cases were not inspected. One line of the run's progress log was seen while the run was being checked: a section identifier and the first letter of its status, nothing of its text or diff.
+
+**Reproducibility:** a second dev run at the same code (`--rerun 1`, the reviewer's request on #17 after the worktree's brief branch switch during round 3's dev run), compared section by section with `scripts/compare_runs.py`: 8,215 sections, 0 differences in outcome, status, predicted text, R_before, R_after or editorial kind. The sealed figure is final for this code.
+
+**After the review of #18.**
+- **Raw rate on the sealed set:** 131 of 1,232 CLEAN predictions differ from R_after in any way (10.63%). Of these, 104 are OLRC editorial work by the detector, and none carries a hand label.
+- **The two off-target counts in the sealed baseline,** `clean_off_target` 1 and `clean_off_target_wrong` 4, measured different things. The first left out the off-target sections that other laws in the window also changed (5 of the 6 CLEAN off-target predictions, which are not gradable). The second still counted those sections where the text differs.
+  - The gate's headline used the first count, plus a third count that leaves out OLRC editorial work (0). So the 2.19% is unaffected: (27 + 0) / (1,232 + 1).
+  - `scripts/m6_gate.py` now stores all of these on the same footing: `clean_off_target_wrong` (any difference), `clean_off_target_substantive` and `clean_off_target_ungradable`.
+  - The sealed baseline stays as measured; it is not re-run.

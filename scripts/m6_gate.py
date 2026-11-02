@@ -374,6 +374,12 @@ def main() -> int:
             o.stage = "unclassified"
         else:
             o.stage = "editorial"
+    # The stored counts match the headline: both leave out the off-target sections other laws also changed (review
+    # of #18: the sealed baseline had clean_off_target 1 beside clean_off_target_wrong 4, the latter still counting
+    # them). clean_off_target_wrong counts any difference; clean_off_target_substantive, OLRC's editorial work aside.
+    m["clean_off_target_wrong"] = len(off)
+    m["clean_off_target_substantive"] = off_sub
+    m["clean_off_target_ungradable"] = len(ungradable)
     graded = m["matched"] + m["mismatched"]
     clean_mism = [o for o in mism if o.status == "CLEAN"]
     # Hand labels bind to the exact texts they were checked against; list the ones that no longer apply.

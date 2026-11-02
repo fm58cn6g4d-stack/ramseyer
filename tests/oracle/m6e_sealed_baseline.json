@@ -1,0 +1,29 @@
+{
+ "predictor": "ramseyer M6",
+ "metrics": {
+  "targets": 7843,
+  "matched": 1961,
+  "mismatched": 1576,
+  "missed": 4306,
+  "extra": 61,
+  "unexpected_change": 29,
+  "pending": 397,
+  "ungradable": 472,
+  "unexecuted": 433,
+  "unexecuted_clean_confirmed_later": 24,
+  "unexecuted_clean_graded": 2,
+  "match_rate": 0.25,
+  "clean": 1232,
+  "false_clean": 131,
+  "false_clean_rate": 0.1063,
+  "clean_off_target": 1,
+  "clean_off_target_wrong": 4,
+  "deterministic_coverage": 1.0,
+  "model_tokens": 0,
+  "mismatch_parser": 99,
+  "mismatch_engine": 1144,
+  "mismatch_unclassified": 131,
+  "mismatch_resolver": 182,
+  "mismatch_verify": 20
+ }
+}

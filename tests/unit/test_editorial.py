@@ -200,5 +200,22 @@ def test_a_footnote_on_a_period_the_law_set_on_its_own_line():
     pred = sec(sub("a", "Authorization of appropriations\n. There is authorized"))
     after = sec(sub("a", "Authorization of appropriations.1 There is authorized"))
     assert kind(pred, after, Context(pl="1-2")) == "editorial: footnote markers"
+    # As the engine builds it: the law's period on a line of its own after the heading; OLRC's in the heading.
+    pred = sec(sub("a", "There is authorized")).replace("</heading>", "</heading><chapeau>.</chapeau>").replace(
+        "Placeholder rule", "Authorization of appropriations")
+    after = sec(sub("a", "There is authorized"), heading='Authorization of appropriations.<ref class="footnoteRef">1'
+                '</ref><note type="footnote"><num>1</num> So in original.</note>')
+    assert kind(pred, after, Context(pl="1-2")) is not None
+    assert kind(pred, sec(sub("a", "There is authorized"), heading="Authorization of grants"), Context(pl="1-2")) is None
     assert kind(sec(sub("a", "Authorization of appropriations\n. There is authorized")),
                 sec(sub("a", "Authorization of appropriations.12345 There is authorized")), Context(pl="1-2")) is None
+
+
+def test_a_heading_set_in_the_unit_s_text_is_still_a_heading():
+    # 38 U.S.C. 3683 (Pub. L. 116-61): R_before set "(b) Placeholder Agency Staff.—If" in the text; OLRC made it the
+    # subsection's heading. The words are the same; only the markup differs.
+    pred = sec(sub("b", "Placeholder Agency Staff.—If the rule applies, act."))
+    after = sec(sub("b", "If the rule applies, act.", heading="Placeholder Agency Staff"))
+    assert kind(pred, after) is not None
+    assert kind(sec(sub("b", "Placeholder Agency Rules.—If the rule applies, act.")), after) is None
+    assert kind(sec(sub("b", "Placeholder Agency Staff.—If the rule lapses, act.")), after) is None
