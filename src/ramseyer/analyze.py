@@ -26,6 +26,7 @@ class Analysis:
     working_html: str
     docx: bytes
     instructions: list[dict]        # one row per instruction: id, status, target, source, detail
+    run: object = None              # the dry-run itself (BillRun), for callers that read the print's marks
 
 
 def draft_text(name: str, data: bytes) -> str:
@@ -90,7 +91,7 @@ def analyze(name: str, data: bytes) -> Analysis:
     counts: dict[str, int] = {}
     for row in rows:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
-    return Analysis(counts=counts, instructions=rows,
+    return Analysis(counts=counts, instructions=rows, run=run,
                     committee_html=print_html.report(run, style="committee", **meta),
                     working_html=print_html.report(run, style="working", **meta),
                     docx=print_word.document(run, style="committee", **meta), **meta)

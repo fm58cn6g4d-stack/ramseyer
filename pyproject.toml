@@ -16,6 +16,8 @@ dependencies = [
 dev = ["pytest>=8"]
 # M6e: reading the dreamproit/uscode release-point history (scripts/load_history.py).
 history = ["pyarrow>=15"]
+# M8: reading committee reports' italics (new matter) for the comparative print's answer key (scripts/m8_answer_key.py).
+answerkey = ["pdfplumber>=0.11"]
 
 [project.scripts]
 ramseyer = "ramseyer.cli:app"

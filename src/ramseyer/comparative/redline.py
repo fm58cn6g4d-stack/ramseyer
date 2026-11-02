@@ -100,17 +100,47 @@ def _merge(before_el, after_el):
             out += [(b_kids[i], a_kids[j]) for i, j in zip(range(i1, i2), range(j1, j2))]
             seen.update(b_ids[i1:i2])
             continue
-        # Removed children first, then added ones; a child that moved within its parent keeps its id and is paired
-        # where it now stands.
-        out += [(b_kids[i], None) for i in range(i1, i2) if b_ids[i] not in shared]
+        # A unit the bill replaces whole ("amended to read as follows") is new XML, but committee reports compare it
+        # with the unit it replaces word by word: a removed and an added child of the same kind and designation are
+        # paired, and so are a lone removed and a lone added text block of the same kind (part 2, H.R. 6498).
+        removed = [b_kids[i] for i in range(i1, i2) if b_ids[i] not in shared]
+        # Pairs keep both orders (each side's text must read back in its own order): a removed child is paired only
+        # with a later added one, never across an earlier pairing.
+        k = 0
         for j in range(j1, j2):
-            ident = a_ids[j]
+            ident, a = a_ids[j], a_kids[j]
             if ident in shared and ident not in seen:
-                out.append((by_id_b[ident], a_kids[j]))
+                # A child that moved within its parent keeps its id and is paired where it now stands.
+                out.append((by_id_b[ident], a))
                 seen.add(ident)
-            else:
-                out.append((None, a_kids[j]))
+                continue
+            m = next((x for x in range(k, len(removed)) if _matches(removed[x], a, removed, a_kids[j1:j2])), None)
+            if m is None:
+                out.append((None, a))
+                continue
+            out += [(b, None) for b in removed[k:m]]
+            out.append((removed[m], a))
+            k = m + 1
+        out += [(b, None) for b in removed[k:]]
     return out
+
+
+def _matches(b, a, removed, added) -> bool:
+    """A removed child stands for an added one: same kind and designation, or the lone text block of that kind on
+    each side."""
+    db, da = _designation(b), _designation(a)
+    if da[1]:
+        return db == da
+    if local(a) not in TEXT_BLOCKS or db != da:
+        return False
+    return sum(_designation(x) == da for x in removed) == 1 and sum(_designation(x) == da for x in added) == 1
+
+
+def _designation(el) -> tuple[str, str]:
+    """(kind, designation): ("subsection", "b") for a unit numbered "(b)"; no designation for a text block."""
+    num = el.find(f"{{{el.nsmap.get(None, '')}}}num") if el.nsmap.get(None) else el.find("num")
+    text = "".join(num.itertext()).strip().strip("().") if num is not None else ""
+    return local(el), text
 
 
 def _pair(before_el, after_el):

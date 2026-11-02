@@ -1081,3 +1081,30 @@ Espen said go for M8 on 2026-11-02. Verify-first findings are in `records/verify
 **The tagging changes no prediction:** the tuning gate re-run with tagging (`--rerun 1`) matches the run before M8 on all 1,306 sections (`scripts/compare_runs.py`, 0 differences).
 
 **Part 2:** grade the print against committee reports' "changes in existing law" sections. Omitted text comes from the report's text (black brackets), new matter from the PDF's italics, which needs a PDF reader as an optional dependency. Statutory notes and uncodified Act text also get their own parts of the print.
+
+## M8: Comparative print, part 2: graded against committee reports (2026-11-02, branch claude/m8-answer-key)
+
+**Answer key (`scripts/m8_answer_key.py`).** A fixed sample of 119th-Congress House reports: every 20th by number, 43 of 855.
+- A report is graded when it carries "Changes in Existing Law Made by the Bill, as Reported" and accompanies a House bill whose reported text (BILLS-119hr<N>rh) ramseyer can run at the pinned release point (119-134).
+- **Omitted text** is read from the report's text version: black brackets. A long omitted passage opens a bracket at each paragraph and closes once.
+- **New matter** is read from the PDF's italic words, using pdfplumber (the optional `answerkey` dependency).
+- **Measure:** a word-level overlap (counts of words, not positions) between ramseyer's print and the report.
+
+| Sample | Reports |
+| --- | --- |
+| Graded | 19 |
+| No Code section reached (changes only to Acts the Code does not hold) | 15 |
+| No changes section, or not a House bill | 9 |
+
+| Words | Report | ramseyer | In both | Recall | Precision |
+| --- | --- | --- | --- | --- | --- |
+| Omitted | 5,008 | 4,644 | 4,400 | 87.9% | 94.7% |
+| New matter | 14,553 | 12,301 | 10,885 | 74.8% | 88.5% |
+
+**Where recall falls short:** chiefly provisions ramseyer does not print yet. H.R. 2406 (report 761) amends mostly Act text outside the Code (16 of 1,577 new words reached), and other reports include statutory notes and uncodified Acts. Those are the plan's print contents 4 and 5, still to come, now that M8a supplies the Act text. Instructions ramseyer could not apply (TARGET_MISSING, CONFLICT) also print no change.
+
+**Two fixes this grading found:**
+- **A unit replaced whole** ("amended to read as follows") is compared word by word with the unit of the same designation it replaces, as the reports print it. The pairing keeps both sides' order, and the gate's round trip stays at 0 mismatches.
+- **The answer key's first reading missed long omitted passages,** which are bracketed at each paragraph and closed once. Reading them raised the key's omitted words from 924 to 5,008. The low omitted precision first measured (13.7%) was this reading error, not ramseyer.
+
+**M8 gate re-run after the pairing fix: PASS** (927 sections round-trip, 0 missing markers, renders, golden renders re-recorded and reproduced).
