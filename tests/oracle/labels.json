@@ -178,5 +178,23 @@
   "reason": "the law's text has a stray closing mark in its quoted block (§ 7002), kept under literal marks (Espen, 2026-10-31); OLRC dropped it",
   "pred": "8fec2fd9f106b393",
   "after": "2fec8971f82f197e"
+ },
+ "116-283 /us/usc/t14/s561": {
+  "stage": "editorial",
+  "reason": "OLRC prints \"to carry out this subsection.T\"; the law (§ 8111(a), new 14 U.S.C. 561(f)(2)) reads \"to carry out this subsection.\", and OLRC's next release point (117-81) drops the stray letter",
+  "pred": "e5bb68131b8306e5",
+  "after": "346c053e3a3742b9"
+ },
+ "116-283 /us/usc/t10/s146": {
+  "stage": "editorial",
+  "reason": "the law's new section (§ 905(a)(1)) sets the inner quotation \"(in this section referred to as the ‘Office’)\" within its quoted text; OLRC kept the single marks rather than the double marks it gives an inner quotation when executing, which ramseyer follows",
+  "pred": "d2527cda9dcca231",
+  "after": "d5ed72579cdfb2b2"
+ },
+ "119-21 /us/usc/t7/s2012": {
+  "stage": "editorial",
+  "reason": "the law's new subsection (u) (§ 10101(a)) has headings \"(1) In general.—The term ...\"; OLRC's markup at R_after runs heading and text together inside the heading (\"In generalThe term\") and drops the \".—\"",
+  "pred": "035ba481d9450009",
+  "after": "8dd7b35364814a0b"
  }
 }
