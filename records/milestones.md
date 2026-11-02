@@ -1012,3 +1012,41 @@ The sealed set's cases were not inspected. One line of the run's progress log wa
   - The gate's headline used the first count, plus a third count that leaves out OLRC editorial work (0). So the 2.19% is unaffected: (27 + 0) / (1,232 + 1).
   - `scripts/m6_gate.py` now stores all of these on the same footing: `clean_off_target_wrong` (any difference), `clean_off_target_substantive` and `clean_off_target_ungradable`.
   - The sealed baseline stays as measured; it is not re-run.
+
+## M8a: Act-text layer (2026-11-02, branch claude/m8a)
+
+Espen chose, after the sealed set's FAIL, to move on to M8a (2026-11-02). Verify-first findings are in `records/verify-first.md` (M8a).
+
+**Built:**
+- `ramseyer.data.comps` loads HOLC's 2,722 Statute Compilations (GovInfo `COMPS.zip`) into an index under the label "comps": 82,519 sections, about 5 minutes. Each file is stored with its currency (2,624 `currentThroughPublicLaw`, 34 from the "As Amended Through" note, 15 unamended, 49 unknown, never guessed) and with its citations, approval date and short titles.
+- An Act is matched to its files by public law ("Public Law 93–406" or "P.L. 93–406", in the meta or in the preface's citation note), or, for an Act before public law numbers, by approval date and chapter. A file of that date that cites no chapter is matched only when its title or a short title is the Act's name as drafted, so another Act approved the same day is never used (review of #20).
+- `ramseyer.dryrun.actside.run_on_act` runs an instruction on the Act's section. Where several files hold that section with different text, it reports them all and picks none.
+- `reading()` gives the cross-check reading of docs/06-dry-run.md: both, act only, code only, neither, or act unavailable, each with a reason.
+- `scripts/m8a_gate.py` runs every tuning law's instructions that name an Act against both sources.
+
+**Measured on the tuning set (20 laws):** 1,958 instructions target an Act. **Gate PASS:** every one has a reading and a reason.
+
+| Reading | Instructions | Share |
+| --- | --- | --- |
+| The compilation already includes the law | 860 | 43.9% |
+| Act unavailable | 461 | 23.5% |
+| Both | 418 | 21.3% |
+| Act only | 216 | 11.0% |
+| Neither | 3 | 0.2% |
+| Code only | 0 | 0% |
+
+- **"The compilation already includes the law":** the compilations are current versions only, and they already carry the tuning laws. For these, the test is whether the law's new words are in the Act's section now.
+  - Yes for 239.
+  - Not found for 32 (later laws may have changed them).
+  - 429 insert words too short to stand for the insertion (under 20 characters or 3 words, such as a year or "and"). These are reported apart and never counted as confirmation (review of #20; before that fix, they had been counted as found).
+  - 160 insert no words to look for.
+  - A draft checked before enactment meets the compilation as it stands, so this reading is particular to measuring on enacted laws.
+- **"Act only"** is mostly instructions on Act text that is not in the Code (156 NOT_EXECUTED on the Code side), which M8a now reaches.
+- **"Act unavailable":**
+  - 102 name no section of an Act.
+  - 39 name no Act the resolver identifies.
+  - The rest name an Act without a compilation (the Internal Revenue Code of 1954 is codified as title 26 and has none), a section the compilation lacks, or a section held by several files with different text.
+
+**Not yet:**
+- "Code only" cannot arise on enacted laws while the compilations already include them. It needs drafts checked before enactment (M8, M13).
+- The comparative print (M8) will show both readings.
