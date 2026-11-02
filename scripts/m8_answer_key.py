@@ -92,6 +92,9 @@ def overlap(ours: list[str], key: list[str]) -> int:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--every", type=int, default=20)
+    ap.add_argument("--offset", type=int, default=0,
+                    help="start the every-k sample here; --offset 10 is disjoint from the tuning sample (review of #22)")
+    ap.add_argument("--tag", default="", help="suffix for the output files")
     args = ap.parse_args()
     cfg = config.load()
     f = Fetcher(cfg)
@@ -107,7 +110,7 @@ def main() -> int:
         if url:
             url = re.sub(r"&api_key=[^&]*", "", url)
     nums = sorted({int(m.group(1)) for p in pkgs if (m := re.fullmatch(r"CRPT-119hrpt(\d+)", p))})
-    sample = nums[::args.every]
+    sample = nums[args.offset::args.every]
     rows, tallies = [], collections.Counter()
     for n in sample:
         pid = f"CRPT-119hrpt{n}"
@@ -126,6 +129,12 @@ def main() -> int:
             rows.append({"report": pid, "skipped": f"download: {e}"})
             continue
         omitted_key, new_key = key_from(htm, pdf)
+        if not omitted_key and not new_key:
+            # The report defers its comparative print ("will make the analysis available as soon as possible",
+            # report 231, H.R. 3838): no answer key to grade against.
+            tallies["report prints no changes (deferred or published separately)"] += 1
+            rows.append({"report": pid, "skipped": "the report's changes section marks no text"})
+            continue
         a = analyze(f"H.R. {bill.group(1)} (reported).xml", xml.path.read_bytes())
         if a.counts and set(a.counts) <= {"ALREADY_EXECUTED"}:
             tallies["already in the pinned Code (enacted since)"] += 1
@@ -157,7 +166,8 @@ def main() -> int:
     oo, on = sum(r["ours_omitted"] for r in graded), sum(r["ours_new"] for r in graded)
     ho, hn = sum(r["omitted_hit"] for r in graded), sum(r["new_hit"] for r in graded)
     lines = ["# M8 part 2: the print against committee reports", "",
-             f"House reports, 119th Congress: {len(nums)}; sample (every {args.every}th): {len(sample)}", "",
+             f"House reports, 119th Congress: {len(nums)}; sample (every {args.every}th from position {args.offset}): "
+             f"{len(sample)}", "",
              "| Sample | Reports |", "| --- | --- |"] + [f"| {k} | {v} |" for k, v in tallies.most_common()] + [
              "", "| Words | Report | ramseyer | In both | Recall | Precision |", "| --- | --- | --- | --- | --- | --- |",
              f"| Omitted | {ok} | {oo} | {ho} | {ratio(ho, ok)} | {ratio(ho, oo)} |",
@@ -166,8 +176,8 @@ def main() -> int:
              f"- {r['report']} ({r.get('bill', '')}): " + (r["skipped"] if "skipped" in r else
              f"omitted {r['omitted_hit']}/{r['key_omitted']} (ours {r['ours_omitted']}), new {r['new_hit']}/"
              f"{r['key_new']} (ours {r['ours_new']}); statuses {r['counts']}") for r in rows]
-    (cfg.var / "m8_answer_key.md").write_text("\n".join(lines) + "\n")
-    with open(cfg.var / "m8_answer_key.jsonl", "w") as fh:
+    (cfg.var / f"m8_answer_key{args.tag}.md").write_text("\n".join(lines) + "\n")
+    with open(cfg.var / f"m8_answer_key{args.tag}.jsonl", "w") as fh:
         for r in rows:
             fh.write(json.dumps(r) + "\n")
     print("\n".join(lines[:20]))
