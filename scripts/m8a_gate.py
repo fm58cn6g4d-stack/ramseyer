@@ -102,8 +102,9 @@ def main() -> int:
                           if new else "the instruction inserts no words to look for"))
                 act.reason = why
             readings[name] += 1
-            reasons[name][act.reason if name in ("act unavailable", "act already amended")
-                          else f"Act {act.status} / Code {c}"] += 1
+            key = why.rsplit("; ", 1)[-1] if name == "act already amended" else \
+                act.reason if name == "act unavailable" else f"Act {act.status} / Code {c}"
+            reasons[name][key] += 1
             out_rows.append({"pl": law.pl, "instruction": ins.id, "act": t.act, "section": t.section,
                              "act_status": act.status, "code_status": c, "reading": name, "reason": why,
                              "files": act.files, "currency": act.currency, "identifier": act.identifier})
