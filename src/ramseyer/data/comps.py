@@ -30,23 +30,27 @@ AMENDED_THROUGH = re.compile(r"^\[\s*(?:As )?Amended Through\s+(.+?)\s*\]$", re.
 
 COMPILATIONS = """CREATE TABLE IF NOT EXISTS compilations (
     rp INTEGER NOT NULL, title TEXT NOT NULL, name TEXT, citable_as TEXT NOT NULL, currency_basis TEXT NOT NULL,
-    current_through TEXT, PRIMARY KEY (rp, title))"""
+    current_through TEXT, approved TEXT, short_titles TEXT, PRIMARY KEY (rp, title))"""
 PUBLIC_LAW = re.compile(r"^(?:Public Law|P\.L\.)\s*(\d+)[–-](\d+)")
 
 
 def files_for(db, rp: int, identity: str) -> list[str]:
-    """The compilation files (titles, "comp<fileId>") of an Act named by its identity ("pl:95-617"), from each file's
-    citableAs. Older Acts cited by chapter or Statutes page are not matched here; the caller reports them."""
-    m = re.fullmatch(r"pl:(\d+)-(\d+)", identity)
-    if not m:
-        return []
+    """The compilation files (titles, "comp<fileId>") of an Act named by its identity: "pl:95-617" by a citableAs
+    "Public Law 95–617" or "P.L. 95–617"; "act:1944-07-01:373" (an Act before public law numbers, by approval date and
+    chapter) by the file's approvedDate, and its "Chapter 373 of ..." citation where the file states one. A file of
+    that date that states another chapter is not matched; one that states none is, and the caller reports several
+    such files rather than picking."""
     out = []
-    for title, cites in db.execute("SELECT title, citable_as FROM compilations WHERE rp=?", (rp,)):
-        for c in cites.split("|"):
-            p = PUBLIC_LAW.match(c.strip())
-            if p and (p.group(1), p.group(2)) == m.groups():
+    pl = re.fullmatch(r"pl:(\d+)-(\d+)", identity)
+    act = re.fullmatch(r"act:(\d{4}-\d{2}-\d{2}):(\w+)", identity)
+    for title, cites, approved in db.execute("SELECT title, citable_as, approved FROM compilations WHERE rp=?", (rp,)):
+        cs = [c.strip() for c in cites.split("|") if c.strip()]
+        if pl and any((m := PUBLIC_LAW.match(c)) and m.groups() == pl.groups() for c in cs):
+            out.append(title)
+        elif act and approved == act.group(1):
+            chapters = [m.group(1) for c in cs if (m := re.match(r"^Chapter (\w+) of", c))]
+            if not chapters or act.group(2) in chapters:
                 out.append(title)
-                break
     return out
 
 
@@ -57,6 +61,8 @@ class Compilation:
     citable_as: list[str]          # "Public Law 95–617", "Chapter 38 of the 81st Congress", ...
     current_through: str | None    # "117–58", or the text of an "As Amended Through" note, or None
     currency_basis: str            # "currentThroughPublicLaw" | "edition note" | "unamended" | "unknown"
+    approved: str | None = None    # meta approvedDate, "1944-07-01" ("--" and blanks read as None)
+    short_titles: tuple[str, ...] = ()
 
 
 def _meta(root, name: str) -> list[str]:
@@ -67,18 +73,23 @@ def _meta(root, name: str) -> list[str]:
 def describe(root, file_id: str) -> Compilation:
     """The compilation's identity and currency, from its meta and preface; never guessed."""
     title = next(iter(_meta(root, "title")), None)
-    cites = list(dict.fromkeys(_meta(root, "citableAs")))
+    # citableAs sits in meta in some files and only in the preface's citation note in others (Pub. L. 93-406, ERISA).
+    cites = list(dict.fromkeys(" ".join("".join(e.itertext()).split()) for e in root.xpath(
+        "./*[local-name()='meta' or local-name()='preface']//*[local-name()='citableAs']")))
+    approved = next((d for d in _meta(root, "approvedDate") if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d)), None)
+    shorts = tuple(dict.fromkeys(_meta(root, "containsShortTitle")))
     cur = next(iter(_meta(root, "currentThroughPublicLaw")), None)
     if cur:
-        return Compilation(file_id, title, cites, cur, "currentThroughPublicLaw")
+        return Compilation(file_id, title, cites, cur, "currentThroughPublicLaw", approved, shorts)
     for note in root.xpath(".//*[local-name()='editionNote']"):
         text = " ".join("".join(note.itertext()).split())
         if UNAMENDED.match(text):
-            return Compilation(file_id, title, cites, cites[0] if cites else "the Act as enacted", "unamended")
+            return Compilation(file_id, title, cites, cites[0] if cites else "the Act as enacted", "unamended",
+                               approved, shorts)
         m = AMENDED_THROUGH.match(text)
         if m:
-            return Compilation(file_id, title, cites, m.group(1), "edition note")
-    return Compilation(file_id, title, cites, None, "unknown")
+            return Compilation(file_id, title, cites, m.group(1), "edition note", approved, shorts)
+    return Compilation(file_id, title, cites, None, "unknown", approved, shorts)
 
 
 def _as_title(root, file_id: str, title: str | None):
@@ -131,8 +142,9 @@ def load_compilations(indexer: Indexer, source: Path, label: str = "comps", sour
         load = indexer._load_title(_as_title(raw, file_id, comp.title), rp, code)
         indexer._write(load, rp)
         currency = f"{comp.currency_basis}: {comp.current_through}" if comp.current_through else "unknown"
-        db.execute("INSERT INTO compilations VALUES (?,?,?,?,?,?)",
-                   (rp, code, comp.title, "|".join(comp.citable_as), comp.currency_basis, comp.current_through))
+        db.execute("INSERT INTO compilations VALUES (?,?,?,?,?,?,?,?)",
+                   (rp, code, comp.title, "|".join(comp.citable_as), comp.currency_basis, comp.current_through,
+                    comp.approved, "|".join(comp.short_titles)))
         db.execute("INSERT INTO titles VALUES (?,?,?,?,?,?,?,?)",
                    (rp, code, name, comp.title, None, currency, load.title_node, load.sections))
     indexer._resolve_refs(rp)

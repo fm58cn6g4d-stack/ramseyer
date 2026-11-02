@@ -71,3 +71,16 @@ def test_an_instruction_runs_on_the_act_and_the_reading_compares_it_with_the_cod
     assert reading(gone, "CLEAN")[0] == "code only" and "118–5" in reading(gone, "CLEAN")[1]
     nothing = run_on_act(ins, ["pl:99-7"], ix)
     assert nothing.status == "UNAVAILABLE" and "no compilation" in nothing.reason
+
+
+def test_an_act_before_public_law_numbers_is_found_by_its_approval_date_and_chapter(tmp_path):
+    from ramseyer.data.comps import files_for
+    pre = '<citationNote>[<citableAs>Public Law 93–406</citableAs>]</citationNote>'
+    ix, rp = build(tmp_path, {
+        "COMPS-5.xml": comp("5", "<dc:title>Five</dc:title><approvedDate>1944-07-01</approvedDate>", "",
+                            SEC.replace("/99/1/", "/78/410/")),
+        "COMPS-6.xml": comp("6", "<dc:title>Six</dc:title><approvedDate>1944-07-01</approvedDate>"
+                                 "<citableAs>Chapter 999 of the 78th Congress</citableAs>", "", SEC.replace("/99/1/", "/78/9/")),
+        "COMPS-7.xml": comp("7", "<dc:title>Seven</dc:title>", pre, SEC.replace("/99/1/", "/93/406/"))})
+    assert files_for(ix.db, rp, "act:1944-07-01:373") == ["comp5"]        # no chapter stated: matched; 999: not
+    assert files_for(ix.db, rp, "pl:93-406") == ["comp7"]                 # citableAs only in the preface
