@@ -128,3 +128,21 @@ comparison, not guessed from the text, so a lone number added or dropped ("withi
 difference. Re-measured on the three dev 2 laws with CLEAN predicted changes OLRC had not yet executed (113-146,
 113-188, 116-283; `--set history_test --law ...`): all 4,339 sections give the same outcome as before, with 59
 confirmed later and 0 graded. Dev 2 stays at 18 of 1,392. Tuning and dev have no such cases.
+
+## Round 3 (31819b2)
+
+Fixed: 38 U.S.C. 3683, 49 U.S.C. 22406 (now editorial), 21 U.S.C. 822 (now a match), 10 U.S.C. 9084 (now ungradable: two sections share the number at R_after). Proposed as hand labels in #16 (tier 3, for Espen), each checked against the enrolled text:
+
+| Law | Section | What OLRC prints | The law's text |
+| --- | --- | --- | --- |
+| 116-283 | 14 U.S.C. 561 | "to carry out this subsection.T" | § 8111(a): "to carry out this subsection."; OLRC's 117-81 drops the stray letter |
+| 116-283 | 10 U.S.C. 146 | keeps the single marks of the inner quotation ‘Office’ | § 905(a)(1): an inner quotation in the law's quoted text, which OLRC usually sets in double marks (the reviewer flagged it for Espen's judgement under literal marks) |
+| 119-21 | 7 U.S.C. 2012 | "In generalThe term": heading and text run together in the heading, no ".—" | § 10101(a): "(1) In general.—The term ..." |
+
+Dev 2 at 31819b2: 14 of 1,391 (1.01%) without #16's labels, 11 (0.79%) with them. The 11 remaining:
+
+- 113-79 16 U.S.C. 2003 (OLRC editorial work not yet checkable: "and tribal" in a heading)
+- 114-322 33 U.S.C. 1383 and 2908 (OLRC dropped "of this section"; to confirm with M8a's Act text)
+- 114-328 54 U.S.C. 308704 (paragraph (a)(2) gone at R_after; nothing in the law strikes it)
+- 114-81 16 U.S.C. 1826b, 114-95 20 U.S.C. 6332, 117-58 23 U.S.C. 164 and 42 U.S.C. 6325, 117-169 42 U.S.C. 1395w–116 and 1395w–132 (open)
+- 117-151 11 U.S.C. 101 (R_after drops subclause (V), struck by Pub. L. 116-136 § 1113 with a later effective date and executed in the window: another law's change, not yet detected as such)

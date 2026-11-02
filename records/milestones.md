@@ -970,3 +970,20 @@ Changes, each with a test: a later release point confirms a predicted change in 
 All of #13's labels still apply at 81cf65f (their hashes match this run). Dev's 9: 10 U.S.C. 483, 2380c and 2583 (another law's delayed amendments in the window), 16 U.S.C. 823a, 10 U.S.C. 1407a, 49 U.S.C. 46102 and 46107, 15 U.S.C. 77ppp and 34 U.S.C. 21711. Dev 2's 18 are listed in `records/m6e_dev2_false_clean.md`.
 
 **After the review of #14 (d0cb4b3):** a later release confirms a predicted change only up to footnote markers OLRC added or removed (never one number for another) and the case of words on its heading lines. Dev 2 re-measured at d0cb4b3: unchanged, 18 of 1,392 (1.29%) with the labels, which the gate now applies itself; 59 CLEAN predicted changes confirmed by a later release, 0 graded. Tuning and dev have no CLEAN predicted changes in "not yet executed", so their figures cannot move.
+
+### Dev 2, round 3 (2026-11-02, claude/m6e-dev2-round3, code at 31819b2)
+
+Changes, each with a test:
+- a heading set in a unit's text rather than its own element compares as a heading (38 U.S.C. 3683);
+- a heading's closing period that the law set on a line of its own is the heading's (49 U.S.C. 22406, the round 2 fix did not cover the heading form);
+- a section number two sections share at a release point is not graded (10 U.S.C. 9084, "Another section 9084 ...");
+- "striking “(e)” and inserting “(e)(1)”" on a unit with a heading designates the text after the heading (21 U.S.C. 822).
+
+| At 31819b2 | Tuning | Dev | Dev 2 |
+| --- | --- | --- | --- |
+| CLEAN | 370 | 1,460 | 1,391 |
+| CLEAN and wrong in substance (labels on main) | 0 | **9 (0.62%)** | **14 (1.01%)** |
+| with #16's three labels (tier 3, for Espen) | 0 | 9 (0.62%) | 11 (0.79%) |
+| Round 2 (81cf65f / d0cb4b3) | 0 | 9 (0.62%) | 18 (1.29%) |
+
+The four targeted cases left the list and none joined it. Dev is unchanged. The gate's checkout was briefly on another branch while dev ran (04:26-04:27 UTC, laws 113-54 to 113-56; the running process had loaded its code at start); those three laws are being re-run separately to confirm their outcomes. Dev 2's 14 are listed in `records/m6e_dev2_false_clean.md`.
