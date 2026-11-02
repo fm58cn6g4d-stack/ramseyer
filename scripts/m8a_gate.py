@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import collections
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -32,6 +33,21 @@ from ramseyer.resolve import popular
 from ramseyer.resolve.actcode import classification_map
 from ramseyer.resolve.cites import parse_parenthetical
 from ramseyer.resolve.resolver import Resolver, classification_rows
+
+
+def law_key(text: str | None) -> tuple[int, int] | None:
+    """(Congress, law number) from a currency such as "currentThroughPublicLaw: 119–103" or "P.L. 119–118, Enacted
+    ..."; None when the currency names no public law."""
+    m = re.search(r"(\d+)\s*[–-]\s*(\d+)", text or "")
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def incorporates(currency: list[str], pl: str) -> bool:
+    """Every compilation file used is current through this law or a later one, so its text already carries the law
+    (compilations are current versions only: records/verify-first.md, M8a)."""
+    want = law_key(pl)
+    keys = [law_key(c) for c in currency]
+    return bool(keys) and want is not None and all(k is not None and k >= want for k in keys)
 
 
 def worst(statuses):
@@ -72,8 +88,22 @@ def main() -> int:
             act = run_on_act(ins, ids, acts)
             c = worst(code.get(ins.id, []))
             name, why = reading(act, c)
+            if act.status not in ("UNAVAILABLE", "CLEAN", "WARN", "ALREADY_EXECUTED") and \
+                    incorporates(act.currency, law.pl):
+                # The compilation already carries this law: the quote it strikes may be gone. The test is whether the
+                # law's new words are in the Act's section now.
+                new = " ".join((ins.replace or ins.new_text or "").replace("“", "").replace("”", "").split())
+                text = " ".join(act.text.split())
+                seen = bool(new) and new[:80] in text
+                name = "act already amended"
+                why = (f"the compilation ({'; '.join(act.currency)}) already includes Pub. L. {law.pl}; "
+                       + ("its new words are in the Act's section" if seen else
+                          "its new words are not found in the Act's section (later laws may have changed them)"
+                          if new else "the instruction inserts no words to look for"))
+                act.reason = why
             readings[name] += 1
-            reasons[name][act.reason if name == "act unavailable" else f"Act {act.status} / Code {c}"] += 1
+            reasons[name][act.reason if name in ("act unavailable", "act already amended")
+                          else f"Act {act.status} / Code {c}"] += 1
             out_rows.append({"pl": law.pl, "instruction": ins.id, "act": t.act, "section": t.section,
                              "act_status": act.status, "code_status": c, "reading": name, "reason": why,
                              "files": act.files, "currency": act.currency, "identifier": act.identifier})

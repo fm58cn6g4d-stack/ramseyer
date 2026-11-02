@@ -36,6 +36,7 @@ class ActRun:
     currency: list[str]            # each file's currency, as stored
     identifier: str | None = None  # the compilation section, e.g. /us/sComp/95/617/s5
     result: Result | None = None
+    text: str = ""                 # the compilation section's text before the instruction, when one was run
 
 
 def _sections(ix: Index, titles: list[str], section: str) -> list[Node]:
@@ -73,7 +74,7 @@ def run_on_act(ins: Instruction, identities: list[str], ix: Index) -> ActRun:
     work = Working(ix.section_xml(node), node.identifier, positive_law=False)
     res = Engine(work).run(ins, list(t.path))
     return ActRun(ins.id, res.status, res.detail, files, [currency.get(f, "unknown") for f in files],
-                  node.identifier, res)
+                  node.identifier, res, node.text)
 
 
 def reading(act: ActRun, code_status: str | None) -> tuple[str, str]:
