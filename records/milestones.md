@@ -1004,4 +1004,4 @@ Espen approved measuring the sealed set (281 laws, never run or inspected before
 
 The sealed set's cases were not inspected. One line of the run's progress log was seen while the run was being checked: a section identifier and the first letter of its status, nothing of its text or diff.
 
-A second dev run at the same code is checking reproducibility (the reviewer's request on #17, after the worktree's brief branch switch during round 3's dev run). Until it reports, the sealed figure stands as measured but provisional.
+**Reproducibility:** a second dev run at the same code (`--rerun 1`, the reviewer's request on #17 after the worktree's brief branch switch during round 3's dev run), compared section by section with `scripts/compare_runs.py`: 8,215 sections, 0 differences in outcome, status, predicted text, R_before, R_after or editorial kind. The sealed figure is final for this code.
