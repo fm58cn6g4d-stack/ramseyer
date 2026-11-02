@@ -111,5 +111,30 @@ def statute(tool: str = typer.Argument(..., help="resolve_cite, get_section, cit
     typer.echo(json.dumps(call(StatuteService(), tool, **kwargs), indent=2, ensure_ascii=False))
 
 
+
+
+@app.command()
+def analyze(draft: str = typer.Argument(..., help="Path to a .txt or .md draft, or published bill XML (.xml)."),
+            out: str = typer.Option("report", help="Report folder to write.")) -> None:
+    """Analyze a draft and write its report folder: the comparative print (HTML and Word) and the instruction list.
+    Drafts stay local; nothing is sent anywhere."""
+    from pathlib import Path
+
+    from ramseyer.analyze import analyze as run, write_report
+    path = Path(draft)
+    a = run(path.name, path.read_bytes())
+    for f in write_report(a, Path(out)):
+        typer.echo(f"  {f}")
+    typer.echo(", ".join(f"{v} {k}" for k, v in sorted(a.counts.items())) + f" (release point {a.release_point})")
+
+
+@app.command("app")
+def app_cmd(port: int = typer.Option(0, help="Port on 127.0.0.1 (0: any free port)."),
+            no_browser: bool = typer.Option(False, help="Do not open the browser.")) -> None:
+    """Start the local app: a page in your web browser that runs on this computer only."""
+    from ramseyer.app import serve
+    serve(port, open_browser=not no_browser)
+
+
 if __name__ == "__main__":
     app()

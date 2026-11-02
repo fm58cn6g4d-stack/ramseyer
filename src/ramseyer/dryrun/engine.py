@@ -15,6 +15,7 @@ from typing import Callable, Literal
 from lxml import etree
 
 from ramseyer.data.indexer import NON_OPERATIVE, SUB, USLM, local, text_of
+from ramseyer.dryrun.ids import tag
 from ramseyer.parse.grammar import SENTENCE_ORD
 from ramseyer.parse.xmltext import TABLE_OMITTED
 from ramseyer.parse.ir import Instruction
@@ -221,6 +222,9 @@ class Working:
         self.title = identifier.split("/")[3][1:]
         self.positive_law = positive_law
         self.el = etree.fromstring(xml.encode("utf-8")) if xml is not None else None
+        if self.el is not None:
+            # Stable element ids, so the comparative print can line the original up with the edited section (M8).
+            tag(self.el)
         self.original = copy.deepcopy(self.el) if self.el is not None else None
         self.removed = False
         self.dash = self._heading_style()
