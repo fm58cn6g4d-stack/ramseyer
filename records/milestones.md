@@ -986,4 +986,4 @@ Changes, each with a test:
 | with #16's three labels (tier 3, for Espen) | 0 | 9 (0.62%) | 11 (0.79%) |
 | Round 2 (81cf65f / d0cb4b3) | 0 | 9 (0.62%) | 18 (1.29%) |
 
-The four targeted cases left the list and none joined it. Dev is unchanged. The gate's checkout was briefly on another branch while dev ran (04:26-04:27 UTC, laws 113-54 to 113-56; the running process had loaded its code at start); those three laws are being re-run separately to confirm their outcomes. Dev 2's 14 are listed in `records/m6e_dev2_false_clean.md`.
+The four targeted cases left the list and none joined it. Dev is unchanged. The gate's checkout was briefly on another branch while dev ran (04:26-04:27 UTC, laws 113-54 to 113-56; the running process had loaded its code at start); those three laws, re-run separately, give the same outcomes and text hashes on all 24 sections. Dev 2's 14 are listed in `records/m6e_dev2_false_clean.md`.
