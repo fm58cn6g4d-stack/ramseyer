@@ -57,3 +57,18 @@ def test_a_unit_removed_or_added_whole_is_marked_whole():
     states = [(u.kind, u.state) for u in red.items if hasattr(u, "items")]
     assert ("subsection", "del") in states and ("subsection", "ins") in states
     assert not changed(redline(work.original, work.original))
+
+
+def test_the_print_marks_omitted_text_in_brackets_and_new_matter_in_italics():
+    from types import SimpleNamespace
+    from ramseyer.comparative.html import report
+    work, _ = run("Section 1(a) of title 99, United States Code, is amended by striking “annually” and inserting "
+                  "“quarterly”.")
+    page = report(SimpleNamespace(working={"/us/usc/t99/s1": work}, traces=[]), title="Placeholder Act",
+                  release_point="1-1", input_hash="0" * 64, generated="2026-11-02", version="0")
+    assert '<del><b class="br">[</b>annually<b class="br">]</b></del><ins>quarterly</ins>' in page
+    assert "99 U.S.C. 1" in page and "black brackets" in page
+    working = report(SimpleNamespace(working={"/us/usc/t99/s1": work}, traces=[]), title="t", release_point="1-1",
+                     input_hash="0" * 64, generated="g", version="0", style="working")
+    assert "<del>annually</del><ins>quarterly</ins>" in working
+    assert "* * *" in page                       # subsections (b) and (c) are untouched and elided past the context
