@@ -94,6 +94,17 @@ def make_server(port: int = 0, root: Path | None = None) -> ThreadingHTTPServer:
         def log_message(self, *args):            # quiet: drafts' names are not logged
             pass
 
+        def _local(self) -> bool:
+            """Only requests addressed to this server by its own name. A page elsewhere that rebinds its domain to
+            127.0.0.1 (DNS rebinding) still sends its own Host, and is refused (review of #21)."""
+            port = self.server.server_address[1]
+            return self.headers.get("Host", "") in (f"127.0.0.1:{port}", f"localhost:{port}")
+
+        def _same_origin(self) -> bool:
+            """A draft may be posted only from the app's own page."""
+            port = self.server.server_address[1]
+            return self.headers.get("Origin", "") in (f"http://127.0.0.1:{port}", f"http://localhost:{port}")
+
         def _send(self, code: int, body: bytes, kind: str, extra: dict | None = None):
             self.send_response(code)
             self.send_header("Content-Type", kind)
@@ -105,6 +116,8 @@ def make_server(port: int = 0, root: Path | None = None) -> ThreadingHTTPServer:
             self.wfile.write(body)
 
         def do_GET(self):
+            if not self._local():
+                return self._send(403, b"not allowed", "text/plain")
             if self.path in ("/", "/index.html"):
                 page = PAGE.replace("__TOKEN__", token).replace("__RP__", html.escape(rp))
                 return self._send(200, page.encode(), "text/html; charset=utf-8")
@@ -119,7 +132,8 @@ def make_server(port: int = 0, root: Path | None = None) -> ThreadingHTTPServer:
             self._send(404, b"not found", "text/plain")
 
         def do_POST(self):
-            if not self.path.startswith("/analyze") or self.headers.get("X-Token") != token:
+            if not self._local() or not self._same_origin() or not self.path.startswith("/analyze") or \
+                    self.headers.get("X-Token") != token:
                 return self._send(403, json.dumps({"error": "not allowed"}).encode(), "application/json")
             from urllib.parse import parse_qs, urlparse
             name = parse_qs(urlparse(self.path).query).get("name", ["draft.txt"])[0]

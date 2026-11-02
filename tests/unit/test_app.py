@@ -24,11 +24,13 @@ def test_the_app_analyzes_a_draft_and_serves_its_report(tmp_path, monkeypatch):
         page = urllib.request.urlopen(base + "/").read().decode()
         token = page.split('const TOKEN = "')[1].split('"')[0]
         try:
-            urllib.request.urlopen(urllib.request.Request(base + "/analyze?name=d.txt", data=b"x", method="POST"))
+            urllib.request.urlopen(urllib.request.Request(base + "/analyze?name=d.txt", data=b"x", method="POST",
+                                                          headers={"Origin": base}))
             raise AssertionError("posted without the page's token")
         except urllib.error.HTTPError as e:
             assert e.code == 403
-        req = urllib.request.Request(base + "/analyze?name=d.txt", data=b"x", method="POST", headers={"X-Token": token})
+        req = urllib.request.Request(base + "/analyze?name=d.txt", data=b"x", method="POST",
+                                     headers={"X-Token": token, "Origin": base})
         body = json.loads(urllib.request.urlopen(req).read())
         assert body["counts"] == {"CLEAN": 1}
         assert urllib.request.urlopen(f"{base}/report/{body['id']}/comparative.html").read() == b"<p>print</p>"
@@ -45,3 +47,34 @@ def test_an_unsupported_draft_is_refused_with_a_reason():
     import pytest
     with pytest.raises(ValueError, match="Word drafts come with M7"):
         analyze_mod.draft_text("bill.docx", b"PK")
+
+
+def test_a_rebound_domain_or_another_origin_is_refused(tmp_path, monkeypatch):
+    # Review of #21: a page that rebinds its own domain to 127.0.0.1 (DNS rebinding) sends its own Host header; it
+    # must not get the page (and its token), and a draft may be posted only from the app's own origin.
+    import http.client
+    monkeypatch.setattr(analyze_mod, "resolver", lambda: SimpleNamespace(ix=SimpleNamespace(release_point="1-1")))
+    server = make_server(0, tmp_path)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    port = server.server_address[1]
+    try:
+        def call(method, path, headers, body=None):
+            c = http.client.HTTPConnection("127.0.0.1", port)
+            c.putrequest(method, path, skip_host=True)
+            for k, v in headers.items():
+                c.putheader(k, v)
+            c.putheader("Content-Length", str(len(body or b"")))
+            c.endheaders(body)
+            r = c.getresponse()
+            return r.status, r.read().decode(errors="replace")
+        status, body = call("GET", "/", {"Host": f"attacker.example:{port}"})
+        assert status == 403 and "TOKEN" not in body
+        status, body = call("GET", "/", {"Host": f"localhost:{port}"})
+        token = body.split('const TOKEN = "')[1].split('"')[0]
+        status, _ = call("POST", "/analyze?name=d.txt", {"Host": f"127.0.0.1:{port}", "X-Token": token,
+                                                         "Origin": "http://attacker.example"}, b"x")
+        assert status == 403
+        status, _ = call("POST", "/analyze?name=d.txt", {"Host": f"127.0.0.1:{port}", "X-Token": token}, b"x")
+        assert status == 403                                    # no Origin at all
+    finally:
+        server.shutdown()

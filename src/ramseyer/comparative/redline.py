@@ -13,24 +13,15 @@ stripping the marks gives back each tree's text exactly (`strip`).
 from __future__ import annotations
 
 import difflib
-import itertools
 import re
 from dataclasses import dataclass, field
 
 from ramseyer.data.indexer import NON_OPERATIVE, local, text_of
 
-ID = "{urn:ramseyer}id"
+from ramseyer.dryrun.ids import ID, tag  # noqa: F401  (tag: re-exported for callers and tests)
 # Elements whose whole text is shown as one run of words; everything else is a container whose children are walked.
 TEXT_BLOCKS = {"num", "heading", "chapeau", "content", "continuation", "p", "quotedContent", "subheading"}
 TOKEN = re.compile(r"\s+|\w+|[^\w\s]")
-
-
-def tag(el) -> None:
-    """Give every element of `el` an id, once (Working tags the section before the engine runs)."""
-    counter = itertools.count(1)
-    for e in el.iter():
-        if isinstance(e.tag, str) and e.get(ID) is None:
-            e.set(ID, str(next(counter)))
 
 
 @dataclass
