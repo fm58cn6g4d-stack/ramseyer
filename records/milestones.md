@@ -987,3 +987,21 @@ Changes, each with a test:
 | Round 2 (81cf65f / d0cb4b3) | 0 | 9 (0.62%) | 18 (1.29%) |
 
 The four targeted cases left the list and none joined it. Dev is unchanged. The gate's checkout was briefly on another branch while dev ran (04:26-04:27 UTC, laws 113-54 to 113-56; the running process had loaded its code at start); those three laws, re-run separately, give the same outcomes and text hashes on all 24 sections. Dev 2's 14 are listed in `records/m6e_dev2_false_clean.md`.
+
+### Sealed set, measured once (2026-11-02, code at 31819b2)
+
+Espen approved measuring the sealed set (281 laws, never run or inspected before) after dev 2's round 3. Run with `scripts/m6_gate.py --set history_sealed` at the code of #17. Only the headline figures were read.
+
+| | Tuning | Dev | Dev 2 | **Sealed** |
+| --- | --- | --- | --- | --- |
+| CLEAN (incl. off target) | 370 | 1,463 | 1,393 | 1,233 |
+| CLEAN and wrong in substance | 0 | 10 (0.68%) | 14 (1.01%) | **27 (2.19%)** |
+| 95% interval | | 0.37%–1.25% | 0.60%–1.68% | **1.51%–3.17%** |
+| Hand labels applied | 4 | 13 | 9 | 0 |
+| Wrong in substance without hand labels | 4 | 23 (1.57%) | 23 (1.65%) | 27 (2.19%) |
+
+**Gate: FAIL** (false-clean rate under 1%). The sealed rate is about twice dev 2's and three times dev's. Part of the gap is that hand labels exist only for inspected sets. OLRC's own slips, which the labels excuse, count as wrong on the sealed set. On the same footing, with no labels, the sets read 1.57%, 1.65% and 2.19%, and their intervals overlap. The rest is the expected overfit: dev 2 itself stood at 3.54% when it was first opened (round 1) and was fixed down to 1.01% by inspecting its cases. The sealed figure is the honest estimate of the false-clean rate on laws ramseyer has not been tuned on.
+
+The sealed set's cases were not inspected. One line of the run's progress log was seen while the run was being checked: a section identifier and the first letter of its status, nothing of its text or diff.
+
+A second dev run at the same code is checking reproducibility (the reviewer's request on #17, after the worktree's brief branch switch during round 3's dev run). Until it reports, the sealed figure stands as measured but provisional.
