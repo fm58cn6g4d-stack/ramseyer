@@ -100,17 +100,40 @@ def _merge(before_el, after_el):
             out += [(b_kids[i], a_kids[j]) for i, j in zip(range(i1, i2), range(j1, j2))]
             seen.update(b_ids[i1:i2])
             continue
-        # Removed children first, then added ones; a child that moved within its parent keeps its id and is paired
-        # where it now stands.
-        out += [(b_kids[i], None) for i in range(i1, i2) if b_ids[i] not in shared]
+        # A unit the bill replaces whole ("amended to read as follows") is new XML, but committee reports compare it
+        # with the unit it replaces word by word: a removed and an added child of the same kind and designation are
+        # paired, and so are a lone removed and a lone added text block of the same kind (part 2, H.R. 6498).
+        removed = [b_kids[i] for i in range(i1, i2) if b_ids[i] not in shared]
+        added = [a_kids[j] for j in range(j1, j2) if a_ids[j] not in shared or a_ids[j] in seen]
+        partner: dict[int, object] = {}
+        free = list(removed)
+        for a in added:
+            m = next((b for b in free if _designation(b) == _designation(a) and _designation(a)[1]), None)
+            if m is None and local(a) in TEXT_BLOCKS:
+                same_kind = [b for b in free if local(b) == local(a) and not _designation(b)[1]]
+                peers = [x for x in added if local(x) == local(a) and not _designation(x)[1]]
+                if len(same_kind) == 1 and len(peers) == 1:
+                    m = same_kind[0]
+            if m is not None:
+                partner[id(a)] = m
+                free.remove(m)
+        out += [(b, None) for b in free]
+        # A child that moved within its parent keeps its id and is paired where it now stands.
         for j in range(j1, j2):
-            ident = a_ids[j]
+            ident, a = a_ids[j], a_kids[j]
             if ident in shared and ident not in seen:
-                out.append((by_id_b[ident], a_kids[j]))
+                out.append((by_id_b[ident], a))
                 seen.add(ident)
             else:
-                out.append((None, a_kids[j]))
+                out.append((partner.get(id(a)), a))
     return out
+
+
+def _designation(el) -> tuple[str, str]:
+    """(kind, designation): ("subsection", "b") for a unit numbered "(b)"; no designation for a text block."""
+    num = el.find(f"{{{el.nsmap.get(None, '')}}}num") if el.nsmap.get(None) else el.find("num")
+    text = "".join(num.itertext()).strip().strip("().") if num is not None else ""
+    return local(el), text
 
 
 def _pair(before_el, after_el):

@@ -111,3 +111,14 @@ def test_a_unit_removed_whole_is_bracketed_once():
                   input_hash="0" * 64, generated="g", version="0")
     assert page.count('<b class="br">[</b>') == 1 and page.count('<b class="br">]</b>') == 1
     assert '<del><b class="br">[</b>(b)</del> <del>The board may issue rules.<b class="br">]</b></del>' in page
+
+
+def test_a_unit_replaced_whole_is_compared_word_by_word_with_the_one_it_replaces():
+    # Committee reports print "amended to read as follows" as a word-level comparison with the old unit (part 2,
+    # H.R. 6498): a removed and an added unit with the same designation are paired.
+    work, red = run("Section 1 of title 99, United States Code, is amended by striking subsection (b) and inserting "
+                    "the following:\n“(b) The board may issue binding rules.”.")
+    runs = [(r.state, r.text) for b in blocks(red) for r in b.runs if r.state != "same"]
+    assert runs == [("ins", "binding ")] or runs == [("ins", " binding")]
+    assert flat(strip(red, "before")) == flat(text_of(work.original))
+    assert flat(strip(red, "after")) == flat(text_of(work.el))
