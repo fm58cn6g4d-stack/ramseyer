@@ -1005,3 +1005,10 @@ Espen approved measuring the sealed set (281 laws, never run or inspected before
 The sealed set's cases were not inspected. One line of the run's progress log was seen while the run was being checked: a section identifier and the first letter of its status, nothing of its text or diff.
 
 **Reproducibility:** a second dev run at the same code (`--rerun 1`, the reviewer's request on #17 after the worktree's brief branch switch during round 3's dev run), compared section by section with `scripts/compare_runs.py`: 8,215 sections, 0 differences in outcome, status, predicted text, R_before, R_after or editorial kind. The sealed figure is final for this code.
+
+**After the review of #18.**
+- **Raw rate on the sealed set:** 131 of 1,232 CLEAN predictions differ from R_after in any way (10.63%). Of these, 104 are OLRC editorial work by the detector, and none carries a hand label.
+- **The two off-target counts in the sealed baseline,** `clean_off_target` 1 and `clean_off_target_wrong` 4, measured different things. The first left out the off-target sections that other laws in the window also changed (5 of the 6 CLEAN off-target predictions, which are not gradable). The second still counted those sections where the text differs.
+  - The gate's headline used the first count, plus a third count that leaves out OLRC editorial work (0). So the 2.19% is unaffected: (27 + 0) / (1,232 + 1).
+  - `scripts/m6_gate.py` now stores all of these on the same footing: `clean_off_target_wrong` (any difference), `clean_off_target_substantive` and `clean_off_target_ungradable`.
+  - The sealed baseline stays as measured; it is not re-run.
