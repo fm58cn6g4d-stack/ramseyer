@@ -129,6 +129,12 @@ def main() -> int:
             rows.append({"report": pid, "skipped": f"download: {e}"})
             continue
         omitted_key, new_key = key_from(htm, pdf)
+        if not omitted_key and not new_key:
+            # The report defers its comparative print ("will make the analysis available as soon as possible",
+            # report 231, H.R. 3838): no answer key to grade against.
+            tallies["report prints no changes (deferred or published separately)"] += 1
+            rows.append({"report": pid, "skipped": "the report's changes section marks no text"})
+            continue
         a = analyze(f"H.R. {bill.group(1)} (reported).xml", xml.path.read_bytes())
         if a.counts and set(a.counts) <= {"ALREADY_EXECUTED"}:
             tallies["already in the pinned Code (enacted since)"] += 1
