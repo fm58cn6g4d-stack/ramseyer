@@ -1,0 +1,173 @@
+"""M8: the redline of one section, built from the dry-run engine's own edits.
+
+Before the engine runs, every element of the section is tagged with a stable id (`tag`). The engine keeps the elements
+it does not remove, so after it has run the two trees line up by id:
+
+- an element in both trees is the same unit or block, wherever it now sits (a redesignated paragraph keeps its id);
+- an element only in the "before" tree was removed by the bill; one only in the "after" tree was added by it.
+
+Only inside one block that is in both trees (a heading, a chapeau, a paragraph's text) are the two texts compared word
+by word, and that block is the one an edit touched. So a change is never placed in a unit the bill did not edit, and
+stripping the marks gives back each tree's text exactly (`strip`).
+"""
+from __future__ import annotations
+
+import difflib
+import itertools
+import re
+from dataclasses import dataclass, field
+
+from ramseyer.data.indexer import NON_OPERATIVE, local, text_of
+
+ID = "{urn:ramseyer}id"
+# Elements whose whole text is shown as one run of words; everything else is a container whose children are walked.
+TEXT_BLOCKS = {"num", "heading", "chapeau", "content", "continuation", "p", "quotedContent", "subheading"}
+TOKEN = re.compile(r"\s+|\w+|[^\w\s]")
+
+
+def tag(el) -> None:
+    """Give every element of `el` an id, once (Working tags the section before the engine runs)."""
+    counter = itertools.count(1)
+    for e in el.iter():
+        if isinstance(e.tag, str) and e.get(ID) is None:
+            e.set(ID, str(next(counter)))
+
+
+@dataclass
+class Run:
+    state: str          # "same", "del" or "ins"
+    text: str
+
+
+@dataclass
+class Block:
+    kind: str           # the element's local name: "num", "heading", "content", ...
+    state: str          # "same" (runs may hold edits), "del" (removed whole) or "ins" (added whole)
+    runs: list[Run]
+
+
+@dataclass
+class Unit:
+    kind: str           # "section", "subsection", ...
+    state: str
+    items: list = field(default_factory=list)    # Block | Unit, in reading order
+
+
+def words(before: str, after: str) -> list[Run]:
+    """A word-level comparison of one block's text before and after; joining the "same" and "del" runs gives
+    `before` exactly, and the "same" and "ins" runs give `after`."""
+    a, b = TOKEN.findall(before), TOKEN.findall(after)
+    runs: list[Run] = []
+
+    def add(state, toks):
+        if not toks:
+            return
+        text = "".join(toks)
+        if runs and runs[-1].state == state:
+            runs[-1].text += text
+        else:
+            runs.append(Run(state, text))
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes():
+        if op == "equal":
+            add("same", a[i1:i2])
+        else:
+            add("del", a[i1:i2])
+            add("ins", b[j1:j2])
+    return runs
+
+
+def _children(el) -> list:
+    return [c for c in el if isinstance(c.tag, str) and local(c) not in NON_OPERATIVE]
+
+
+def _whole(el, state: str):
+    """An element removed or added whole."""
+    name = local(el)
+    if name in TEXT_BLOCKS:
+        return Block(name, state, [Run(state, text_of(el, frozenset(NON_OPERATIVE)).strip())])
+    unit = Unit(name, state)
+    if (el.text or "").strip():
+        unit.items.append(Block("text", state, [Run(state, el.text.strip())]))
+    unit.items += [_whole(c, state) for c in _children(el)]
+    return unit
+
+
+def _merge(before_el, after_el):
+    """The children of an element in both trees, in reading order, each paired with its other side (or None)."""
+    b_kids, a_kids = _children(before_el), _children(after_el)
+    b_ids = [c.get(ID) for c in b_kids]
+    a_ids = [c.get(ID) for c in a_kids]
+    shared = set(b_ids) & set(a_ids)
+    by_id_b = {c.get(ID): c for c in b_kids if c.get(ID) in shared}
+    seen: set[str] = set()
+    out = []
+    for op, i1, i2, j1, j2 in difflib.SequenceMatcher(None, b_ids, a_ids, autojunk=False).get_opcodes():
+        if op == "equal":
+            out += [(b_kids[i], a_kids[j]) for i, j in zip(range(i1, i2), range(j1, j2))]
+            seen.update(b_ids[i1:i2])
+            continue
+        # Removed children first, then added ones; a child that moved within its parent keeps its id and is paired
+        # where it now stands.
+        out += [(b_kids[i], None) for i in range(i1, i2) if b_ids[i] not in shared]
+        for j in range(j1, j2):
+            ident = a_ids[j]
+            if ident in shared and ident not in seen:
+                out.append((by_id_b[ident], a_kids[j]))
+                seen.add(ident)
+            else:
+                out.append((None, a_kids[j]))
+    return out
+
+
+def _pair(before_el, after_el):
+    name = local(after_el)
+    if name in TEXT_BLOCKS:
+        old = text_of(before_el, frozenset(NON_OPERATIVE)).strip()
+        new = text_of(after_el, frozenset(NON_OPERATIVE)).strip()
+        return Block(name, "same", words(old, new))
+    unit = Unit(name, "same")
+    if (before_el.text or "").strip() or (after_el.text or "").strip():
+        unit.items.append(Block("text", "same", words((before_el.text or "").strip(), (after_el.text or "").strip())))
+    for b, a in _merge(before_el, after_el):
+        if b is None:
+            unit.items.append(_whole(a, "ins"))
+        elif a is None:
+            unit.items.append(_whole(b, "del"))
+        else:
+            unit.items.append(_pair(b, a))
+    return unit
+
+
+def redline(before_el, after_el):
+    """The section's redline: removed whole (after_el None), added whole (before_el None), or edited."""
+    if before_el is None and after_el is None:
+        return None
+    if before_el is None:
+        return _whole(after_el, "ins")
+    if after_el is None:
+        return _whole(before_el, "del")
+    return _pair(before_el, after_el)
+
+
+def blocks(node) -> list[Block]:
+    """The redline's text blocks in reading order."""
+    if isinstance(node, Block):
+        return [node]
+    return [b for item in node.items for b in blocks(item)]
+
+
+def strip(node, side: str) -> str:
+    """The text of one side ("before" or "after") with the marks taken away: block texts, one per line."""
+    drop = "ins" if side == "before" else "del"
+    lines = []
+    for b in blocks(node):
+        if b.state == drop:
+            continue
+        text = "".join(r.text for r in b.runs if r.state != drop)
+        if text.strip():
+            lines.append(text.strip())
+    return "\n".join(lines)
+
+
+def changed(node) -> bool:
+    return any(b.state != "same" or any(r.state != "same" for r in b.runs) for b in blocks(node))

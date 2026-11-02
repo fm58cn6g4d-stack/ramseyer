@@ -1,0 +1,59 @@
+"""M8: the redline is built from the engine's edits; stripping its marks gives back each side's text
+(synthetic section: structure only, placeholder text)."""
+import re
+
+from ramseyer.comparative.redline import blocks, changed, redline, strip
+from ramseyer.data.indexer import text_of
+from ramseyer.dryrun.engine import Engine, Working
+from ramseyer.parse import parse_text
+
+NS = "http://xml.house.gov/schemas/uslm/1.0"
+XML = f"""<section xmlns="{NS}" identifier="/us/usc/t99/s1"><num value="1">§ 1.</num><heading> Placeholder</heading>
+<subsection identifier="/us/usc/t99/s1/a"><num value="a">(a)</num><heading> Alpha Rule.—</heading>
+<content>The determiner shall review each term. Reviews shall be made at least annually.</content></subsection>
+<subsection identifier="/us/usc/t99/s1/b"><num value="b">(b)</num><content>The board may issue rules.</content>
+</subsection>
+<subsection identifier="/us/usc/t99/s1/c"><num value="c">(c)</num><content>The board shall report.</content>
+</subsection></section>"""
+
+
+def run(draft: str):
+    work = Working(XML, "/us/usc/t99/s1", positive_law=True)
+    eng = Engine(work)
+    for i in parse_text("SEC. 2. AMENDMENTS.\n" + draft + "\n").instructions:
+        eng.run(i, list(i.target.path))
+    return work, redline(work.original, work.el)
+
+
+def flat(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def test_stripping_the_marks_gives_back_both_sides():
+    work, red = run("Section 1 of title 99, United States Code, is amended—\n"
+                    "(1) in subsection (a), by striking “annually” and inserting “quarterly”;\n"
+                    "(2) by striking subsection (b); and\n"
+                    "(3) by adding at the end the following:\n"
+                    "“(d) Delta rule.—The board shall publish.”.")
+    assert flat(strip(red, "before")) == flat(text_of(work.original))
+    assert flat(strip(red, "after")) == flat(text_of(work.el))
+    assert changed(red)
+
+
+def test_an_edit_is_shown_in_the_block_it_touched():
+    work, red = run("Section 1(a) of title 99, United States Code, is amended by striking “annually” and inserting "
+                    "“quarterly”.")
+    edited = [b for b in blocks(red) if any(r.state != "same" for r in b.runs)]
+    assert len(edited) == 1 and edited[0].kind == "content"
+    assert [(r.state, r.text) for r in edited[0].runs if r.state != "same"] == [("del", "annually"),
+                                                                             ("ins", "quarterly")]
+
+
+def test_a_unit_removed_or_added_whole_is_marked_whole():
+    work, red = run("Section 1 of title 99, United States Code, is amended—\n"
+                    "(1) by striking subsection (b); and\n"
+                    "(2) by adding at the end the following:\n"
+                    "“(d) Delta rule.—The board shall publish.”.")
+    states = [(u.kind, u.state) for u in red.items if hasattr(u, "items")]
+    assert ("subsection", "del") in states and ("subsection", "ins") in states
+    assert not changed(redline(work.original, work.original))
