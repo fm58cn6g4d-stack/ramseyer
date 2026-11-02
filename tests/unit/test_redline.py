@@ -72,3 +72,18 @@ def test_the_print_marks_omitted_text_in_brackets_and_new_matter_in_italics():
                      input_hash="0" * 64, generated="g", version="0", style="working")
     assert "<del>annually</del><ins>quarterly</ins>" in working
     assert "* * *" in page                       # subsections (b) and (c) are untouched and elided past the context
+
+
+def test_the_word_print_carries_real_brackets_and_italics():
+    import io
+    from types import SimpleNamespace
+    from docx import Document
+    from ramseyer.comparative.word import document
+    work, _ = run("Section 1(a) of title 99, United States Code, is amended by striking “annually” and inserting "
+                  "“quarterly”.")
+    data = document(SimpleNamespace(working={"/us/usc/t99/s1": work}, traces=[]), title="Placeholder Act",
+                    release_point="1-1", input_hash="0" * 64, generated="g", version="0")
+    runs = [r for p in Document(io.BytesIO(data)).paragraphs for r in p.runs]
+    assert any(r.text == "quarterly" and r.italic for r in runs)
+    i = next(i for i, r in enumerate(runs) if r.text == "annually")
+    assert runs[i - 1].text == "[" and runs[i - 1].bold and runs[i + 1].text == "]"

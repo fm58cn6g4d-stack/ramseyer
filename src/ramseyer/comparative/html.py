@@ -29,7 +29,6 @@ header h1 { font-size: 1.4rem; margin: 0 0 .25rem; } .meta { color: var(--muted)
 .summary span { margin-right: 1.25rem; } .clean { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
 section.law { border-top: 1px solid var(--line); padding-top: 1rem; margin-top: 2rem; }
 section.law h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
-.u { margin-left: 1.5rem; } .u.section { margin-left: 0; }
 .blk { margin: .2rem 0; } .stars { text-align: center; color: var(--muted); letter-spacing: .5rem; }
 .working del { text-decoration: line-through; color: var(--bad); } .working ins { text-decoration: underline; color: var(--ok); }
 .committee del { text-decoration: none; } .committee b.br { font-weight: bold; }
@@ -71,15 +70,17 @@ def _runs(block: Block, style: str) -> str:
                    for r in block.runs)
 
 
-def _render(node, context: int, style: str = "committee") -> str:
+def layout(node, context: int, depth: int = 0):
+    """The print's lines in reading order, shared by the HTML and Word renders: (depth, Block) for a block to show,
+    (depth, None) for "* * *" where units the bill does not touch are elided beyond `context` neighbours of a
+    changed one. A unit removed or added whole is shown whole; its blocks are marked one by one (Block.state)."""
     if isinstance(node, Block):
-        body = _runs(node, style)
-        return f'<div class="blk {node.kind}">{body}</div>' if body.strip() else ""
-    cls = f"u {node.kind}" + (f" {node.state}" if node.state != "same" else "")
+        yield depth, node
+        return
     if node.state != "same":
-        # A unit removed or added whole: its blocks are already marked one by one (Block.state).
-        return f'<div class="{cls}">{"".join(_render(i, context, style) for i in node.items)}</div>'
-    # Units the bill does not touch are elided to "* * *" beyond `context` neighbours of a changed one.
+        for item in node.items:
+            yield from layout(item, context, depth + (0 if isinstance(item, Block) else 1))
+        return
     kids = node.items
     keep = [False] * len(kids)
     for i, k in enumerate(kids):
@@ -88,15 +89,41 @@ def _render(node, context: int, style: str = "committee") -> str:
         if changed(k):
             for j in range(max(0, i - context), min(len(kids), i + context + 1)):
                 keep[j] = True
-    parts, gap = [], False
+    gap = False
     for k, show in zip(kids, keep):
         if show:
-            parts.append(_render(k, context, style))
+            yield from layout(k, context, depth + (0 if isinstance(k, Block) else 1))
             gap = False
         elif not gap:
-            parts.append('<div class="stars">* * *</div>')
+            yield depth + 1, None
             gap = True
-    return f'<div class="{cls}">{"".join(parts)}</div>'
+
+
+def lines(node, context: int) -> list[tuple[int, list[Block] | None]]:
+    """`layout` gathered into printed lines: a unit's number, heading and the text that follows them on one line,
+    "(a) Heading.—Text", as the Code and committee reports set them; None for "* * *"."""
+    out: list[tuple[int, list[Block] | None]] = []
+    for depth, b in layout(node, context):
+        if b is None:
+            out.append((depth, None))
+        elif out and out[-1][1] is not None and out[-1][0] == depth and b.kind in ("heading", "content", "chapeau") \
+                and out[-1][1][-1].kind in ("num", "heading") and b.state == out[-1][1][-1].state:
+            out[-1][1].append(b)
+        else:
+            out.append((depth, [b]))
+    return out
+
+
+def _render(node, context: int, style: str = "committee") -> str:
+    parts = []
+    for depth, bs in lines(node, context):
+        if bs is None:
+            parts.append('<div class="stars">* * *</div>')
+            continue
+        body = " ".join(x for x in (_runs(b, style) for b in bs) if x.strip())
+        if body.strip():
+            parts.append(f'<div class="blk" style="margin-left:{1.5 * depth:.1f}rem">{body}</div>')
+    return "".join(parts)
 
 
 def views(run) -> list[SectionView]:
