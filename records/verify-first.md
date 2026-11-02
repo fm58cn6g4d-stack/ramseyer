@@ -127,3 +127,12 @@ Each item flagged "verify first" in `docs/`, checked against the live source bef
 | `currentThroughPublicLaw`, as loaded | Read from the file's meta in 2,624; inside the preface's "As Amended Through" note (the same tag, outside meta) in 30, and as plain text of that note in 4 (34 "edition note" in all); "[This law has not been amended]" in 15; none in 49 ("unknown"). |
 | Repeated identifiers | 804 section identifiers occur in more than one file (for example the Social Security Act's file 88888888 beside per-title files). 742 of them carry identical text; 62 differ. A lookup that finds an identifier in several files compares their texts: identical, either is used and both files are named; different, both are reported with their currency, never one picked. Within single files, 1,585 identifiers repeat (malformed ones such as `/us/sComp//tIII/...`); reported as load issues. |
 | Load | `ramseyer.data.comps.load_compilations`: 2,722 files, 82,519 sections, about 4½ minutes, into `var/comps/comps.sqlite` under label "comps". |
+
+## M8: comparative print conventions and the committee-report answer key (checked 2026-11-02)
+
+| Item | Finding |
+| --- | --- |
+| Committee report convention (House Rule XIII, clause 3(e)) | Confirmed on a current report: H. Rept. 119-46 (National Taxpayer Advocate Enhancement Act of 2025), section "Changes in Existing Law Made by the Bill, as Reported": "existing law proposed to be omitted is enclosed in black brackets, new matter is printed in italics, and existing law in which no change is proposed is shown in roman", with "*  *  *" for omitted unchanged text and the enclosing title, chapter and subchapter headings above each section. The plan's committee style stands. |
+| Rules Committee comparative prints | Different convention: the Rules Committee's own comparative print (rules package, 118th Congress) shows omitted text stricken and new matter in underlined italics, close to the plan's "working redline". |
+| Answer-key formats on GovInfo (CRPT) | Each report is HTML/text and PDF; `xml/` and `uslm/` paths redirect (no XML). The text keeps the black brackets, so struck text can be read from it, but loses the italics, so new matter can be read only from the PDF's italic fonts. Grading new matter needs a PDF reader: an optional dependency for the answer key only (M8-3), not for the print. |
+| DOCX | python-docx is already a declared dependency. |
