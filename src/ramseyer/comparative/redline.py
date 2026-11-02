@@ -88,7 +88,10 @@ def _whole(el, state: str):
     unit = Unit(name, state)
     if (el.text or "").strip():
         unit.items.append(Block("text", state, [Run(state, el.text.strip())]))
-    unit.items += [_whole(c, state) for c in _children(el)]
+    for c in _children(el):
+        unit.items.append(_whole(c, state))
+        if (c.tail or "").strip():          # text set after a child unit, inside this one
+            unit.items.append(Block("text", state, [Run(state, c.tail.strip())]))
     return unit
 
 
@@ -135,6 +138,10 @@ def _pair(before_el, after_el):
             unit.items.append(_whole(b, "del"))
         else:
             unit.items.append(_pair(b, a))
+        # Text set after a child, inside this unit (an XML tail): the engine may add a sentence there.
+        old, new = ((b.tail or "").strip() if b is not None else ""), ((a.tail or "").strip() if a is not None else "")
+        if old or new:
+            unit.items.append(Block("text", "same", words(old, new)))
     return unit
 
 

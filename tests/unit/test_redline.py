@@ -87,3 +87,17 @@ def test_the_word_print_carries_real_brackets_and_italics():
     assert any(r.text == "quarterly" and r.italic for r in runs)
     i = next(i for i, r in enumerate(runs) if r.text == "annually")
     assert runs[i - 1].text == "[" and runs[i - 1].bold and runs[i + 1].text == "]"
+
+
+def test_text_set_after_a_child_unit_is_part_of_the_redline():
+    # 42 U.S.C. 1395cc-7 (Pub. L. 119-75): a sentence added after the last paragraph, inside the subsection.
+    import copy
+    from lxml import etree
+    from ramseyer.comparative.redline import tag
+    before = etree.fromstring(f'<subsection xmlns="{NS}"><num>(a)</num><paragraph><num>(1)</num><content>Alpha.'
+                              f'</content></paragraph></subsection>')
+    tag(before)
+    after = copy.deepcopy(before)
+    after.find(f"{{{NS}}}paragraph").tail = "The board may act."
+    red = redline(before, after)
+    assert flat(strip(red, "after")).endswith("The board may act.") and "board" not in strip(red, "before")
