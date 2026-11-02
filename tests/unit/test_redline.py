@@ -101,3 +101,13 @@ def test_text_set_after_a_child_unit_is_part_of_the_redline():
     after.find(f"{{{NS}}}paragraph").tail = "The board may act."
     red = redline(before, after)
     assert flat(strip(red, "after")).endswith("The board may act.") and "board" not in strip(red, "before")
+
+
+def test_a_unit_removed_whole_is_bracketed_once():
+    from types import SimpleNamespace
+    from ramseyer.comparative.html import report
+    work, _ = run("Section 1 of title 99, United States Code, is amended by striking subsection (b).")
+    page = report(SimpleNamespace(working={"/us/usc/t99/s1": work}, traces=[]), title="t", release_point="1-1",
+                  input_hash="0" * 64, generated="g", version="0")
+    assert page.count('<b class="br">[</b>') == 1 and page.count('<b class="br">]</b>') == 1
+    assert '<del><b class="br">[</b>(b)</del> <del>The board may issue rules.<b class="br">]</b></del>' in page

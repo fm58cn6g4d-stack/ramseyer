@@ -65,21 +65,33 @@ def _mark(state: str, inner: str, style: str) -> str:
     return f"<{state}>{inner}</{state}>"
 
 
-def _runs(block: Block, style: str) -> str:
+def _runs(block: Block, style: str, flags: str = "") -> str:
+    """A block's text with its marks. A block removed with a whole unit carries no brackets of its own: the unit's
+    first line opens "[" and its last line closes "]" (`flags`), as committee reports print a removed unit."""
+    if block.state == "del" and style == "committee":
+        text = "".join(html.escape(r.text) for r in block.runs)
+        o = '<b class="br">[</b>' if "open" in flags else ""
+        c = '<b class="br">]</b>' if "close" in flags else ""
+        return f"<del>{o}{text}{c}</del>"
     return "".join(html.escape(r.text) if r.state == "same" else _mark(r.state, html.escape(r.text), style)
                    for r in block.runs)
 
 
-def layout(node, context: int, depth: int = 0):
-    """The print's lines in reading order, shared by the HTML and Word renders: (depth, Block) for a block to show,
-    (depth, None) for "* * *" where units the bill does not touch are elided beyond `context` neighbours of a
-    changed one. A unit removed or added whole is shown whole; its blocks are marked one by one (Block.state)."""
+def layout(node, context: int, depth: int = 0, inherited: str = "same"):
+    """The print's items in reading order, shared by the HTML and Word renders: (depth, Block) for a block to show;
+    (depth, None) for "* * *" where units the bill does not touch are elided beyond `context` neighbours of a changed
+    one; (depth, "open") and (depth, "close") around a unit removed whole."""
     if isinstance(node, Block):
         yield depth, node
         return
     if node.state != "same":
+        whole = node.state == "del" and inherited != "del"
+        if whole:
+            yield depth, "open"
         for item in node.items:
-            yield from layout(item, context, depth + (0 if isinstance(item, Block) else 1))
+            yield from layout(item, context, depth + (0 if isinstance(item, Block) else 1), node.state)
+        if whole:
+            yield depth, "close"
         return
     kids = node.items
     keep = [False] * len(kids)
@@ -99,28 +111,42 @@ def layout(node, context: int, depth: int = 0):
             gap = True
 
 
-def lines(node, context: int) -> list[tuple[int, list[Block] | None]]:
+def lines(node, context: int) -> list[tuple[int, list[Block] | None, str]]:
     """`layout` gathered into printed lines: a unit's number, heading and the text that follows them on one line,
-    "(a) Heading.—Text", as the Code and committee reports set them; None for "* * *"."""
-    out: list[tuple[int, list[Block] | None]] = []
+    "(a) Heading.—Text", as the Code and committee reports set them; None for "* * *". The third item says whether
+    the line opens and/or closes a unit removed whole."""
+    out: list[list] = []
+    pending = ""
     for depth, b in layout(node, context):
-        if b is None:
-            out.append((depth, None))
-        elif out and out[-1][1] is not None and out[-1][0] == depth and b.kind in ("heading", "content", "chapeau") \
-                and out[-1][1][-1].kind in ("num", "heading") and b.state == out[-1][1][-1].state:
+        if b == "open":
+            pending = "open"
+        elif b == "close":
+            if out:
+                out[-1][2] += " close"
+        elif b is None:
+            out.append([depth, None, ""])
+        elif out and out[-1][1] is not None and out[-1][0] == depth and not pending and \
+                b.kind in ("heading", "content", "chapeau") and out[-1][1][-1].kind in ("num", "heading") and \
+                b.state == out[-1][1][-1].state:
             out[-1][1].append(b)
         else:
-            out.append((depth, [b]))
-    return out
+            out.append([depth, [b], pending])
+            pending = ""
+    return [(d, bs, f) for d, bs, f in out]
 
 
 def _render(node, context: int, style: str = "committee") -> str:
     parts = []
-    for depth, bs in lines(node, context):
+    for depth, bs, flags in lines(node, context):
         if bs is None:
             parts.append('<div class="stars">* * *</div>')
             continue
-        body = " ".join(x for x in (_runs(b, style) for b in bs) if x.strip())
+        texts = [_runs(b, style) for b in bs]
+        if style == "committee" and bs[0].state == "del":
+            texts = [_runs(b, style, ("open" if i == 0 and "open" in flags else "") +
+                           (" close" if i == len(bs) - 1 and "close" in flags else ""))
+                     for i, b in enumerate(bs)]
+        body = " ".join(t for t in texts if t.strip())
         if body.strip():
             parts.append(f'<div class="blk" style="margin-left:{1.5 * depth:.1f}rem">{body}</div>')
     return "".join(parts)

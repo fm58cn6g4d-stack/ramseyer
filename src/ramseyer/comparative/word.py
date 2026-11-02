@@ -11,7 +11,14 @@ from docx.shared import Pt
 from ramseyer.comparative.html import BROKEN, lines, views
 
 
-def _add_runs(par, block, style: str) -> None:
+def _add_runs(par, block, style: str, flags: str = "") -> None:
+    if block.state == "del" and style == "committee":
+        if "open" in flags:
+            par.add_run("[").bold = True
+        par.add_run("".join(r.text for r in block.runs))
+        if "close" in flags:
+            par.add_run("]").bold = True
+        return
     for r in block.runs:
         if r.state == "same":
             par.add_run(r.text)
@@ -50,7 +57,7 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
             doc.add_paragraph(f"{status}: {src[:300]}" + (f" — {why}" if why else ""))
         if v.tree is None:
             continue
-        for depth, bs in lines(v.tree, context):
+        for depth, bs, flags in lines(v.tree, context):
             par = doc.add_paragraph()
             par.paragraph_format.left_indent = Pt(18 * depth)
             if bs is None:
@@ -59,7 +66,8 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
             for i, b in enumerate(bs):
                 if i:
                     par.add_run(" ")
-                _add_runs(par, b, style)
+                _add_runs(par, b, style, ("open" if i == 0 and "open" in flags else "") +
+                          (" close" if i == len(bs) - 1 and "close" in flags else ""))
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()
