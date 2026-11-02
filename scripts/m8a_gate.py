@@ -22,7 +22,7 @@ from pathlib import Path
 from ramseyer import config
 from ramseyer.data.http import Fetcher
 from ramseyer.data.index import Index
-from ramseyer.dryrun.actside import reading, run_on_act
+from ramseyer.dryrun.actside import confirmation, reading, run_on_act
 from ramseyer.dryrun.engine import SEVERITY
 from ramseyer.dryrun.predict import run_bill
 from ramseyer.oracle import store
@@ -92,14 +92,9 @@ def main() -> int:
                     incorporates(act.currency, law.pl):
                 # The compilation already carries this law: the quote it strikes may be gone. The test is whether the
                 # law's new words are in the Act's section now.
-                new = " ".join((ins.replace or ins.new_text or "").replace("“", "").replace("”", "").split())
-                text = " ".join(act.text.split())
-                seen = bool(new) and new[:80] in text
                 name = "act already amended"
                 why = (f"the compilation ({'; '.join(act.currency)}) already includes Pub. L. {law.pl}; "
-                       + ("its new words are in the Act's section" if seen else
-                          "its new words are not found in the Act's section (later laws may have changed them)"
-                          if new else "the instruction inserts no words to look for"))
+                       + confirmation(ins.replace or ins.new_text, act.text))
                 act.reason = why
             readings[name] += 1
             key = why.rsplit("; ", 1)[-1] if name == "act already amended" else \

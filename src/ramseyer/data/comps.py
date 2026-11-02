@@ -34,22 +34,35 @@ COMPILATIONS = """CREATE TABLE IF NOT EXISTS compilations (
 PUBLIC_LAW = re.compile(r"^(?:Public Law|P\.L\.)\s*(\d+)[–-](\d+)")
 
 
-def files_for(db, rp: int, identity: str) -> list[str]:
-    """The compilation files (titles, "comp<fileId>") of an Act named by its identity: "pl:95-617" by a citableAs
-    "Public Law 95–617" or "P.L. 95–617"; "act:1944-07-01:373" (an Act before public law numbers, by approval date and
-    chapter) by the file's approvedDate, and its "Chapter 373 of ..." citation where the file states one. A file of
-    that date that states another chapter is not matched; one that states none is, and the caller reports several
-    such files rather than picking."""
+def _norm(name: str | None) -> str:
+    return " ".join(re.sub(r"[’']", "'", name or "").replace("–", "-").lower().split()).rstrip(".")
+
+
+def files_for(db, rp: int, identity: str, name: str | None = None) -> list[str]:
+    """The compilation files (titles, "comp<fileId>") of an Act named by its identity.
+
+    - "pl:95-617": a file citing "Public Law 95–617" or "P.L. 95–617".
+    - "act:1944-07-01:373" (an Act before public law numbers): a file approved that day that cites "Chapter 373 of
+      ...", or, when the file cites no chapter, whose title or a short title is the Act's name as drafted (`name`), so
+      another Act approved the same day is never taken for it (review of #20). Without a name, such a file is not
+      matched.
+    """
     out = []
     pl = re.fullmatch(r"pl:(\d+)-(\d+)", identity)
     act = re.fullmatch(r"act:(\d{4}-\d{2}-\d{2}):(\w+)", identity)
-    for title, cites, approved in db.execute("SELECT title, citable_as, approved FROM compilations WHERE rp=?", (rp,)):
+    want = _norm(name)
+    for title, cites, approved, label, shorts in db.execute(
+            "SELECT title, citable_as, approved, name, short_titles FROM compilations WHERE rp=?", (rp,)):
         cs = [c.strip() for c in cites.split("|") if c.strip()]
         if pl and any((m := PUBLIC_LAW.match(c)) and m.groups() == pl.groups() for c in cs):
             out.append(title)
         elif act and approved == act.group(1):
             chapters = [m.group(1) for c in cs if (m := re.match(r"^Chapter (\w+) of", c))]
-            if not chapters or act.group(2) in chapters:
+            if chapters:
+                if act.group(2) in chapters:
+                    out.append(title)
+            elif want and (_norm(label) == want or _norm(label).startswith(want + "-") or
+                           want in {_norm(x) for x in (shorts or "").split("|")}):
                 out.append(title)
     return out
 

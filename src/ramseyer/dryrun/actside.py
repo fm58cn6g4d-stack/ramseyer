@@ -53,7 +53,7 @@ def run_on_act(ins: Instruction, identities: list[str], ix: Index) -> ActRun:
     t = ins.target
     if not t.section:
         return ActRun(ins.id, "UNAVAILABLE", "the target names no section of an Act", [], [])
-    titles = [f for i in identities for f in comps.files_for(ix.db, ix.rp_id, i)]
+    titles = [f for i in identities for f in comps.files_for(ix.db, ix.rp_id, i, t.act)]
     if not identities:
         return ActRun(ins.id, "UNAVAILABLE", "the target names no Act the resolver identifies", [], [])
     if not titles:
@@ -93,3 +93,21 @@ def reading(act: ActRun, code_status: str | None) -> tuple[str, str]:
                              "the Code's form"
     return "neither", f"applies to neither (Act {act.status}, Code {code_status or 'not run'}): a drafting error or a " \
                       "stale draft"
+
+
+MIN_CONFIRM = 20     # characters of inserted text needed before finding it in the Act counts as confirmation
+
+
+def confirmation(inserted: str | None, act_text: str) -> str:
+    """For a compilation that already includes the law: are the law's new words in the Act's section? Words too short
+    to stand for this insertion ("2026", "and") are found almost anywhere, so they are reported apart and never count
+    as confirmation (review of #20)."""
+    new = " ".join((inserted or "").replace("“", "").replace("”", "").split())
+    text = " ".join(act_text.split())
+    if not new:
+        return "the instruction inserts no words to look for"
+    if len(new) < MIN_CONFIRM or len(new.split()) < 3:
+        return f"its new words are too short to confirm by search (under {MIN_CONFIRM} characters or 3 words)"
+    if new[:80] in text:
+        return "its new words are in the Act's section"
+    return "its new words are not found in the Act's section (later laws may have changed them)"

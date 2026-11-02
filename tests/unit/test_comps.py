@@ -82,5 +82,17 @@ def test_an_act_before_public_law_numbers_is_found_by_its_approval_date_and_chap
         "COMPS-6.xml": comp("6", "<dc:title>Six</dc:title><approvedDate>1944-07-01</approvedDate>"
                                  "<citableAs>Chapter 999 of the 78th Congress</citableAs>", "", SEC.replace("/99/1/", "/78/9/")),
         "COMPS-7.xml": comp("7", "<dc:title>Seven</dc:title>", pre, SEC.replace("/99/1/", "/93/406/"))})
-    assert files_for(ix.db, rp, "act:1944-07-01:373") == ["comp5"]        # no chapter stated: matched; 999: not
+    assert files_for(ix.db, rp, "act:1944-07-01:373", "Five") == ["comp5"]  # no chapter stated, name matches
+    assert files_for(ix.db, rp, "act:1944-07-01:373", "Placeholder Health Act") == []   # a same-day Act: never taken
+    assert files_for(ix.db, rp, "act:1944-07-01:373") == []                # no chapter and no name: not matched
+    assert files_for(ix.db, rp, "act:1944-07-01:999") == ["comp6"]         # the chapter decides
     assert files_for(ix.db, rp, "pl:93-406") == ["comp7"]                 # citableAs only in the preface
+
+
+def test_short_new_words_never_confirm_an_amendment():
+    from ramseyer.dryrun.actside import confirmation
+    text = "The Secretary shall act by 2026 and report on the placeholder program each year."
+    assert confirmation("2026", text).startswith("its new words are too short")
+    assert confirmation("“report on the placeholder program”", text) == "its new words are in the Act's section"
+    assert confirmation("report on the other program", text).startswith("its new words are not found")
+    assert confirmation(None, text) == "the instruction inserts no words to look for"
