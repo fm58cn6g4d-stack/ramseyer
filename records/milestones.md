@@ -1019,7 +1019,7 @@ Espen chose, after the sealed set's FAIL, to move on to M8a (2026-11-02). Verify
 
 **Built:**
 - `ramseyer.data.comps` loads HOLC's 2,722 Statute Compilations (GovInfo `COMPS.zip`) into an index under the label "comps": 82,519 sections, about 5 minutes. Each file is stored with its currency (2,624 `currentThroughPublicLaw`, 34 from the "As Amended Through" note, 15 unamended, 49 unknown, never guessed) and with its citations, approval date and short titles.
-- An Act is matched to its files by public law ("Public Law 93–406" or "P.L. 93–406", in the meta or in the preface's citation note), or, for an Act before public law numbers, by approval date and chapter.
+- An Act is matched to its files by public law ("Public Law 93–406" or "P.L. 93–406", in the meta or in the preface's citation note), or, for an Act before public law numbers, by approval date and chapter. A file of that date that cites no chapter is matched only when its title or a short title is the Act's name as drafted, so another Act approved the same day is never used (review of #20).
 - `ramseyer.dryrun.actside.run_on_act` runs an instruction on the Act's section. Where several files hold that section with different text, it reports them all and picks none.
 - `reading()` gives the cross-check reading of docs/06-dry-run.md: both, act only, code only, neither, or act unavailable, each with a reason.
 - `scripts/m8a_gate.py` runs every tuning law's instructions that name an Act against both sources.
@@ -1036,8 +1036,9 @@ Espen chose, after the sealed set's FAIL, to move on to M8a (2026-11-02). Verify
 | Code only | 0 | 0% |
 
 - **"The compilation already includes the law":** the compilations are current versions only, and they already carry the tuning laws. For these, the test is whether the law's new words are in the Act's section now.
-  - Yes for 650.
-  - Not found for 50 (later laws may have changed them).
+  - Yes for 239.
+  - Not found for 32 (later laws may have changed them).
+  - 429 insert words too short to stand for the insertion (under 20 characters or 3 words, such as a year or "and"). These are reported apart and never counted as confirmation (review of #20; before that fix, they had been counted as found).
   - 160 insert no words to look for.
   - A draft checked before enactment meets the compilation as it stands, so this reading is particular to measuring on enacted laws.
 - **"Act only"** is mostly instructions on Act text that is not in the Code (156 NOT_EXECUTED on the Code side), which M8a now reaches.
