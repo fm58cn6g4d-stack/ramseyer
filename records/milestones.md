@@ -1108,3 +1108,20 @@ Espen said go for M8 on 2026-11-02. Verify-first findings are in `records/verify
 - **The answer key's first reading missed long omitted passages,** which are bracketed at each paragraph and closed once. Reading them raised the key's omitted words from 924 to 5,008. The low omitted precision first measured (13.7%) was this reading error, not ramseyer.
 
 **M8 gate re-run after the pairing fix: PASS** (927 sections round-trip, 0 missing markers, renders, golden renders re-recorded and reproduced).
+
+### M8 part 2, measured once on a disjoint sample (2026-11-02)
+
+**Why:** the review of #22 noted that the answer-key reader and the pairing were tuned on the first sample. So the code was frozen and measured once on a disjoint sample: every 20th report from position 10, 43 of 855.
+
+**One grading rule was added after seeing the first disjoint result, and applied to both samples.** A report whose changes section marks no text is not graded. Report 231 (H.R. 3838) defers its analysis ("will make the analysis available as soon as possible"), and without the rule its 32,552 printed words counted as all wrong. The rule changes nothing in ramseyer.
+
+| Sample | Graded | Omitted recall | Omitted precision | New-matter recall | New-matter precision |
+| --- | --- | --- | --- | --- | --- |
+| Tuning (from position 0) | 19 | 87.9% | 94.7% | 74.8% | 88.5% |
+| **Disjoint (from position 10)** | **18** | **41.0%** | **94.4%** | **41.8%** | **90.7%** |
+
+**Precision holds,** at 91–95% on both samples: what the print marks, the committee reports mark.
+
+**Recall depends on how much of a bill changes text the print does not reach.** On the disjoint sample, three reports hold most of what is missed. In H.R. 976, H.R. 7688 and H.R. 2853 the bill amends mostly Act text outside the Code (NOT_EXECUTED on the Code side). For H.R. 7688, 177 of 211 instructions are NOT_EXECUTED.
+
+**The figure to quote** for laws not tuned on is the disjoint one: precision about 91–94%, recall about 41–42%. Recall should rise once the print shows Act text through M8a's compilations (plan contents 4–5).
