@@ -49,7 +49,7 @@ def key_from(htm: str, pdf_path) -> tuple[list[str], list[str]]:
     """(omitted words, new words) printed in the report's changes section."""
     import pdfplumber
     sec = section_of(re.sub(r"<[^>]+>", "", htm)) or ""
-    omitted = [w for span in re.findall(r"\[([^\[\]]{1,2000})\]", sec) for w in words(span)]
+    omitted = [w for span in re.findall(r"\[([^\[\]]{1,200000})\]", sec) for w in words(span)]
     new: list[str] = []
     with pdfplumber.open(pdf_path) as pdf:
         inside = False
