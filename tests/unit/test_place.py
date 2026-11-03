@@ -6,7 +6,7 @@ from ramseyer.analyze import place
 
 
 def _tr(iid, section, status):
-    return NS(instruction=NS(id=iid), section=section, result=None if status is None else NS(status=status))
+    return NS(instruction=NS(id=iid), section=section, result=None if status is None else NS(status=status, detail=""))
 
 
 def _row(iid, status):
@@ -42,3 +42,11 @@ def test_without_compilations_every_unrun_instruction_is_listed():
     rows = [_row("1", "NOT_EXECUTED"), _row("2", "UNPARSED")]
     assert len(place(rows, NS(traces=[]), None)) == 2
     assert all(r["placed"] == "none" for r in rows)
+
+
+def test_act_side_reason_is_kept_in_the_instruction_list():
+    rows = [_row("2", "NOT_EXECUTED")]
+    tr = _tr("2", "/us/comp/9/s3", "WARN")
+    tr.result.detail = "section 3 struck; not placed: section 9: section 9 is not in the compilation"
+    place(rows, NS(traces=[]), NS(traces=[tr], currency={}, unplaced=[]))
+    assert rows[0]["status"] == "ACT:WARN" and "not placed: section 9" in rows[0]["detail"]

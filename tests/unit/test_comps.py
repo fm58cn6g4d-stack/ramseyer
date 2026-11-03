@@ -172,3 +172,56 @@ def test_structure_regressions_from_review_of_26(tmp_path):
     last = act.traces[-1]
     assert last.instruction.id == edit.id and last.result.status == "TARGET_MISSING"
     assert structural("by redesignating title III as title II and inserting after title I the following:") is None
+
+
+def test_sections_the_bill_adds_to_an_act_are_shown_new_and_edited_later(tmp_path):
+    from ramseyer.comparative.html import views
+    from ramseyer.comparative.redline import strip
+    from ramseyer.dryrun.actside import run_bill_on_acts
+    from ramseyer.parse import parse_text
+    build(tmp_path, {"COMPS-1.xml": comp("1", "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1"
+                                              "</citableAs>", "", SEC)})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    edit = parse_text("SEC. 2. AMENDMENT.\nSection 3(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                      "striking “beta” and inserting “delta”.\n").instructions[0]
+    add = edit.model_copy(update={"id": "add", "op": "ADD_UNIT_AFTER", "find": None, "replace": None,
+                                  "new_text": "“SEC. 3. PLACEHOLDER ADDITION.\n“(a) Alpha beta gamma.”",
+                                  "target": edit.target.model_copy(update={"section": None, "path": []})})
+    again = add.model_copy(update={"id": "again"})                  # adding a section the Act now has: reported
+    act = run_bill_on_acts([add, edit, again], lambda i: ["pl:99-1"], ix)
+    ident = "/us/sComp/new/comp1/s3"
+    assert [tr.section for tr in act.traces] == [ident, ident] and act.traces[1].result.status == "CLEAN"
+    assert act.working[ident].original is None
+    assert [u.instruction_id for u in act.unplaced] == ["again"] and "already added" in act.unplaced[0].reason
+    v = {x.identifier: x for x in views(act)}[ident]
+    assert v.new and "delta" in strip(v.tree, "after")
+
+
+def test_addition_regressions_from_review_of_27(tmp_path):
+    """(1) a partly placed addition is WARN and says what was not placed; (2) a section the compilations disagree on is
+    not taken as absent; a section the bill struck may be added again."""
+    from ramseyer.dryrun.actside import run_bill_on_acts
+    from ramseyer.parse import parse_text
+    meta = "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1</citableAs>"
+    other = SEC.replace("s2", "s5").replace('value="2">SEC. 2.', 'value="5">SEC. 5.')
+    build(tmp_path, {"COMPS-1.xml": comp("1", meta, "", SEC + other),
+                     "COMPS-2.xml": comp("2", meta, "", other.replace("Alpha", "Omega"))})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    edit = parse_text("SEC. 2. AMENDMENT.\nSection 2(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                      "striking “beta” and inserting “delta”.\n").instructions[0]
+    base = edit.target.model_copy(update={"section": None, "path": []})
+
+    def add(i, *nums):
+        text = "\n".join(f"“SEC. {n}. PLACEHOLDER ADDITION.\n“(a) Alpha beta gamma." for n in nums) + "”"
+        return edit.model_copy(update={"id": i, "op": "ADD_UNIT_AFTER", "find": None, "replace": None,
+                                       "new_text": text, "target": base})
+    strike = edit.model_copy(update={"id": "strike", "op": "UNPARSED", "source_text": "by striking section 2;",
+                                     "target": base})
+    act = run_bill_on_acts([add("part", "3", "2"), add("disagree", "5"), strike, add("again", "2")],
+                           lambda i: ["pl:99-1"], ix)
+    part = next(tr for tr in act.traces if tr.instruction.id == "part")
+    assert part.result.status == "WARN" and "section 2: the Act already has it" in part.result.detail
+    disagree = next(u for u in act.unplaced if u.instruction_id == "disagree")
+    assert "cannot tell" in disagree.reason
+    again = next(tr for tr in act.traces if tr.instruction.id == "again")
+    assert again.result.status == "CLEAN" and again.section == "/us/sComp/new/comp1/s2"

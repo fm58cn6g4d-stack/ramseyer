@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 from ramseyer.data import comps
 from ramseyer.data.index import Index, Node
-from ramseyer.dryrun.engine import Engine, Result, Working
+from ramseyer.dryrun.engine import NS, Engine, Result, Working, build_units
 from ramseyer.parse.ir import Instruction
 
 # A result that edited the text, or found the edit already made, or found it with a caveat: the quote or unit was there.
@@ -167,6 +167,7 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
     traces, labels, currency, unplaced = [], {}, {}, []
     renamed: dict[tuple, dict[str, str]] = {}      # Act -> {current number: number in the compilation}
     gone: dict[tuple, set[str]] = {}                # Act -> compiled numbers redesignated away (not to be reused)
+    added: dict[tuple, dict[str, str]] = {}         # Act -> {number: identifier} of sections the bill adds
 
     def open_section(ins, where):
         node, files, cur = where
@@ -180,6 +181,70 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
             currency[ident] = cur
         return ident
 
+    def _add_sections(ins, ids, act, names, away, new_here):
+        """Sections the instruction adds to the Act ("inserting after section 117 the following: SEC. 117A. ..."),
+        each shown as a new section of that Act; later instructions naming its number edit it. None when the inserted
+        text holds no section (the instruction then goes on as any other)."""
+        units, _ = build_units(ins.new_text, False)
+        secs = [u for u in units if u.tag == NS + "section" and u.find("{*}num") is not None]
+        if not secs:
+            return None
+        files = sorted({f for i in ids for f in comps.files_for(ix.db, ix.rp_id, i, ins.target.act)})
+        if not files:
+            unplaced.append(ActRun(ins.id, "UNAVAILABLE", f"adds sections to an Act with no compilation "
+                                   f"({', '.join(ids) or 'not identified'})", [], []))
+            return True
+        row = ix.db.execute("SELECT publication FROM titles WHERE rp=? AND title=?", (ix.rp_id, files[0])).fetchone()
+        name = (row[0] if row else None) or ins.target.act or "Act"
+        done, missing = [], []
+        for sec in secs:
+            num = sec.find("{*}num").get("value") or ""
+            why = _has(ins, ids, num, names, away, new_here)
+            if why:
+                missing.append(f"section {num}: {why}")
+                continue
+            ident = f"/us/sComp/new/{files[0]}/s{num}"
+            if ident in working:                       # re-added after the bill struck its own addition
+                missing.append(f"section {num}: the bill already added a section {num}")
+                continue
+            sec.set("identifier", ident)
+            work = Working(None, ident, positive_law=False)
+            work.el, work.removed = sec, False
+            working[ident], engines[ident] = work, Engine(work)
+            labels[ident] = f"{name}, section {num}"
+            currency[ident] = ["added by the bill"]
+            new_here[num] = ident
+            names.pop(num, None)
+            away.discard(num)
+            done.append(ActTrace(ins, ident, Result(ins.id, "CLEAN", "new section added to the Act")))
+        if missing and done:
+            # Partly placed: each added section says what was not, and the instruction is not CLEAN (review of #27).
+            for tr in done:
+                tr.result.status = "WARN"
+                tr.result.detail += "; not placed: " + "; ".join(missing)
+        elif missing:
+            unplaced.append(ActRun(ins.id, "UNAVAILABLE", "; ".join(missing), [], []))
+        traces.extend(done)
+        return True
+
+    def _has(ins, ids, num, names, away, new_here) -> str | None:
+        """Why section `num` cannot be added (the Act has it now, or ramseyer cannot tell), or None when it is free.
+        Only "not in the compilation" counts as absent; compilations that disagree are not (review of #27). A section
+        the bill struck earlier is free again."""
+        if num in new_here:
+            return "the bill already added it"
+        compiled = names.get(num) or (None if num in away else num)
+        if compiled is None:
+            return None                                 # redesignated away and not taken: free
+        where = find(ins, ids, compiled)
+        if isinstance(where, ActRun):
+            if where.reason == f"section {compiled} is not in the compilation":
+                return None
+            return f"cannot tell whether the Act has it ({where.reason})"
+        if working.get(where[0].identifier) is not None and working[where[0].identifier].removed:
+            return None
+        return "the Act already has it"
+
     def find(ins, ids, number):
         t = ins.target.model_copy(update={"section": number})
         return locate(ins.model_copy(update={"target": t}), ids, ix)
@@ -190,6 +255,11 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
         act = tuple(sorted(ids)) or ("name", ins.target.act or ins.target.public_law or ins.target.cite_raw)
         names = renamed.setdefault(act, {})
         away = gone.setdefault(act, set())
+        new_here = added.setdefault(act, {})
+        if ins.new_text and ins.op in ("ADD_END", "ADD_UNIT_AFTER", "ADD_UNIT_BEFORE") and not ins.target.section:
+            made = _add_sections(ins, ids, act, names, away, new_here)
+            if made is not None:
+                continue
         what = structural(ins.source_text) if not ins.target.section or ins.op in ("UNKNOWN", "UNPARSED") else None
         if what and what[1] == "title":
             unplaced.append(ActRun(ins.id, "UNAVAILABLE", "redesignates a title of the Act: no section's text changes "
@@ -242,6 +312,10 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
             traces.extend(done)
             continue
         number = ins.target.section
+        if number and number in new_here and number not in names:
+            ident = new_here[number]
+            traces.append(ActTrace(ins, ident, engines[ident].run(ins, list(ins.target.path))))
+            continue
         if number and number not in names and number in away:
             unplaced.append(ActRun(ins.id, "UNAVAILABLE", f"section {number} was redesignated earlier in the bill and no "
                                    "section has taken its number", [], []))
