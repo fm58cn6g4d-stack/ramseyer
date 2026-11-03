@@ -50,3 +50,18 @@ def test_act_side_reason_is_kept_in_the_instruction_list():
     tr.result.detail = "section 3 struck; not placed: section 9: section 9 is not in the compilation"
     place(rows, NS(traces=[]), NS(traces=[tr], currency={}, unplaced=[]))
     assert rows[0]["status"] == "ACT:WARN" and "not placed: section 9" in rows[0]["detail"]
+
+
+def test_only_confirmed_notes_are_printed_as_notes_and_every_place_is_named():
+    """Review of #28: a NOTE read from the drafted parenthetical alone (no note_id) is not printed as a note."""
+    from ramseyer.analyze import note_places
+    from ramseyer.comparative.html import note_place
+
+    def code(iid, cite, note_id):
+        return NS(instruction=NS(id=iid), resolution=NS(outcome="NOTE", cite=cite, note_id=note_id))
+    run = NS(traces=[code("a", "42 U.S.C. 1 note", 7), code("b", "15 U.S.C. 6701(a)", None),
+                     code("c", "42 U.S.C. note prec. 1", 8)])
+    act = NS(traces=[NS(instruction=NS(id=i), section=s) for i, s in (("a", "s1"), ("b", "s2"), ("c", "s1"))])
+    assert note_places(run, act) == {"s1": "42 U.S.C. 1 note; 42 U.S.C. note prec. 1"}
+    assert note_place("42 U.S.C. 1 note; 42 U.S.C. note prec. 1") == \
+        "Set out as a note under 42 U.S.C. 1 and as a note preceding 42 U.S.C. 1"

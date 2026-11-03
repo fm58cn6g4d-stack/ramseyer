@@ -8,7 +8,7 @@ import io
 from docx import Document
 from docx.shared import Pt
 
-from ramseyer.comparative.html import BROKEN, lines, views
+from ramseyer.comparative.html import BROKEN, act_parts, lines, note_place, views
 
 
 def _add_runs(par, block, style: str, flags: str = "") -> None:
@@ -52,7 +52,7 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
     def section(v, label=None, currency=None):
         doc.add_heading((label or v.cite) + (" (new)" if v.new else ""), level=2)
         if currency is not None:
-            doc.add_paragraph(f"Compilation {currency}")
+            doc.add_paragraph(currency)
         if v.new and v.placement:
             doc.add_paragraph(f"New section, placed as the bill directs: {v.placement[:400]}")
         for status, src, why in v.notes:
@@ -72,11 +72,15 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
                           (" close" if i == len(bs) - 1 and "close" in flags else ""))
     for v in views(run):
         section(v)
-    if act is not None and act.working:
-        doc.add_heading("Act text not in the Code", level=1)
-        doc.add_paragraph("From the House Office of the Legislative Counsel's compilation of each Act.")
-        for v in views(act):
-            section(v, act.labels.get(v.identifier), "; ".join(act.currency.get(v.identifier, [])) or "currency unknown")
+    for part, intro, vs in act_parts(act):
+        doc.add_heading(part, level=1)
+        doc.add_paragraph(intro)
+        for v in vs:
+            cur = "; ".join(act.currency.get(v.identifier, [])) or "currency unknown"
+            where = act.notes.get(v.identifier)
+            section(v, act.labels.get(v.identifier),
+                    (f"{note_place(where)}; compilation " if where else "Compilation ")
+                    + cur)
     if unplaced:
         doc.add_heading("Instructions not placed", level=1)
         for status, src, why in unplaced:

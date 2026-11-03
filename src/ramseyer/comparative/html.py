@@ -174,6 +174,29 @@ def views(run) -> list[SectionView]:
     return sorted(out, key=lambda v: v.identifier)
 
 
+def note_place(cites: str) -> str:
+    """ "Set out as a note under 42 U.S.C. 2133" (or "preceding 42 U.S.C. 1" for a "note prec." cite); several places,
+    separated by "; ", are all named."""
+    out = []
+    for c in cites.split("; "):
+        m = re.fullmatch(r"(.*?U\.S\.C\.) note prec\. (.+)", c)
+        out.append(f"preceding {m[1]} {m[2]}" if m else f"under {c.removesuffix(' note')}")
+    return "Set out as a note " + " and as a note ".join(out)
+
+
+def act_parts(act) -> list[tuple[str, str, list]]:
+    """The print's Act parts (plan contents 4 and 5): statutory note changes (Act text the Code sets out as a note),
+    then the other uncodified provisions. Both come from HOLC's compilation of each Act."""
+    if act is None or not act.working:
+        return []
+    vs = views(act)
+    notes = [v for v in vs if v.identifier in getattr(act, "notes", {})]
+    other = [v for v in vs if v.identifier not in getattr(act, "notes", {})]
+    src = "From the House Office of the Legislative Counsel's compilation of each Act; each section shows its currency."
+    return [p for p in [("Statutory note changes", "Act text the Code sets out as a statutory note. " + src, notes),
+                        ("Act text not in the Code", src, other)] if p[2]]
+
+
 def _section_html(v, marks: str, context: int, style: str, label: str | None = None) -> str:
     inner = _render(v.tree, context, style) if v.tree is not None else ""
     name = html.escape(label or v.cite)
@@ -213,14 +236,14 @@ def report(run, *, title: str, release_point: str, input_hash: str, generated: s
                f'review</span><span class="bad">{broken} could not be applied</span><div class="meta">'
                f"{html.escape(legend)}</div></div>")
     body = [_section_html(v, _marks(v.notes), context, style) for v in secs]
-    if act is not None and act.working:
-        body.append('<h2 class="part">Act text not in the Code</h2><div class="meta">From the House Office of the '
-                    "Legislative Counsel's compilation of each Act; each section shows the compilation's currency."
-                    "</div>")
-        for v in views(act):
+    for part, intro, vs in act_parts(act):
+        body.append(f'<h2 class="part">{html.escape(part)}</h2><div class="meta">{html.escape(intro)}</div>')
+        for v in vs:
             cur = "; ".join(act.currency.get(v.identifier, [])) or "currency unknown"
-            body.append(_section_html(v, f'<div class="meta">Compilation {html.escape(cur)}</div>' + _marks(v.notes),
-                                      context, style, act.labels.get(v.identifier)))
+            where = act.notes.get(v.identifier)
+            meta = (f"{note_place(where)}; " if where else "") + f"compilation {cur}"
+            body.append(_section_html(v, f'<div class="meta">{html.escape(meta[0].upper() + meta[1:])}</div>' +
+                                      _marks(v.notes), context, style, act.labels.get(v.identifier)))
     if unplaced:
         rows = "".join(f'<div class="marker bad"><b>{html.escape(s)}</b>: {html.escape(src[:300])}'
                        f"{' — ' + html.escape(why) if why else ''}</div>" for s, src, why in unplaced)

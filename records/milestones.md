@@ -1258,3 +1258,33 @@ After the rebase, H.R. 1048 gives the same statuses. H.R. 7688 places two more i
 - **Offset 15 is not held out for this change.** H.R. 1048, the bill that prompted it, is in that sample (new matter
   2,546 → 7,725 of 8,181 words). Two of its reports are now graded because they now reach a section.
 - **Precision held** on every sample.
+
+## M8: statutory note changes in the print (2026-11-03, branch claude/m8-notes)
+
+Plan contents 4 and 5 are now separate parts of the print:
+- **"Statutory note changes":** Act text that the Code sets out as a statutory note.
+- **"Act text not in the Code":** the other uncodified provisions.
+
+**How it works:**
+- An Act-side section goes in the notes part when an instruction that edits it resolved, on the Code side, to Act text
+  in a note.
+- It is printed under that place ("Set out as a note under 42 U.S.C. 2133"), with the compilation's currency.
+- The text is still HOLC's compilation of the Act, so the edit and its marks are the same as before. Only where the
+  section is shown, and its label, change.
+- Word counts are unchanged.
+
+**Seen on the four committee-report samples** (offsets 0, 7, 10 and 15): 5 sections in 3 bills now print as note
+changes.
+- H.R. 976: 12 U.S.C. 5301 note.
+- H.R. 7688: 10 U.S.C. 111 note, 10 U.S.C. 4811 note, 42 U.S.C. 2133 note.
+- H.R. 3482: 38 U.S.C. 1701 note.
+
+Only a note the Code index confirms (the resolver found it, with a note id) is printed as a note.
+- A note read from the bill's parenthetical alone is unverified and stays under "Act text not in the Code" (review of
+  #28). This covers H.R. 7128's three sections, cited only as units of 15 U.S.C. 6701.
+- When the instructions on one section name different notes, all of them are shown.
+
+**Not done:** a note's own text in the Code index is not edited. The print uses the Act's compiled text for it
+(M6e step 3, Act text in notes, stays open).
+
+M8 gate: PASS (927 sections round-trip, 0 mismatches, 0 missing markers, renders OK, golden unchanged).

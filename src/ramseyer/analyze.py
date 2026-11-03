@@ -90,6 +90,8 @@ def analyze(name: str, data: bytes) -> Analysis:
              "detail": next((tr.result.detail for tr in run.traces if tr.instruction.id == i.id and tr.result), "")
              or i.reason or ""} for i in instructions]
     act = act_side(instructions, status, r)
+    if act is not None:
+        act.notes.update(note_places(run, act))
     unplaced = place(rows, run, act)
     counts: dict[str, int] = {}
     for row in rows:
@@ -99,6 +101,21 @@ def analyze(name: str, data: bytes) -> Analysis:
                     committee_html=print_html.report(run, style="committee", **meta, **extra),
                     working_html=print_html.report(run, style="working", **meta, **extra),
                     docx=print_word.document(run, style="committee", **meta, **extra), **meta)
+
+
+def note_places(run, act) -> dict[str, str]:
+    """Act-side sections the Code sets out as a statutory note: section -> the note's place(s), "; "-separated."""
+    # Only a note the Code index confirms (it has a note_id); a NOTE read from the drafted parenthetical alone is
+    # unverified and stays with the other Act text (review of #28).
+    note_of = {tr.instruction.id: tr.resolution.cite for tr in run.traces
+               if tr.resolution is not None and tr.resolution.outcome == "NOTE" and tr.resolution.cite
+               and tr.resolution.note_id is not None}
+    places: dict[str, list[str]] = {}
+    for tr in act.traces:
+        if tr.section and tr.instruction.id in note_of and note_of[tr.instruction.id] not in places.get(tr.section, []):
+            places.setdefault(tr.section, []).append(note_of[tr.instruction.id])
+    # Every note place named for a section is kept: two different ones are both shown, never one picked.
+    return {s: "; ".join(p) for s, p in places.items()}
 
 
 def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
