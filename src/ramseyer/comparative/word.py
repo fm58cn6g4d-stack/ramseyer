@@ -8,7 +8,7 @@ import io
 from docx import Document
 from docx.shared import Pt
 
-from ramseyer.comparative.html import BROKEN, act_parts, lines, views
+from ramseyer.comparative.html import BROKEN, act_parts, lines, note_place, views
 
 
 def _add_runs(par, block, style: str, flags: str = "") -> None:
@@ -79,7 +79,7 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
             cur = "; ".join(act.currency.get(v.identifier, [])) or "currency unknown"
             where = act.notes.get(v.identifier)
             section(v, act.labels.get(v.identifier),
-                    (f"Set out as a note under {where.removesuffix(' note')}; compilation " if where else "Compilation ")
+                    (f"{note_place(where)}; compilation " if where else "Compilation ")
                     + cur)
     if unplaced:
         doc.add_heading("Instructions not placed", level=1)

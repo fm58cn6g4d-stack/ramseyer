@@ -174,6 +174,16 @@ def views(run) -> list[SectionView]:
     return sorted(out, key=lambda v: v.identifier)
 
 
+def note_place(cites: str) -> str:
+    """ "Set out as a note under 42 U.S.C. 2133" (or "preceding 42 U.S.C. 1" for a "note prec." cite); several places,
+    separated by "; ", are all named."""
+    out = []
+    for c in cites.split("; "):
+        m = re.fullmatch(r"(.*?U\.S\.C\.) note prec\. (.+)", c)
+        out.append(f"preceding {m[1]} {m[2]}" if m else f"under {c.removesuffix(' note')}")
+    return "Set out as a note " + " and as a note ".join(out)
+
+
 def act_parts(act) -> list[tuple[str, str, list]]:
     """The print's Act parts (plan contents 4 and 5): statutory note changes (Act text the Code sets out as a note),
     then the other uncodified provisions. Both come from HOLC's compilation of each Act."""
@@ -231,7 +241,7 @@ def report(run, *, title: str, release_point: str, input_hash: str, generated: s
         for v in vs:
             cur = "; ".join(act.currency.get(v.identifier, [])) or "currency unknown"
             where = act.notes.get(v.identifier)
-            meta = (f"Set out as a note under {where.removesuffix(' note')}; " if where else "") + f"compilation {cur}"
+            meta = (f"{note_place(where)}; " if where else "") + f"compilation {cur}"
             body.append(_section_html(v, f'<div class="meta">{html.escape(meta[0].upper() + meta[1:])}</div>' +
                                       _marks(v.notes), context, style, act.labels.get(v.identifier)))
     if unplaced:
