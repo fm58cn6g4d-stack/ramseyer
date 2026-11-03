@@ -35,7 +35,7 @@ def _add_runs(par, block, style: str, flags: str = "") -> None:
 
 
 def document(run, *, title: str, release_point: str, input_hash: str, generated: str, version: str,
-             style: str = "committee", context: int = 0) -> bytes:
+             style: str = "committee", context: int = 0, act=None, unplaced=()) -> bytes:
     doc = Document()
     doc.styles["Normal"].font.name = "Times New Roman"
     doc.styles["Normal"].font.size = Pt(12)
@@ -49,14 +49,16 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
     doc.add_paragraph("Existing law proposed to be omitted is enclosed in black brackets, new matter is printed in "
                       "italics, and existing law in which no change is proposed is shown in roman." if style ==
                       "committee" else "Struck text is struck through; new text is underlined.")
-    for v in views(run):
-        doc.add_heading(v.cite + (" (new)" if v.new else ""), level=2)
+    def section(v, label=None, currency=None):
+        doc.add_heading((label or v.cite) + (" (new)" if v.new else ""), level=2)
+        if currency is not None:
+            doc.add_paragraph(f"Compilation {currency}")
         if v.new and v.placement:
             doc.add_paragraph(f"New section, placed as the bill directs: {v.placement[:400]}")
         for status, src, why in v.notes:
             doc.add_paragraph(f"{status}: {src[:300]}" + (f" — {why}" if why else ""))
         if v.tree is None:
-            continue
+            return
         for depth, bs, flags in lines(v.tree, context):
             par = doc.add_paragraph()
             par.paragraph_format.left_indent = Pt(18 * depth)
@@ -68,6 +70,17 @@ def document(run, *, title: str, release_point: str, input_hash: str, generated:
                     par.add_run(" ")
                 _add_runs(par, b, style, ("open" if i == 0 and "open" in flags else "") +
                           (" close" if i == len(bs) - 1 and "close" in flags else ""))
+    for v in views(run):
+        section(v)
+    if act is not None and act.working:
+        doc.add_heading("Act text not in the Code", level=1)
+        doc.add_paragraph("From the House Office of the Legislative Counsel's compilation of each Act.")
+        for v in views(act):
+            section(v, act.labels.get(v.identifier), "; ".join(act.currency.get(v.identifier, [])) or "currency unknown")
+    if unplaced:
+        doc.add_heading("Instructions not placed", level=1)
+        for status, src, why in unplaced:
+            doc.add_paragraph(f"{status}: {src[:300]}" + (f" — {why}" if why else ""))
     buf = io.BytesIO()
     doc.save(buf)
     return buf.getvalue()

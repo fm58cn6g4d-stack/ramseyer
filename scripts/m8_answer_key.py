@@ -142,7 +142,7 @@ def main() -> int:
             continue
         run = a.run
         ours_del, ours_ins = [], []
-        for v in views(run):
+        for v in views(run) + (views(a.act) if getattr(a, "act", None) is not None else []):
             if v.tree is None:
                 continue
             for b in blocks(v.tree):
