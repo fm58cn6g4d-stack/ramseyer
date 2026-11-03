@@ -34,7 +34,7 @@ section.law h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
 .committee del { text-decoration: none; } .committee b.br { font-weight: bold; }
 .committee ins { text-decoration: none; font-style: italic; }
 .marker { border-left: 3px solid var(--warn); padding: .25rem .75rem; margin: .5rem 0; font-size: .9rem; }
-.marker.bad { border-color: var(--bad); } .placement { font-family: system-ui, sans-serif; font-size: .9rem; color: var(--muted); }
+.marker.bad { border-color: var(--bad); } h2.part { font-family: system-ui, sans-serif; margin-top: 3rem; } .placement { font-family: system-ui, sans-serif; font-size: .9rem; color: var(--muted); }
 @media print { .summary { break-inside: avoid; } section.law { break-inside: auto; } }
 """
 
@@ -174,10 +174,30 @@ def views(run) -> list[SectionView]:
     return sorted(out, key=lambda v: v.identifier)
 
 
+def _section_html(v, marks: str, context: int, style: str, label: str | None = None) -> str:
+    inner = _render(v.tree, context, style) if v.tree is not None else ""
+    name = html.escape(label or v.cite)
+    if v.new:
+        place = f'<div class="placement">New section, placed as the bill directs: {html.escape(v.placement[:400])}' \
+                f"</div>" if v.placement else ""
+        return f'<section class="law new"><h2>{name} (new)</h2>{place}{marks}{inner}</section>'
+    return f'<section class="law"><h2>{name}</h2>{marks}{inner}</section>'
+
+
+def _marks(notes) -> str:
+    return "".join(f'<div class="marker{" bad" if s in BROKEN else ""}"><b>{html.escape(s)}</b>: '
+                   f"{html.escape(src[:300])}{' — ' + html.escape(why) if why else ''}</div>" for s, src, why in notes)
+
+
 def report(run, *, title: str, release_point: str, input_hash: str, generated: str, version: str,
-           style: str = "committee", context: int = 0) -> str:
+           style: str = "committee", context: int = 0, act=None, unplaced=()) -> str:
     """The comparative print as a standalone HTML page. `context`: unchanged neighbouring units shown beside a
-    changed one (0, as committee reports print it: untouched units become "* * *")."""
+    changed one (0, as committee reports print it: untouched units become "* * *").
+
+    `act` (actside.ActBill): instructions on Act text the Code does not hold, applied to HOLC's compiled text and
+    printed in their own part with each compilation's currency (plan contents 5). `unplaced`: (status, instruction,
+    reason) for every instruction placed in neither the Code nor a compiled Act, listed at the end so none is
+    dropped."""
     secs = views(run)
     statuses = [tr.result.status for tr in run.traces if tr.result is not None]
     clean = sum(s == "CLEAN" for s in statuses)
@@ -192,19 +212,19 @@ def report(run, *, title: str, release_point: str, input_hash: str, generated: s
     summary = (f'<div class="summary"><span class="clean">{clean} clean</span><span class="warn">{review} need '
                f'review</span><span class="bad">{broken} could not be applied</span><div class="meta">'
                f"{html.escape(legend)}</div></div>")
-    body = []
-    for v in secs:
-        marks = "".join(
-            f'<div class="marker{" bad" if s in BROKEN else ""}"><b>{html.escape(s)}</b>: '
-            f"{html.escape(src[:300])}{' — ' + html.escape(why) if why else ''}</div>" for s, src, why in v.notes)
-        if v.new:
-            place = f'<div class="placement">New section, placed as the bill directs: {html.escape(v.placement[:400])}' \
-                    f"</div>" if v.placement else ""
-            inner = _render(v.tree, context, style) if v.tree is not None else ""
-            body.append(f'<section class="law new"><h2>{html.escape(v.cite)} (new)</h2>{place}{marks}{inner}</section>')
-        else:
-            inner = _render(v.tree, context, style) if v.tree is not None else ""
-            body.append(f'<section class="law"><h2>{html.escape(v.cite)}</h2>{marks}{inner}</section>')
+    body = [_section_html(v, _marks(v.notes), context, style) for v in secs]
+    if act is not None and act.working:
+        body.append('<h2 class="part">Act text not in the Code</h2><div class="meta">From the House Office of the '
+                    "Legislative Counsel's compilation of each Act; each section shows the compilation's currency."
+                    "</div>")
+        for v in views(act):
+            cur = "; ".join(act.currency.get(v.identifier, [])) or "currency unknown"
+            body.append(_section_html(v, f'<div class="meta">Compilation {html.escape(cur)}</div>' + _marks(v.notes),
+                                      context, style, act.labels.get(v.identifier)))
+    if unplaced:
+        rows = "".join(f'<div class="marker bad"><b>{html.escape(s)}</b>: {html.escape(src[:300])}'
+                       f"{' — ' + html.escape(why) if why else ''}</div>" for s, src, why in unplaced)
+        body.append(f'<section class="law"><h2>Instructions not placed</h2>{rows}</section>')
     return (f"<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" "
             f"content=\"width=device-width, initial-scale=1\"><title>Comparative print</title><style>{CSS}</style>"
             f"</head><body class=\"{style}\">{head}{summary}{''.join(body)}</body></html>")

@@ -27,6 +27,7 @@ class Analysis:
     docx: bytes
     instructions: list[dict]        # one row per instruction: id, status, target, source, detail
     run: object = None              # the dry-run itself (BillRun), for callers that read the print's marks
+    act: object = None              # instructions on Act text outside the Code, run on HOLC's compilations (ActBill)
 
 
 def draft_text(name: str, data: bytes) -> str:
@@ -88,13 +89,67 @@ def analyze(name: str, data: bytes) -> Analysis:
              "target": i.target.cite_raw, "source": i.source_text.strip()[:400],
              "detail": next((tr.result.detail for tr in run.traces if tr.instruction.id == i.id and tr.result), "")
              or i.reason or ""} for i in instructions]
+    act = act_side(instructions, status, r)
+    unplaced = place(rows, run, act)
     counts: dict[str, int] = {}
     for row in rows:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
-    return Analysis(counts=counts, instructions=rows, run=run,
-                    committee_html=print_html.report(run, style="committee", **meta),
-                    working_html=print_html.report(run, style="working", **meta),
-                    docx=print_word.document(run, style="committee", **meta), **meta)
+    extra = dict(act=act, unplaced=unplaced)
+    return Analysis(counts=counts, instructions=rows, run=run, act=act,
+                    committee_html=print_html.report(run, style="committee", **meta, **extra),
+                    working_html=print_html.report(run, style="working", **meta, **extra),
+                    docx=print_word.document(run, style="committee", **meta, **extra), **meta)
+
+
+def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
+    """Give each instruction row its place in the print and return the ones placed nowhere.
+
+    `row["placed"]` is "code" (shown in a Code section), "act" (in the part "Act text not in the Code") or "none"
+    (listed under "Instructions not placed", with its reason). An instruction the Code side could not execute and the
+    Act side ran keeps that fact in its status: "ACT:<status>", checked against HOLC's compilation of the Act (its
+    currency in the detail), not against the pinned release point and without the Code side's checks (review of
+    #25). Every row gets exactly one place, so none is dropped."""
+    code = {tr.instruction.id for tr in run.traces if tr.section and tr.result is not None}
+    act_status: dict[str, str] = {}
+    act_cur: dict[str, str] = {}
+    if act is not None:
+        for tr in act.traces:
+            if tr.result is None:
+                continue
+            prev = act_status.get(tr.instruction.id)
+            act_status[tr.instruction.id] = tr.result.status if prev in (None, "CLEAN") else prev
+            act_cur[tr.instruction.id] = "; ".join(act.currency.get(tr.section, [])) or "currency unknown"
+    reasons = {u.instruction_id: u.reason for u in (act.unplaced if act is not None else [])}
+    unplaced = []
+    for row in rows:
+        if row["status"] == "NOT_EXECUTED" and row["id"] in act_status:
+            row["status"] = "ACT:" + act_status[row["id"]]
+            row["detail"] = f"on HOLC's compiled text of the Act (not in the Code), compilation {act_cur[row['id']]}"
+            row["placed"] = "act"
+        elif row["id"] in code:
+            row["placed"] = "code"
+        else:
+            row["placed"] = "none"
+            row["detail"] = reasons.get(row["id"], row["detail"])
+            unplaced.append((row["status"], row["source"], row["detail"]))
+    return unplaced
+
+
+def act_side(instructions, status: dict, r):
+    """The instructions the Code side could not execute that name an Act, run on HOLC's compiled text of that Act
+    (M8a), or None when the compilations are not loaded (var/comps/comps.sqlite)."""
+    from ramseyer.data.index import Index
+    from ramseyer.dryrun.actside import run_bill_on_acts
+    from ramseyer.resolve.cites import parse_parenthetical
+    db = config.load().var / "comps" / "comps.sqlite"
+    if not db.exists():
+        return None
+    todo = [i for i in instructions if status.get(i.id, "NOT_EXECUTED") == "NOT_EXECUTED"
+            and (i.target.act or i.target.public_law) and i.op != "UNPARSED"]
+    if not todo:
+        return None
+    return run_bill_on_acts(todo, lambda i: r._identities(i.target, parse_parenthetical(i.target.usc_parenthetical))[0],
+                            Index(db, "comps"))
 
 
 def write_report(a: Analysis, out: Path) -> list[Path]:

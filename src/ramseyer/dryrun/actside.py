@@ -47,9 +47,9 @@ def _sections(ix: Index, titles: list[str], section: str) -> list[Node]:
     return [ix._node(i) for i, _, ident in rows if re.search(rf"/s{want}$", ident or "", re.I)]
 
 
-def run_on_act(ins: Instruction, identities: list[str], ix: Index) -> ActRun:
-    """Run one instruction against the compiled Act its target names (identities as the resolver gives them,
-    "pl:95-617"). Never picks among compilations that disagree."""
+def locate(ins: Instruction, identities: list[str], ix: Index):
+    """The compiled Act section an instruction's target names: (node, files, currency), or an ActRun saying why
+    there is none. Never picks among compilations that disagree."""
     t = ins.target
     if not t.section:
         return ActRun(ins.id, "UNAVAILABLE", "the target names no section of an Act", [], [])
@@ -70,11 +70,63 @@ def run_on_act(ins: Instruction, identities: list[str], ix: Index) -> ActRun:
     if len(texts) > 1:
         return ActRun(ins.id, "UNAVAILABLE", f"{len(found)} compilation files hold section {t.section} with different "
                       "text; both reported, neither picked", files, [currency.get(f, "unknown") for f in files])
-    node = found[0]
+    return found[0], files, [currency.get(f, "unknown") for f in files]
+
+
+def run_on_act(ins: Instruction, identities: list[str], ix: Index) -> ActRun:
+    """Run one instruction against the compiled Act its target names (identities as the resolver gives them,
+    "pl:95-617"), on a fresh copy of the section."""
+    where = locate(ins, identities, ix)
+    if isinstance(where, ActRun):
+        return where
+    node, files, currency = where
     work = Working(ix.section_xml(node), node.identifier, positive_law=False)
-    res = Engine(work).run(ins, list(t.path))
-    return ActRun(ins.id, res.status, res.detail, files, [currency.get(f, "unknown") for f in files],
-                  node.identifier, res, node.text)
+    res = Engine(work).run(ins, list(ins.target.path))
+    return ActRun(ins.id, res.status, res.detail, files, currency, node.identifier, res, node.text)
+
+
+@dataclass
+class ActTrace:
+    instruction: Instruction
+    section: str | None
+    result: Result | None
+
+
+@dataclass
+class ActBill:
+    """A bill's instructions on Act text the Code does not hold, applied in bill order to one copy of each compiled
+    section (the comparative print's "Act text" part): `working` and `traces` as a BillRun has them, with each
+    section's label and currency, and the instructions that could not be placed, with why."""
+    working: dict
+    traces: list
+    labels: dict[str, str]
+    currency: dict[str, list[str]]
+    unplaced: list[ActRun]
+
+
+def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) -> ActBill:
+    """Each instruction in bill order, on its compiled Act section; several instructions on one section edit the same
+    copy, as the Code side does. `identities_of(ins)` gives the resolver's identities for its target."""
+    working: dict[str, Working] = {}
+    engines: dict[str, Engine] = {}
+    traces, labels, currency, unplaced = [], {}, {}, []
+    for ins in instructions:
+        where = locate(ins, identities_of(ins), ix)
+        if isinstance(where, ActRun):
+            unplaced.append(where)
+            continue
+        node, files, cur = where
+        ident = node.identifier
+        if ident not in working:
+            working[ident] = Working(ix.section_xml(node), ident, positive_law=False)
+            engines[ident] = Engine(working[ident])
+            title = ix.db.execute("SELECT publication FROM titles WHERE rp=? AND title=?",
+                                  (ix.rp_id, node.title)).fetchone()
+            labels[ident] = f"{(title[0] if title else None) or ins.target.act or 'Act'}, {node.num or ''}".strip(" ,")
+            currency[ident] = cur
+        res = engines[ident].run(ins, list(ins.target.path))
+        traces.append(ActTrace(ins, ident, res))
+    return ActBill(working, traces, labels, currency, unplaced)
 
 
 def reading(act: ActRun, code_status: str | None) -> tuple[str, str]:
