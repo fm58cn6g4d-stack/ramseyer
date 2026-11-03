@@ -1144,3 +1144,31 @@ Espen said go for M8 on 2026-11-02. Verify-first findings are in `records/verify
    - **71:** "This legislation does not amend any existing Federal statute".
    - **231:** the committee "will make the analysis available as soon as possible".
    - **101:** "There are no changes to existing statutes made by H.R. 1823", followed by an unfilled "*******INSERT RAMSEYER*******" placeholder.
+
+## M8: the print's Act-text part (2026-11-03, branch claude/m8-act-text)
+
+Espen chose to finish the print before M7 (2026-11-03).
+
+**Built:**
+- **`actside.run_bill_on_acts`:** runs the instructions the Code side could not execute (NOT_EXECUTED) that name an Act on HOLC's compiled text of that Act. They run in bill order, one copy per section, as the Code side does.
+- **`analyze`:** passes them to the print.
+- **The print's new part, "Act text not in the Code":** each section with its compilation's currency.
+- **"Instructions not placed":** every instruction placed in neither the Code nor a compiled Act, with its reason, so none is dropped.
+
+**Re-measured on the committee-report samples (the disjoint sample first, code frozen):**
+
+| Sample | Graded | Omitted recall / precision | New-matter recall / precision |
+| --- | --- | --- | --- |
+| Disjoint (position 10) | 18 | 41.0% / 94.4% | 41.8% / 90.7% |
+| Disjoint without H.R. 7688 | 17 | 63.9% / 95.7% | 67.4% / 90.3% |
+| Tuning (position 0) | 21 | 86.2% / 94.5% | 73.6% / 86.4% |
+
+**The Act-text part does not move the disjoint sample's recall** (2 more words found). This revises the expectation recorded in part 2.
+
+On the disjoint sample, 67% of the words ramseyer misses come from one bill, H.R. 7688 (the Defense Production Act of 1950):
+- **Existing sections are already handled:** the Act is classified to title 50, so amendments to its existing sections run on the Code side.
+- **The misses are self-built sections.** The bill inserts a new title II and then amends the sections it has just created (172 NOT_EXECUTED). No instruction can be applied to a section that exists only once an earlier instruction of the same bill has added it, unless the bill's structural changes are applied to the whole Act first. That is a separate capability, not built here.
+
+The next two bills (H.R. 2853, 13%; H.R. 976, 11%) are still to be examined.
+
+Statutory notes (plan contents 4) are not in the print yet. Act text quoted in Code notes is M6e step 3.
