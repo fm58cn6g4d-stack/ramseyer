@@ -1169,6 +1169,12 @@ On the disjoint sample, 67% of the words ramseyer misses come from one bill, H.R
 - **Existing sections are already handled:** the Act is classified to title 50, so amendments to its existing sections run on the Code side.
 - **The misses are self-built sections.** The bill inserts a new title II and then amends the sections it has just created (172 NOT_EXECUTED). No instruction can be applied to a section that exists only once an earlier instruction of the same bill has added it, unless the bill's structural changes are applied to the whole Act first. That is a separate capability, not built here.
 
-The next two bills (H.R. 2853, 13%; H.R. 976, 11%) are still to be examined.
+The next two bills (H.R. 2853, 13%; H.R. 976, 11%) miss for a different reason: their instructions name an Act but no section, so neither side can place them. They are listed under "Instructions not placed", with that reason:
+- **H.R. 976:** "by striking section 1071" of the Dodd-Frank Act (the instruction strikes a whole section and names it only as its object), an amendment to the Equal Credit Opportunity Act's table of contents, and one instruction the parser does not read ("in paragraph (3), by adding 'or' at the end").
+- **H.R. 2853:** "Title III of the Trade Facilitation and Trade Enforcement Act of 2015 ... is amended by inserting" (a whole title, no section), and that Act's table of contents.
+
+Placing these needs Act-level edits: striking or inserting whole sections and titles, and tables of contents. Like H.R. 7688's self-built sections, this is a separate capability, not built here.
+
+H.R. 1823 (report skipped as "prints no changes"): ramseyer prints 0 words for it too, which is consistent.
 
 Statutory notes (plan contents 4) are not in the print yet. Act text quoted in Code notes is M6e step 3.
