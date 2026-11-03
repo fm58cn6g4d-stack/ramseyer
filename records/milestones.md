@@ -1178,3 +1178,50 @@ Placing these needs Act-level edits: striking or inserting whole sections and ti
 H.R. 1823 (report skipped as "prints no changes"): ramseyer prints 0 words for it too, which is consistent.
 
 Statutory notes (plan contents 4) are not in the print yet. Act text quoted in Code notes is M6e step 3.
+
+## M8: whole-Act structure on the Act side (2026-11-03, branch claude/m8-whole-act)
+
+Built to place what the Act-text part could not: bills that renumber or strike whole sections of an Act and then amend
+them under their new numbers (H.R. 7688, recorded above).
+
+**Built (`dryrun/actside.py`):**
+- **`structural()`** reads, from an instruction's own words, "redesignating sections 301, 302 and 305 as sections 201,
+  202 and 206, respectively", "sections 701 through 711 as sections 301 through 311", "and transferring such section so
+  as to appear after section 303", "redesignating title VII as title III", and "striking section 714 and 723".
+  - Lists are paired one to one. A count mismatch, or a range between numbers that are not plain integers, is not read
+    (no guess).
+  - The parser leaves these instructions unparsed; the Act side reads them itself.
+- **`run_bill_on_acts`** follows them in bill order.
+  - One instruction's redesignations take effect together.
+  - A later instruction naming the new number edits the renumbered compiled section, shown as "section 201 (formerly
+    section 301)" with its number changed in the redline.
+  - A struck section is shown removed. A move is noted (order not shown).
+  - A number redesignated away, and not taken by another section, is reported as such, never matched to the wrong
+    section.
+  - A title's redesignation changes no section text and is listed under "Instructions not placed" with that reason.
+- Unit tests: `tests/unit/test_comps.py` (synthetic compilation).
+
+**Measured (committee-report answer key):**
+
+| Sample | Graded | Omitted recall / precision | New recall / precision |
+| --- | --- | --- | --- |
+| Disjoint (offset 10), before | 18 | 41.0% / 94.4% | 41.8% / 90.7% |
+| Disjoint (offset 10), after | 18 | 73.9% / 93.2% | 69.7% / 93.2% |
+| Tuning (offset 0), before and after | 21 | 86.2% / 94.5% | 73.6% / 86.4% |
+| Fresh (offset 5), before and after | 17 | 85.7% / 82.2% | 75.6% / 95.2% |
+| Fresh (offset 15), before and after | 16 | 66.5% / 92.2% | 37.3% / 96.5% |
+
+**The whole gain is one bill, H.R. 7688, the bill this was built for.** Its unplaced instructions fell from 172 to 8:
+omitted 2,378 of 2,675 words found, new 4,111 of 5,664.
+
+- The disjoint sample is therefore no longer a held-out measure of this change.
+- On two fresh samples never graded before (offsets 5 and 15), the change moves nothing, for better or worse. Their
+  bills do not renumber whole sections.
+- So the figure to quote for the print is not the disjoint 74%. It is the range across samples: omitted recall
+  67–86% and new-matter recall 37–76%, at 82–97% precision.
+
+**Largest remaining miss on the fresh samples:** H.R. 1048 (new matter 2,546 of 8,181 words; 4 instructions not
+executed). Still to examine.
+
+M8 gate on this head: PASS (927 sections round-trip, 0 mismatches, 0 missing markers, renders OK, golden renders
+unchanged).
