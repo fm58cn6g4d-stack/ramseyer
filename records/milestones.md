@@ -1243,7 +1243,7 @@ Code.
   "not in the compilation".
 
 **Measured.** The code was frozen first. The reports were graded at 106e89f, before rebasing onto the merged #26 fixes.
-After the rebase, H.R. 7688 and H.R. 1048 give the same statuses.
+After the rebase, H.R. 1048 gives the same statuses. H.R. 7688 places two more instructions (its own added sections: 8 → 6 not executed); it was graded on the disjoint sample before the rebase.
 
 | Sample | Graded | Omitted recall / precision | New recall / precision |
 | --- | --- | --- | --- |
