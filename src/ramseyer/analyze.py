@@ -122,7 +122,7 @@ def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
     reasons = {u.instruction_id: u.reason for u in (act.unplaced if act is not None else [])}
     unplaced = []
     for row in rows:
-        if row["status"] == "NOT_EXECUTED" and row["id"] in act_status:
+        if row["status"] in ("NOT_EXECUTED", "UNPARSED") and row["id"] in act_status:
             row["status"] = "ACT:" + act_status[row["id"]]
             row["detail"] = f"on HOLC's compiled text of the Act (not in the Code), compilation {act_cur[row['id']]}"
             row["placed"] = "act"
@@ -144,8 +144,11 @@ def act_side(instructions, status: dict, r):
     db = config.load().var / "comps" / "comps.sqlite"
     if not db.exists():
         return None
-    todo = [i for i in instructions if status.get(i.id, "NOT_EXECUTED") == "NOT_EXECUTED"
-            and (i.target.act or i.target.public_law) and i.op != "UNPARSED"]
+    from ramseyer.dryrun.actside import structural
+    # The parser leaves Act-level structure ("redesignating sections 301 and 302 as sections 201 and 202") unparsed;
+    # the Act side reads those itself.
+    todo = [i for i in instructions if status.get(i.id, "NOT_EXECUTED") in ("NOT_EXECUTED", "UNPARSED")
+            and (i.target.act or i.target.public_law) and (i.op != "UNPARSED" or structural(i.source_text))]
     if not todo:
         return None
     return run_bill_on_acts(todo, lambda i: r._identities(i.target, parse_parenthetical(i.target.usc_parenthetical))[0],
