@@ -1225,3 +1225,33 @@ executed). Still to examine.
 
 M8 gate on this head: PASS (927 sections round-trip, 0 mismatches, 0 missing markers, renders OK, golden renders
 unchanged).
+
+## M8: sections a bill adds to an Act (2026-11-03, branch claude/m8-act-additions)
+
+The Act side now places sections that a bill inserts into an Act ("Part B of title I of the Higher Education Act of
+1965 is amended by inserting after section 117 the following: SEC. 117A. ..."). The Code side already did this for the
+Code.
+
+**Built (`dryrun/actside.py`):**
+- Each inserted section is shown as a new section of that Act, with "added by the bill" in place of a compilation
+  currency.
+- A later instruction naming its number edits it.
+- Adding a number the Act already has, under its own or a renumbered section, is reported and not overwritten.
+- An Act-side reason (a partly placed structural instruction) now also reaches `instructions.json`, not only the print
+  (review of #26).
+- Known limit: a later redesignation or strike of a section the bill itself added is not followed. It is reported as
+  "not in the compilation".
+
+**Measured.** The code was frozen first. The reports were graded at 106e89f, before rebasing onto the merged #26 fixes.
+After the rebase, H.R. 7688 and H.R. 1048 give the same statuses.
+
+| Sample | Graded | Omitted recall / precision | New recall / precision |
+| --- | --- | --- | --- |
+| Fresh (offset 7), main → this branch (never graded before) | 16 | 73.9% / 95.7% → unchanged | 77.1% / 96.1% → 81.4% / 96.0% |
+| Offset 15, before → after | 16 → 18 | 66.5% / 92.2% → 66.4% / 92.2% | 37.3% / 96.5% → 72.2% / 96.6% |
+| Disjoint (offset 10), before → after | 18 | 73.9% / 93.2% → unchanged | 69.7% / 93.2% → 87.5% / 93.6% |
+
+- **Offset 7 is the fair measure:** new-matter recall rose 4 points on reports never seen while building this.
+- **Offset 15 is not held out for this change.** H.R. 1048, the bill that prompted it, is in that sample (new matter
+  2,546 → 7,725 of 8,181 words). Two of its reports are now graded because they now reach a section.
+- **Precision held** on every sample.
