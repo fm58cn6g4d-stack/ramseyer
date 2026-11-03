@@ -172,3 +172,26 @@ def test_structure_regressions_from_review_of_26(tmp_path):
     last = act.traces[-1]
     assert last.instruction.id == edit.id and last.result.status == "TARGET_MISSING"
     assert structural("by redesignating title III as title II and inserting after title I the following:") is None
+
+
+def test_sections_the_bill_adds_to_an_act_are_shown_new_and_edited_later(tmp_path):
+    from ramseyer.comparative.html import views
+    from ramseyer.comparative.redline import strip
+    from ramseyer.dryrun.actside import run_bill_on_acts
+    from ramseyer.parse import parse_text
+    build(tmp_path, {"COMPS-1.xml": comp("1", "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1"
+                                              "</citableAs>", "", SEC)})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    edit = parse_text("SEC. 2. AMENDMENT.\nSection 3(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                      "striking “beta” and inserting “delta”.\n").instructions[0]
+    add = edit.model_copy(update={"id": "add", "op": "ADD_UNIT_AFTER", "find": None, "replace": None,
+                                  "new_text": "“SEC. 3. PLACEHOLDER ADDITION.\n“(a) Alpha beta gamma.”",
+                                  "target": edit.target.model_copy(update={"section": None, "path": []})})
+    again = add.model_copy(update={"id": "again"})                  # adding a section the Act now has: reported
+    act = run_bill_on_acts([add, edit, again], lambda i: ["pl:99-1"], ix)
+    ident = "/us/sComp/new/comp1/s3"
+    assert [tr.section for tr in act.traces] == [ident, ident] and act.traces[1].result.status == "CLEAN"
+    assert act.working[ident].original is None
+    assert [u.instruction_id for u in act.unplaced] == ["again"] and "already has" in act.unplaced[0].reason
+    v = {x.identifier: x for x in views(act)}[ident]
+    assert v.new and "delta" in strip(v.tree, "after")

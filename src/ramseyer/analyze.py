@@ -112,6 +112,7 @@ def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
     code = {tr.instruction.id for tr in run.traces if tr.section and tr.result is not None}
     act_status: dict[str, str] = {}
     act_cur: dict[str, str] = {}
+    act_why: dict[str, list[str]] = {}
     if act is not None:
         for tr in act.traces:
             if tr.result is None:
@@ -119,12 +120,17 @@ def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
             prev = act_status.get(tr.instruction.id)
             act_status[tr.instruction.id] = tr.result.status if prev in (None, "CLEAN") else prev
             act_cur[tr.instruction.id] = "; ".join(act.currency.get(tr.section, [])) or "currency unknown"
+            if tr.result.detail and tr.result.status != "CLEAN":
+                act_why.setdefault(tr.instruction.id, []).append(tr.result.detail)
     reasons = {u.instruction_id: u.reason for u in (act.unplaced if act is not None else [])}
     unplaced = []
     for row in rows:
         if row["status"] in ("NOT_EXECUTED", "UNPARSED") and row["id"] in act_status:
             row["status"] = "ACT:" + act_status[row["id"]]
             row["detail"] = f"on HOLC's compiled text of the Act (not in the Code), compilation {act_cur[row['id']]}"
+            if act_why.get(row["id"]):
+                # The Act side's own reason, kept in the instruction list too (review of #26).
+                row["detail"] += "; " + "; ".join(act_why[row["id"]])
             row["placed"] = "act"
         elif row["id"] in code:
             row["placed"] = "code"
