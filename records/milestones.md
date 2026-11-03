@@ -1273,12 +1273,16 @@ Plan contents 4 and 5 are now separate parts of the print:
   section is shown, and its label, change.
 - Word counts are unchanged.
 
-**Seen on the four committee-report samples** (offsets 0, 7, 10 and 15): 8 sections in 4 bills now print as note
+**Seen on the four committee-report samples** (offsets 0, 7, 10 and 15): 5 sections in 3 bills now print as note
 changes.
 - H.R. 976: 12 U.S.C. 5301 note.
 - H.R. 7688: 10 U.S.C. 111 note, 10 U.S.C. 4811 note, 42 U.S.C. 2133 note.
 - H.R. 3482: 38 U.S.C. 1701 note.
-- H.R. 7128: three places the resolver cites as units of 15 U.S.C. 6701.
+
+Only a note the Code index confirms (the resolver found it, with a note id) is printed as a note.
+- A note read from the bill's parenthetical alone is unverified and stays under "Act text not in the Code" (review of
+  #28). This covers H.R. 7128's three sections, cited only as units of 15 U.S.C. 6701.
+- When the instructions on one section name different notes, all of them are shown.
 
 **Not done:** a note's own text in the Code index is not edited. The print uses the Act's compiled text for it
 (M6e step 3, Act text in notes, stays open).
