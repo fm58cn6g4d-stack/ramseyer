@@ -90,6 +90,13 @@ def analyze(name: str, data: bytes) -> Analysis:
              "detail": next((tr.result.detail for tr in run.traces if tr.instruction.id == i.id and tr.result), "")
              or i.reason or ""} for i in instructions]
     act = act_side(instructions, status, r)
+    if act is not None:
+        # Act text the Code sets out as a statutory note: shown in the print's own part, under the note's place.
+        note_of = {tr.instruction.id: tr.resolution.cite for tr in run.traces
+                   if tr.resolution is not None and tr.resolution.outcome == "NOTE" and tr.resolution.cite}
+        for tr in act.traces:
+            if tr.section and tr.instruction.id in note_of:
+                act.notes.setdefault(tr.section, note_of[tr.instruction.id])
     unplaced = place(rows, run, act)
     counts: dict[str, int] = {}
     for row in rows:

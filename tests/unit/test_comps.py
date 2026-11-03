@@ -225,3 +225,32 @@ def test_addition_regressions_from_review_of_27(tmp_path):
     assert "cannot tell" in disagree.reason
     again = next(tr for tr in act.traces if tr.instruction.id == "again")
     assert again.result.status == "CLEAN" and again.section == "/us/sComp/new/comp1/s2"
+
+
+def test_act_text_set_out_as_a_note_has_its_own_part(tmp_path):
+    """Plan contents 4 and 5: statutory note changes are shown apart from other uncodified Act text, each under the
+    place the Code sets the note out."""
+    from types import SimpleNamespace as NS
+
+    from ramseyer.comparative import html as print_html
+    from ramseyer.comparative import word as print_word
+    from ramseyer.dryrun.actside import run_bill_on_acts
+    from ramseyer.parse import parse_text
+    secs = "".join(SEC.replace("s2", f"s{n}").replace('value="2">SEC. 2.', f'value="{n}">SEC. {n}.') for n in (2, 3))
+    build(tmp_path, {"COMPS-1.xml": comp("1", "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1"
+                                              "</citableAs>", "", secs)})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    edit = parse_text("SEC. 2. AMENDMENT.\nSection 2(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                      "striking “beta” and inserting “delta”.\n").instructions[0]
+    other = edit.model_copy(update={"id": "other", "target": edit.target.model_copy(update={"section": "3"})})
+    act = run_bill_on_acts([edit, other], lambda i: ["pl:99-1"], ix)
+    act.notes["/us/sComp/99/1/s2"] = "42 U.S.C. 1 note"
+    parts = print_html.act_parts(act)
+    assert [(p, [v.identifier for v in vs]) for p, _, vs in parts] == [
+        ("Statutory note changes", ["/us/sComp/99/1/s2"]), ("Act text not in the Code", ["/us/sComp/99/1/s3"])]
+    page = print_html.report(NS(traces=[], working={}), title="t", release_point="rp", input_hash="h",
+                             generated="g", version="v", act=act)
+    assert page.index("Statutory note changes") < page.index("Act text not in the Code")
+    assert "Set out as a note under 42 U.S.C. 1;" in page
+    assert print_word.document(NS(traces=[], working={}), title="t", release_point="rp", input_hash="h",
+                               generated="g", version="v", act=act)[:2] == b"PK"

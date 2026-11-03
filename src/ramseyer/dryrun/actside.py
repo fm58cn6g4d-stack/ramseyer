@@ -16,7 +16,7 @@ compilation, its section is not in the compilation, or files disagree on the sec
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ramseyer.data import comps
 from ramseyer.data.index import Index, Node
@@ -37,6 +37,7 @@ class ActRun:
     identifier: str | None = None  # the compilation section, e.g. /us/sComp/95/617/s5
     result: Result | None = None
     text: str = ""                 # the compilation section's text before the instruction, when one was run
+    absent: bool = False           # the compilation holds no such section (not: files disagree, no compilation)
 
 
 def _sections(ix: Index, titles: list[str], section: str) -> list[Node]:
@@ -64,7 +65,7 @@ def locate(ins: Instruction, identities: list[str], ix: Index):
         (ix.rp_id, *titles))}
     if not found:
         return ActRun(ins.id, "UNAVAILABLE", f"section {t.section} is not in the compilation", sorted(set(titles)),
-                      [currency.get(f, "unknown") for f in sorted(set(titles))])
+                      [currency.get(f, "unknown") for f in sorted(set(titles))], absent=True)
     texts = {n.text for n in found}
     files = sorted({n.title for n in found})
     if len(texts) > 1:
@@ -102,6 +103,7 @@ class ActBill:
     labels: dict[str, str]
     currency: dict[str, list[str]]
     unplaced: list[ActRun]
+    notes: dict[str, str] = field(default_factory=dict)   # section -> Code note it is set out as ("42 U.S.C. 1 note")
 
 
 _NUM = r"[0-9]+[A-Za-z]*(?:-[0-9A-Za-z]+)?"
@@ -238,7 +240,7 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
             return None                                 # redesignated away and not taken: free
         where = find(ins, ids, compiled)
         if isinstance(where, ActRun):
-            if where.reason == f"section {compiled} is not in the compilation":
+            if where.absent:
                 return None
             return f"cannot tell whether the Act has it ({where.reason})"
         if working.get(where[0].identifier) is not None and working[where[0].identifier].removed:
