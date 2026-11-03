@@ -1236,7 +1236,9 @@ Code.
 - Each inserted section is shown as a new section of that Act, with "added by the bill" in place of a compilation
   currency.
 - A later instruction naming its number edits it.
-- Adding a number the Act already has, under its own or a renumbered section, is reported and not overwritten.
+- Adding a number the Act already has, under its own or a renumbered section, is reported and not overwritten; so is a
+  number the compilations disagree on (ramseyer cannot tell whether it is there). A partly placed addition is WARN and
+  says what was not placed; a section the bill struck may be added again (review of #27).
 - An Act-side reason (a partly placed structural instruction) now also reaches `instructions.json`, not only the print
   (review of #26).
 - Known limit: a later redesignation or strike of a section the bill itself added is not followed. It is reported as
@@ -1248,8 +1250,9 @@ After the rebase, H.R. 1048 gives the same statuses. H.R. 7688 places two more i
 | Sample | Graded | Omitted recall / precision | New recall / precision |
 | --- | --- | --- | --- |
 | Fresh (offset 7), main → this branch (never graded before) | 16 | 73.9% / 95.7% → unchanged | 77.1% / 96.1% → 81.4% / 96.0% |
-| Offset 15, before → after | 16 → 18 | 66.5% / 92.2% → 66.4% / 92.2% | 37.3% / 96.5% → 72.2% / 96.6% |
-| Disjoint (offset 10), before → after | 18 | 73.9% / 93.2% → unchanged | 69.7% / 93.2% → 87.5% / 93.6% |
+| Offset 15, before → after, same 16 reports (not held out: H.R. 1048) | 16 | 66.5% / 92.2% → unchanged | 37.3% / 96.5% → 71.0% / 96.6% |
+| Offset 15 after, all 18 now graded | 18 | 66.4% / 92.2% | 72.2% / 96.6% |
+| Disjoint (offset 10), before → after (not held out: H.R. 7688 shaped earlier work) | 18 | 73.9% / 93.2% → unchanged | 69.7% / 93.2% → 87.5% / 93.6% |
 
 - **Offset 7 is the fair measure:** new-matter recall rose 4 points on reports never seen while building this.
 - **Offset 15 is not held out for this change.** H.R. 1048, the bill that prompted it, is in that sample (new matter
