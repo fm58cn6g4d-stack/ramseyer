@@ -136,8 +136,11 @@ def structural(text: str):
     if m:
         kind = "title" if m.group(1).lower().startswith("title") else "section"
         if kind == "title":
-            old = re.findall(r"\b[IVXLC]+\b", m.group(2))
-            new = re.findall(r"\b[IVXLC]+\b", m.group(3))
+            roman = r"[IVXLC]+(?:(?:, (?:and )?| and )[IVXLC]+)*"
+            if not (re.fullmatch(roman, m.group(2)) and re.fullmatch(roman, m.group(3))):
+                return None                        # joined to anything else ("... and inserting"): not read
+            old = re.findall(r"[IVXLC]+", m.group(2))
+            new = re.findall(r"[IVXLC]+", m.group(3))
         else:
             old, new = _numbers(m.group(2)), _numbers(m.group(3))
         if old and new and len(old) == len(new):
@@ -183,7 +186,8 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
 
     for ins in instructions:
         ids = identities_of(ins)
-        act = tuple(sorted(ids))
+        # An Act the resolver does not identify is keyed by its drafted name, never shared with other such Acts.
+        act = tuple(sorted(ids)) or ("name", ins.target.act or ins.target.public_law or ins.target.cite_raw)
         names = renamed.setdefault(act, {})
         away = gone.setdefault(act, set())
         what = structural(ins.source_text) if not ins.target.section or ins.op in ("UNKNOWN", "UNPARSED") else None
@@ -196,17 +200,27 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
             # One instruction's redesignations take effect together ("301 and 302 as 302 and 303"): every number is
             # looked up before any is changed.
             pairs = [(p[0], p[1]) if what[0] == "redesignate" else (p, None) for p in what[2]]
-            looked = [(number, new, names.get(number, number)) for number, new in pairs]
+            # A number redesignated away earlier, and not taken since, names no section now (review of #26).
+            looked = [(number, new, None if number not in names and number in away else names.get(number, number))
+                      for number, new in pairs]
             for number, _new, _c in looked:
                 if what[0] == "redesignate":
                     names.pop(number, None)
                     away.add(number)
+            done = []
             for number, new, compiled in looked:
+                if compiled is None:
+                    missing.append(f"section {number}: redesignated earlier in the bill and no section has taken its "
+                                   "number")
+                    continue
                 where = find(ins, ids, compiled)
                 if isinstance(where, ActRun):
                     missing.append(f"section {number}: {where.reason}")
                     continue
                 ident = open_section(ins, where)
+                if working[ident].removed:
+                    missing.append(f"section {number}: struck earlier in the bill")
+                    continue
                 if what[0] == "redesignate":
                     _renumber(working[ident], new)
                     names[new] = compiled
@@ -217,9 +231,15 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
                 else:
                     working[ident].removed = True
                     detail = f"section {number} struck"
-                traces.append(ActTrace(ins, ident, Result(ins.id, "CLEAN", detail)))
-            if missing:
+                done.append(ActTrace(ins, ident, Result(ins.id, "CLEAN", detail)))
+            if missing and done:
+                # Partly placed: each placed part says what was not, and the instruction is not CLEAN (review of #26).
+                for tr in done:
+                    tr.result.status = "WARN"
+                    tr.result.detail += "; not placed: " + "; ".join(missing)
+            elif missing:
                 unplaced.append(ActRun(ins.id, "UNAVAILABLE", "; ".join(missing), [], []))
+            traces.extend(done)
             continue
         number = ins.target.section
         if number and number not in names and number in away:
@@ -231,6 +251,11 @@ def run_bill_on_acts(instructions: list[Instruction], identities_of, ix: Index) 
             unplaced.append(where)
             continue
         ident = open_section(ins, where)
+        if working[ident].removed:
+            # The bill struck this section earlier: an edit to it is not applied to the removed text (review of #26).
+            traces.append(ActTrace(ins, ident, Result(ins.id, "TARGET_MISSING", "the section was struck earlier in "
+                                                      "the bill")))
+            continue
         res = engines[ident].run(ins, list(ins.target.path))
         traces.append(ActTrace(ins, ident, res))
     return ActBill(working, traces, labels, currency, unplaced)

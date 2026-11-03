@@ -142,3 +142,33 @@ def test_structural_reads_only_whole_section_and_title_changes():
     assert structural("by striking section 3 and inserting the following:") is None
     assert structural("by redesignating sections 2 and 3 as section 4;") is None       # counts differ: not guessed
     assert structural("by redesignating sections 2A through 2C as sections 3A through 3C") is None
+
+
+def test_structure_regressions_from_review_of_26(tmp_path):
+    """(1) a number redesignated away is not struck under its old name; (2) a partly placed structural instruction is
+    not CLEAN and says what was not placed; (3) an edit to a struck section is not applied."""
+    from ramseyer.dryrun.actside import run_bill_on_acts, structural
+    from ramseyer.parse import parse_text
+    secs = "".join(SEC.replace("s2", f"s{n}").replace('value="2">SEC. 2.', f'value="{n}">SEC. {n}.') for n in (2, 3))
+    build(tmp_path, {"COMPS-1.xml": comp("1", "<dc:title>Placeholder Act</dc:title><citableAs>Public Law 99–1"
+                                              "</citableAs>", "", secs)})
+    ix = Index(tmp_path / "c.sqlite", "comps")
+    edit = parse_text("SEC. 2. AMENDMENT.\nSection 3(a) of the Placeholder Act (Public Law 99–1) is amended by "
+                      "striking “beta” and inserting “delta”.\n").instructions[0]
+    base = edit.target.model_copy(update={"section": None, "path": []})
+
+    def struct(i, words):
+        return edit.model_copy(update={"id": i, "op": "UNPARSED", "source_text": words, "target": base})
+    bill = [struct("r", "by redesignating section 2 as section 4;"),
+            struct("s2", "by striking section 2;"),                         # (1): 2 is gone; 4 must stay
+            struct("part", "by striking sections 3 and 9;"),                # (2): 3 struck, 9 does not exist
+            edit]                                                            # (3): section 3 was struck
+    act = run_bill_on_acts(bill, lambda i: ["pl:99-1"], ix)
+    s2 = "/us/sComp/99/1/s2"
+    assert not act.working[s2].removed
+    assert [u.instruction_id for u in act.unplaced] == ["s2"] and "redesignated earlier" in act.unplaced[0].reason
+    part = next(tr for tr in act.traces if tr.instruction.id == "part")
+    assert part.result.status == "WARN" and "section 9" in part.result.detail
+    last = act.traces[-1]
+    assert last.instruction.id == edit.id and last.result.status == "TARGET_MISSING"
+    assert structural("by redesignating title III as title II and inserting after title I the following:") is None
