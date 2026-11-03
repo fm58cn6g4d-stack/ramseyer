@@ -90,17 +90,7 @@ def analyze(name: str, data: bytes) -> Analysis:
              "detail": next((tr.result.detail for tr in run.traces if tr.instruction.id == i.id and tr.result), "")
              or i.reason or ""} for i in instructions]
     act = act_side(instructions, status, r)
-    if act is not None:
-        # An instruction the Code side could not execute and the Act side ran takes the Act side's status.
-        by_id = {tr.instruction.id: tr.result.status for tr in act.traces if tr.result is not None}
-        for row in rows:
-            if row["status"] == "NOT_EXECUTED" and row["id"] in by_id:
-                row["status"], row["detail"] = by_id[row["id"]], "on the Act's compiled text (not in the Code)"
-    placed = {tr.instruction.id for tr in run.traces if tr.section} | \
-        ({tr.instruction.id for tr in act.traces} if act is not None else set())
-    reasons = {u.instruction_id: u.reason for u in (act.unplaced if act is not None else [])}
-    unplaced = [(row["status"], row["source"], reasons.get(row["id"], row["detail"])) for row in rows
-                if row["id"] not in placed]
+    unplaced = place(rows, run, act)
     counts: dict[str, int] = {}
     for row in rows:
         counts[row["status"]] = counts.get(row["status"], 0) + 1
@@ -109,6 +99,40 @@ def analyze(name: str, data: bytes) -> Analysis:
                     committee_html=print_html.report(run, style="committee", **meta, **extra),
                     working_html=print_html.report(run, style="working", **meta, **extra),
                     docx=print_word.document(run, style="committee", **meta, **extra), **meta)
+
+
+def place(rows: list[dict], run, act) -> list[tuple[str, str, str]]:
+    """Give each instruction row its place in the print and return the ones placed nowhere.
+
+    `row["placed"]` is "code" (shown in a Code section), "act" (in the part "Act text not in the Code") or "none"
+    (listed under "Instructions not placed", with its reason). An instruction the Code side could not execute and the
+    Act side ran keeps that fact in its status: "ACT:<status>", checked against HOLC's compilation of the Act (its
+    currency in the detail), not against the pinned release point and without the Code side's checks (review of
+    #25). Every row gets exactly one place, so none is dropped."""
+    code = {tr.instruction.id for tr in run.traces if tr.section and tr.result is not None}
+    act_status: dict[str, str] = {}
+    act_cur: dict[str, str] = {}
+    if act is not None:
+        for tr in act.traces:
+            if tr.result is None:
+                continue
+            prev = act_status.get(tr.instruction.id)
+            act_status[tr.instruction.id] = tr.result.status if prev in (None, "CLEAN") else prev
+            act_cur[tr.instruction.id] = "; ".join(act.currency.get(tr.section, [])) or "currency unknown"
+    reasons = {u.instruction_id: u.reason for u in (act.unplaced if act is not None else [])}
+    unplaced = []
+    for row in rows:
+        if row["status"] == "NOT_EXECUTED" and row["id"] in act_status:
+            row["status"] = "ACT:" + act_status[row["id"]]
+            row["detail"] = f"on HOLC's compiled text of the Act (not in the Code), compilation {act_cur[row['id']]}"
+            row["placed"] = "act"
+        elif row["id"] in code:
+            row["placed"] = "code"
+        else:
+            row["placed"] = "none"
+            row["detail"] = reasons.get(row["id"], row["detail"])
+            unplaced.append((row["status"], row["source"], row["detail"]))
+    return unplaced
 
 
 def act_side(instructions, status: dict, r):
